@@ -14,7 +14,63 @@ suppressMessages(library("ggspatial"))
 suppressMessages(library("sf"))
 suppressMessages(library("rnaturalearth"))
 suppressMessages(library("rnaturalearthdata"))
+suppressMessages(library("optparse"))
+suppressMessages(library("stringr"))
 
+
+# get Options
+option_list = list(
+  make_option(c("-c", "--country"), type="character", default="Austria", 
+              help="Name of country used to produce map [default %default]", metavar="character"),
+  make_option(c("-S", "--bbsouth"), type="double", default=46.38, 
+              help="Bounding box most south point [default %default]", metavar="character"),
+  make_option(c("-N", "--bbnorth"), type="double", default=49.01, 
+              help="Bounding box most norther point [default %default]", metavar="character"),
+  make_option(c("-W", "--bbwest"), type="double", default=9.53, 
+              help="Bounding box most western point [default %default]", metavar="character"),
+  make_option(c("-E", "--bbeast"), type="double", default=17.15, 
+              help="Bounding box most easter point [default %default]", metavar="character"),
+  make_option(c("-y", "--metadata"), type="character", default="data/metaDataSub.tsv", 
+              help="Path to meta data input file [default %default]", metavar="character"),
+  make_option(c("-x", "--marker"), type="character", default="resources/mutations_list.csv", 
+              help="Path to marker mutation input file [default %default]", metavar="character"),
+  make_option(c("-X", "--smarker"), type="character", default="resources/mutations_special.csv", 
+              help="Path to special mutation input file [default %default]", metavar="character"),
+  make_option(c("-d", "--data"), type="character", default="data/mutationDataSub.tsv", 
+              help="Path to data input file [default %default]", metavar="character"),
+  make_option(c("-w", "--plotwidth"), type="double", default=8, 
+              help="Base size of plot width [default %default]", metavar="character"),
+  make_option(c("-h", "--plotheight"), type="double", default=4.5, 
+              help="Base size of plot height [default %default]", metavar="character"),
+  make_option(c("-n", "--ninconsens"), type="double", default="0.4", 
+              help="Minimal fraction of genome covered by reads to be considered (0-1) [default %default]", metavar="character"),
+  make_option(c("-z", "--zero"), type="double", default=0.02, 
+              help="Minimal allele frequency to be considered [default %default]", metavar="double"),
+  make_option(c("-d", "--depth"), type="integer", default=75, 
+              help="Minimal depth at mutation locus to be considered [default %default]", metavar="character"),
+  make_option(c("-r", "--recent"), type="integer", default=99, 
+              help="How old (in days) most recent sample might be to be still considered in overview maps [default %default]", metavar="character"),
+  make_option(c("-T", "--plottp"), type="integer", default=3, 
+              help="Produce timecourse plots only if more than this timepoints are available [default %default]", metavar="character"),
+  make_option(c("-m", "--minuniqmark"), type="integer", default=3, 
+              help="Minimal absolute number of uniq markers that variant is considered detected [default %default]", metavar="character"),
+  make_option(c("-U", "--minuniqmarkfrac"), type="double", default=0, 
+              help="Minimal fraction of uniq markers that variant is considered detected [default %default]", metavar="character"),
+  make_option(c("-u", "--minqmark"), type="integer", default=3, 
+              help="Minimal absolute number of markers that variant is considered detected [default %default]", metavar="character"),
+  make_option(c("-M", "--minmarkfrac"), type="double", default=0, 
+              help="Minimal fraction of markers that variant is considered detected [default %default]", metavar="character"),
+  make_option(c("-s", "--smoothingsamples"), type="integer", default=1, 
+              help="Number of previous timepoints use for smoothing [default %default]", metavar="character"),
+  make_option(c("-t", "--smoothingtime"), type="double", default=8, 
+              help="Previous timepoints for smoothing are ignored if more days than this days apart [default %default]", metavar="character"),
+  make_option(c("-v", "--voi"), type="character", default="B.1.1.7;B.1.617.2;P.1;B.1.351", 
+              help="List of variants which should be plotted in more detail. List separated by semicolon [default %default]", metavar="character"),
+  make_option(c("-H", "--highlight"), type="character", default="B.1.1.7;B.1.617.2", 
+              help="List of variants which should be plotted at the bottom axis. List separated by semicolon [default %default]", metavar="character")
+);
+opt_parser = OptionParser(option_list=option_list);
+opt = parse_args(opt_parser);
 
 ## define functions
 `%notin%` <- Negate(`%in%`)
@@ -23,19 +79,19 @@ suppressMessages(library("rnaturalearthdata"))
 ## read in config file to overwrite all para below
 
 ## read in mutations and meta data 
-metaDT       <- fread(file = "data/metaDataSub.tsv")
-sewage_samps <- read.table("data/mutationDataSub.tsv" , header=TRUE, sep="\t" ,na.strings = ".")
+metaDT       <- fread(file = opt$metadata)
+sewage_samps <- read.table(opt$data , header=TRUE, sep="\t" ,na.strings = ".")
 
 
 ## set variable parameters
 summaryDataFile <- "summary.csv"
-markermutationFile  <- "resources/mutations_list.csv"
-specialmutationFile <- "resources/mutations_special.csv"
+markermutationFile  <- opt$marker
+specialmutationFile <- opt$smarker
 
-mapCountry  <- "Austria"
-mapMargines <- c(46.38,9.53,49.01,17.15)
-plotWidth  <- 8
-plotHeight <- 4.5
+mapCountry  <- opt$country
+mapMargines <- c(opt$bbsouth,opt$bbwest,opt$bbnorth,opt$bbeast)
+plotWidth  <- opt$plotwidth
+plotHeight <- opt$plotheight
 
 
 
@@ -67,21 +123,21 @@ if( ! dir.exists(paste0("ExampleOutput/figs/maps")) ){
 ### how many none-N in consensus may be seen to ba called detected 
 N_in_Consensus_detection_filter <- 29903 - 29781 * 0.05 
 ### how many non-N in consensus may be seen to be called passed_qc
-N_in_Consensus_filter <- 29903 - 29781 * 0.4 
+N_in_Consensus_filter <- 29903 - 29781 * opt$ninconsens
 
-zeroo <- 0.02      # marker below this value are considered to be zero
-min.depth = 75     # mutations with less read support are ignored
-recentEnought = 99 # sample with less than this days in the past are not used for the summary map
-tpLimitToPlot = 3 # produce plot only if at least than n time points
-minUniqMarker <- 3 # minmal absolute number of uniq markers that variant is considered detected 
-minUniqMarkerRatio <- 0 # minmal fraction of uniq markers that variant is considered detected (0.25)
-minMarker <- 3 # minmal absolute number of sensitive markers that variant is considered detected 
-minMarkerRatio <- 0 # minmal fraction of sensitive markers that variant is considered detected (0.25)
-timeLag <- 1 # number of previous timepoints use for smoothing
+zeroo <- opt$zero      # marker below this value are considered to be zero
+min.depth = opt$depth     # mutations with less read support are ignored
+recentEnought = opt$recent # sample with less than this days in the past are not used for the summary map
+tpLimitToPlot = opt$plottp # produce plot only if at least than n time points
+minUniqMarker <- opt$minuniqmark # minmal absolute number of uniq markers that variant is considered detected 
+minUniqMarkerRatio <- opt$minuniqmarkfrac # minmal fraction of uniq markers that variant is considered detected (0.25)
+minMarker <- opt$minqmark # minmal absolute number of sensitive markers that variant is considered detected 
+minMarkerRatio <- opt$minmarkfrac # minmal fraction of sensitive markers that variant is considered detected (0.25)
+timeLag <- opt$smoothingsamples # number of previous timepoints use for smoothing
 timeStart <- 1 # set to 1 if all time points should be considered; 2 if first should not be considered
-timeLagDay <- 8 # previous timepoints for smoothing are ignored if more days before
-VoI                 <- c("B.1.1.7", "B.1.617.2", "P.1", "B.1.351")
-highlightedVariants <- c("B.1.1.7", "B.1.617.2")
+timeLagDay <- opt$smoothingtime # previous timepoints for smoothing are ignored if more days before
+VoI                 <- unlist(str_split(opt$voi, pattern=";"))
+highlightedVariants <- unlist(str_split(opt$highlight, pattern=";"))
   
 ## define global variables to fill
 globalFittedData <- data.table(variant = character(), LocationID_coronA = character(), LocationName_coronA  = character(), sample_id = character(), sample_date = character(), value = numeric() )
