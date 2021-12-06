@@ -20,6 +20,8 @@ suppressMessages(library("stringr"))
 
 # get Options
 option_list = list(
+  make_option(c("--dir"), type="character", default="ExampleOutput", 
+              help="Directory to write results [default %default]", metavar="character"),
   make_option(c("--country"), type="character", default="Austria", 
               help="Name of country used to produce map [default %default]", metavar="character"),
   make_option(c("--bbsouth"), type="double", default=46.38, 
@@ -74,6 +76,7 @@ opt = parse_args(opt_parser);
 
 ## define functions
 `%notin%` <- Negate(`%in%`)
+options(warn=-1)
 
 
 ## read in config file to overwrite all para below
@@ -84,7 +87,7 @@ sewage_samps <- read.table(opt$data , header=TRUE, sep="\t" ,na.strings = ".")
 
 
 ## set variable parameters
-summaryDataFile <- "summary.csv"
+summaryDataFile <- paste0(opt$dir, "/summary.csv")
 markermutationFile  <- opt$marker
 specialmutationFile <- opt$smarker
 
@@ -96,26 +99,27 @@ plotHeight <- opt$plotheight
 
 
 ## create directory to write plots
-if( ! dir.exists("ExampleOutput")){
-  dir.create("ExampleOutput", showWarnings = FALSE)
+outdir = opt$dir
+if( ! dir.exists(outdir)){
+  dir.create(outdir, showWarnings = FALSE)
 }
-if( ! dir.exists("ExampleOutput/figs")){
-  dir.create("ExampleOutput/figs", showWarnings = FALSE)
+if( ! dir.exists(paste0(outdir, "/figs"))){
+  dir.create(paste0(outdir, "/figs"), showWarnings = FALSE)
 }
-if( ! dir.exists("ExampleOutput/figs/specialMutations")){
-  dir.create("ExampleOutput/figs/specialMutations", showWarnings = FALSE)
+if( ! dir.exists(paste0(outdir, "/figs/specialMutations"))){
+  dir.create(paste0(outdir, "/figs/specialMutations"), showWarnings = FALSE)
 }
-if( ! dir.exists("ExampleOutput/figs/fullview")){
-  dir.create("ExampleOutput/figs/fullview", showWarnings = FALSE)
+if( ! dir.exists(paste0(outdir, "/figs/fullview"))){
+  dir.create(paste0(outdir, "/figs/fullview"), showWarnings = FALSE)
 }
-if( ! dir.exists("ExampleOutput/figs/detail")){
-  dir.create("ExampleOutput/figs/detail", showWarnings = FALSE)
+if( ! dir.exists(paste0(outdir, "/figs/detail"))){
+  dir.create(paste0(outdir, "/figs/detail"), showWarnings = FALSE)
 }
-if( ! dir.exists("ExampleOutput/figs/stackview")){
-  dir.create("ExampleOutput/figs/stackview", showWarnings = FALSE)
+if( ! dir.exists(paste0(outdir, "/figs/stackview"))){
+  dir.create(paste0(outdir, "/figs/stackview"), showWarnings = FALSE)
 }
-if( ! dir.exists(paste0("ExampleOutput/figs/maps")) ){
-  dir.create(paste0("ExampleOutput/figs/maps"), showWarnings = FALSE)
+if( ! dir.exists(paste0(outdir, "/figs/maps"))){
+  dir.create(paste0(outdir, "/figs/maps"), showWarnings = FALSE)
 }
 
 ## set definition of failed/detected/passed
@@ -191,7 +195,7 @@ s <- s + guides(size = guide_legend(title = "Population", nrow = 2))
 s <- s + scale_size(range = c(1, 10), labels = scales::comma, breaks = c(50000, 100000, 500000, 1000000))
 s <- s + scale_shape_manual(values = c("detected" = 24, "fail" = 25, "passed_qc" = 21), name = "Seq. Status") # set to c(24,25,21)
 s <- s + xlab("") + ylab("")
-filename <- paste0("ExampleOutput/figs/maps/STATUS.pdf")
+filename <- paste0(outdir, "/figs/maps/STATUS.pdf")
 ggsave(filename = filename, plot = s)
 fwrite(as.list(c("statusmapplot", "status", filename)), file = summaryDataFile, append = TRUE, sep = "\t")
 rm(s, filename)
@@ -457,7 +461,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID_coronA))) {
       plantFittedData2$variant <- factor(plantFittedData2$variant, levels = rev(c(highlightedVariants, unique(plantFittedData2$variant)[unique(plantFittedData2$variant) %notin% highlightedVariants])))
       
       plantFittedData2 %>% group_by(LocationID_coronA) %>% mutate(n = length(unique(sample_date))) %>% ggplot(aes(x = as.Date(sample_date), y = value, fill = variant)) + geom_area(position = "stack", alpha = 0.6) + geom_vline(xintercept = as.Date(latestSample$latest), linetype = "dotdash", color = "grey", size =  0.5) + facet_wrap(~LocationName_coronA, ncol = 4) + scale_fill_viridis_d(alpha = 0.6, begin = .05, end = .95, option = "H", direction = +1, name="") + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1)) + theme_bw() + theme(legend.position="bottom", strip.text.x = element_text(size = 4.5), panel.grid.minor = element_blank(), panel.spacing.y = unit(0, "lines"),  strip.background = element_rect(fill="grey97")) + scale_x_date(date_breaks = "2 month", date_labels =  "%b %d", limits = c(as.Date(NA), as.Date(latestSample$latest))) + ylab(paste0("Variantenanteil [1/1]") ) + xlab("") -> q3
-      filename <- paste0('ExampleOutput/figs/stackview', paste('/klaerwerk', roi, "all", sep="_"), ".pdf")
+      filename <- paste0(outdir, '/figs/stackview', paste('/klaerwerk', roi, "all", sep="_"), ".pdf")
       ggsave(filename = filename, plot = q3, width = plotWidth, height = plotHeight)
       fwrite(as.list(c("stackOverview", c( ifelse(dim(count_last_BSF_run_id)[1] > 0, "current", "old"), roiname, "all", filename))), file = summaryDataFile, append = TRUE, sep = "\t")
       
@@ -482,7 +486,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID_coronA))) {
         q2 + guides(shape = guide_legend(title = "Spezial-\nMutationen", nrow = 2, title.position = "top"), fill = guide_legend(title = "Spezial-\nMutationen", nrow = 2, title.position = "top"), col = guide_legend(title = "Varianten", nrow = 2, title.position = "top")) -> q2
         print(paste0("LOG: draw special mutation for ", roi))
         
-        filename <- paste0('ExampleOutput/figs/specialMutations', paste('/klaerwerk', roi, "all", sep="_"), ".pdf")
+        filename <- paste0(outdir, '/figs/specialMutations', paste('/klaerwerk', roi, "all", sep="_"), ".pdf")
         ggsave(filename = filename, plot = q2, width = plotWidth, height = plotHeight)
         fwrite(as.list(c("specialMutations", c( ifelse(dim(count_last_BSF_run_id)[1] > 0, "current", "old"), roiname, "all",filename))), file = summaryDataFile, append = TRUE, sep = "\t")
       }
@@ -504,7 +508,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID_coronA))) {
         q1 + guides(shape = guide_legend(title = "Spezial-\nMutationen", nrow = 2, title.position = "top"), fill = guide_legend(title = "Spezial-\nMutationen", nrow = 2, title.position = "top"), col = guide_legend(title = "Varianten", nrow = 2, title.position = "top")) -> q1
         print(paste0("LOG: draw special mutation for ", roi))
     
-        filename <- paste0('ExampleOutput/figs/specialMutations', paste('/klaerwerk', roi, "VoI", sep="_"), ".pdf")
+        filename <- paste0(outdir, '/figs/specialMutations', paste('/klaerwerk', roi, "VoI", sep="_"), ".pdf")
         ggsave(filename = filename, plot = q1, width = plotWidth, height = plotHeight)
         fwrite(as.list(c("specialMutations", c( ifelse(dim(count_last_BSF_run_id)[1] > 0, "current", "old"), roiname, "VoI", filename))), file = summaryDataFile, append = TRUE, sep = "\t")
       }
@@ -516,7 +520,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID_coronA))) {
       colorAssignment %>% filter(category %in% VoI) -> colorAssignmentVoI
       plantFullData %>% filter(variant %in% VoI) %>% ggplot()  + geom_line(data = subset(plantFittedData, variant %in% VoI), alpha = 0.6, size = 2, aes(x = as.Date(sample_date), y = value, col = variant)) + geom_jitter(aes(x = as.Date(sample_date), y = singlevalue), alpha = 0.33, size = 1.5, width = 0.33, height = 0) + geom_vline(xintercept = as.Date(latestSample$latest), linetype = "dotdash", color = "grey", size =  0.5) + facet_wrap(~variant)  + scale_color_manual(values = colorAssignmentVoI$fill, breaks = colorAssignmentVoI$category, name = "") + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1)) + theme_bw() + theme(legend.position="bottom", strip.background = element_rect(fill="grey97")) + scale_x_date(date_breaks = "2 month", date_labels =  "%b", limits = c(as.Date(NA), as.Date(latestSample$latest))) + ylab(paste0("Variantenanteil [1/1]") ) + xlab("") -> p1  
          
-      filename <- paste0('ExampleOutput/figs/detail', paste('/klaerwerk', roi, "VoI", sep="_"), ".pdf")
+      filename <- paste0(outdir, '/figs/detail', paste('/klaerwerk', roi, "VoI", sep="_"), ".pdf")
       ggsave(filename = filename, plot = p1, width = plotWidth, height = plotHeight)
       fwrite(as.list(c("variantDetail", c( ifelse(dim(count_last_BSF_run_id)[1] > 0, "current", "old"), roiname, "VoI", filename))), file = summaryDataFile, append = TRUE, sep = "\t")
       
@@ -527,7 +531,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID_coronA))) {
       ## print faceted line plot of fitted values plut point plot of measured AF for all lineages
       plantFullData %>% ggplot() +  geom_line(data = plantFittedData, alpha = 0.6, size = 2, aes(x = as.Date(sample_date), y = value, col = variant)) + geom_jitter(aes(x = as.Date(sample_date), y = singlevalue), alpha = 0.33, size = 1.5, width = 0.33, height = 0) + geom_vline(xintercept = as.Date(latestSample$latest), linetype = "dotdash", color = "grey", size =  0.5) + facet_wrap(~variant) + scale_color_manual(values = colorAssignment$fill, breaks = colorAssignment$category, name = "") + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1)) + theme_bw() + theme(legend.position="bottom", strip.background = element_rect(fill="grey97")) + scale_x_date(date_breaks = "2 month", date_labels =  "%b", limits = c(as.Date(NA), as.Date(latestSample$latest))) + ylab(paste0("Variantenanteil [1/1]") ) + xlab("") -> p2
     
-      filename <- paste0('ExampleOutput/figs/detail', paste('/klaerwerk', roi, "all", sep="_"), ".pdf")
+      filename <- paste0(outdir, '/figs/detail', paste('/klaerwerk', roi, "all", sep="_"), ".pdf")
       ggsave(filename = filename, plot = p2, width = plotWidth, height = plotHeight)
       fwrite(as.list(c("variantDetail", c(ifelse(dim(count_last_BSF_run_id)[1] > 0, "current", "old"), roiname, "all", filename))), file = summaryDataFile, append = TRUE, sep = "\t")
       rm(p2, filename)
@@ -541,12 +545,12 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID_coronA))) {
 }
 
 ## dump global data into output file
-fwrite(globalFittedData, file = "globalFittedData.csv", sep = "\t")
-fwrite(globalFullData, file = "globalFullData.csv", sep = "\t")
+fwrite(globalFittedData, file = paste0(outdir, "/globalFittedData.csv"), sep = "\t")
+fwrite(globalFullData, file = paste0(outdir, "/globalFullData.csv"), sep = "\t")
 
 ## print overview of all VoI and all plants
 globalFittedData %>% group_by(LocationID_coronA) %>% mutate(n = length(unique(sample_date))) %>% filter(n > tpLimitToPlot*2) %>% filter(variant %in% VoI) %>% ggplot(aes(x = as.Date(sample_date), y = value, fill = variant)) + geom_area(position = "stack", alpha = 0.7)  + facet_wrap(~LocationName_coronA) + scale_fill_viridis_d(alpha = 0.6, begin = .05, end = .95, option = "H", direction = +1, name="") + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1)) + theme_minimal() + theme(legend.position="bottom", strip.text.x = element_text(size = 4.5), panel.grid.minor = element_blank(), panel.spacing.y = unit(0, "lines"), legend.direction="horizontal") + guides(fill = guide_legend(title = "", ncol = 10)) + scale_x_date(date_breaks = "2 month", date_labels =  "%b") + ylab(paste0("Variantenanteil [1/1]") ) + xlab("") -> r2
-filename <- paste0('ExampleOutput/figs/fullview', paste('/klaerwerke', "VoI", sep="_"), ".pdf")
+filename <- paste0(outdir, '/figs/fullview', paste('/klaerwerke', "VoI", sep="_"), ".pdf")
 ggsave(filename = filename, plot = r2, width = plotWidth, height = plotHeight)
 fwrite(as.list(c("fullOverview", c(roiname, "VoI", filename))), file = summaryDataFile, append = TRUE, sep = "\t")
 rm(r2,filename)
@@ -554,7 +558,7 @@ rm(r2,filename)
 ## print overview of all variants and all plants
 globalFittedData$variant <- factor(globalFittedData$variant, levels = rev(c(highlightedVariants, unique(globalFittedData$variant)[unique(globalFittedData$variant) %notin% highlightedVariants])))
 globalFittedData %>% group_by(LocationID_coronA) %>% mutate(n = length(unique(sample_date))) %>% filter(n > tpLimitToPlot*2) %>% ggplot(aes(x = as.Date(sample_date), y = value, fill = variant)) + geom_area(position = "stack", alpha = 0.7)  + facet_wrap(~LocationName_coronA) + scale_fill_viridis_d(alpha = 0.6, begin = .05, end = .95, option = "H", direction = +1, name="") + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1)) + theme_minimal() + theme(legend.position="bottom", strip.text.x = element_text(size = 4.5), panel.grid.minor = element_blank(), panel.spacing.y = unit(0, "lines"), legend.direction="horizontal") + guides(fill = guide_legend(title = "", ncol = 10)) + scale_x_date(date_breaks = "2 month", date_labels =  "%b") + ylab(paste0("Variantenanteil [1/1]") ) + xlab("") -> r1
-filename <- paste0('ExampleOutput/figs/fullview', paste('/klaerwerke', "all", sep="_"), ".pdf")
+filename <- paste0(outdir, '/figs/fullview', paste('/klaerwerke', "all", sep="_"), ".pdf")
 ggsave(filename = filename, plot = r1, width = plotWidth, height = plotHeight)
 fwrite(as.list(c("fullOverview", c(roiname, "all", filename))), file = summaryDataFile, append = TRUE, sep = "\t")
 rm(r1,filename)
@@ -591,7 +595,7 @@ for (voi in VoI){
       s <- s + scale_color_viridis_c(limits = c(0,1), direction = 1, begin = .05, end = .95, option = "C")
       s <- s + scale_size(range = c(1, 10), labels = scales::comma, breaks = c(50000, 100000, 500000, 1000000))
   
-      filename <- paste0('ExampleOutput/figs/maps/', voi, ".pdf")
+      filename <- paste0(outdir, '/figs/maps/', voi, ".pdf")
       ggsave(filename = filename, plot = s)
       fwrite(as.list(c("mapplot", voi, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
       rm(s, filename, mapdata)

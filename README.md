@@ -3,7 +3,7 @@ SARS-CoV-2 (Va)riant (Qu)antification in s(E)wage, designed for (Ro)bustness
 
 ## Synopsis
 
-Rscript scripts/VaQuERo.r
+Rscript scripts/VaQuERo.r > vaquero.log
 
 ## Description
 Takes allele frequencies in table formate and associated meta data and quantifies different virus variants as defined in provided marker mutation file. The workflow first calls 'detected' variants and subsequently quantifies the abundance of the detected variants based on the observed non-zero frequencies using a SIMPLEX regression.
@@ -14,6 +14,9 @@ Takes allele frequencies in table formate and associated meta data and quantifie
 scripts/VaQuERo.r [options]
 
 ## Options
+	--dir=CHARACTER
+		Directory to write results [default ExampleOutput]
+
 	--country=CHARACTER
 		Name of country used to produce map [default Austria]
 
@@ -182,3 +185,42 @@ List of all plots produced.
 ### Figure directory
 
 Timecourse plots and map represention of results, to be included in a report.
+
+## Install
+
+The following R packages must be pre-installed: 
+
+"tidyr"
+
+"ggplot2"
+
+"reshape2"
+
+"dplyr"
+
+"data.table"
+
+"gamlss"
+
+"ggmap"
+
+"tmaptools"
+
+"ggrepel"
+
+"scales"
+
+"betareg"
+
+"ggspatial"
+
+"sf"
+
+"rnaturalearth"
+
+"rnaturalearthdata"
+
+"optparse"
+
+"stringr"
+
