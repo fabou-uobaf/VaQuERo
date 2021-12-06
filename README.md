@@ -3,7 +3,92 @@ SARS-CoV-2 (Va)riant (Qu)antification in s(E)wage, designed for (Ro)bustness
 
 ## Synopsis
 
+Rscript scripts/VaQuERo.r
+
+## Description
 Takes allele frequencies in table formate and associated meta data and quantifies different virus variants as defined in provided marker mutation file. The workflow first calls 'detected' variants and subsequently quantifies the abundance of the detected variants based on the observed non-zero frequencies using a SIMPLEX regression.
+
+## Usage 
+
+
+scripts/VaQuERo.r [options]
+
+## Options
+	--country=CHARACTER
+		Name of country used to produce map [default Austria]
+
+	--bbsouth=CHARACTER
+		Bounding box most south point [default 46.38]
+
+	--bbnorth=CHARACTER
+		Bounding box most norther point [default 49.01]
+
+	--bbwest=CHARACTER
+		Bounding box most western point [default 9.53]
+
+	--bbeast=CHARACTER
+		Bounding box most easter point [default 17.15]
+
+	--metadata=CHARACTER
+		Path to meta data input file [default data/metaDataSub.tsv]
+
+	--marker=CHARACTER
+		Path to marker mutation input file [default resources/mutations_list.csv]
+
+	--smarker=CHARACTER
+		Path to special mutation input file [default resources/mutations_special.csv]
+
+	--data=CHARACTER
+		Path to data input file [default data/mutationDataSub.tsv]
+
+	--plotwidth=CHARACTER
+		Base size of plot width [default 8]
+
+	--plotheight=CHARACTER
+		Base size of plot height [default 4.5]
+
+	--ninconsens=CHARACTER
+		Minimal fraction of genome covered by reads to be considered (0-1) [default 0.4]
+
+	--zero=DOUBLE
+		Minimal allele frequency to be considered [default 0.02]
+
+	--depth=CHARACTER
+		Minimal depth at mutation locus to be considered [default 75]
+
+	--recent=CHARACTER
+		How old (in days) most recent sample might be to be still considered in overview maps [default 99]
+
+	--plottp=CHARACTER
+		Produce timecourse plots only if more than this timepoints are available [default 3]
+
+	--minuniqmark=CHARACTER
+		Minimal absolute number of uniq markers that variant is considered detected [default 3]
+
+	--minuniqmarkfrac=CHARACTER
+		Minimal fraction of uniq markers that variant is considered detected [default 0]
+
+	--minqmark=CHARACTER
+		Minimal absolute number of markers that variant is considered detected [default 3]
+
+	--minmarkfrac=CHARACTER
+		Minimal fraction of markers that variant is considered detected [default 0]
+
+	--smoothingsamples=CHARACTER
+		Number of previous timepoints use for smoothing [default 1]
+
+	--smoothingtime=CHARACTER
+		Previous timepoints for smoothing are ignored if more days than this days apart [default 8]
+
+	--voi=CHARACTER
+		List of variants which should be plotted in more detail. List separated by semicolon [default B.1.1.7;B.1.617.2;P.1;B.1.351]
+
+	--highlight=CHARACTER
+		List of variants which should be plotted at the bottom axis. List separated by semicolon [default B.1.1.7;B.1.617.2]
+
+	-h, --help
+		Show this help message and exit
+
 
 ## Input
 
@@ -40,7 +125,7 @@ A TAB separated table with columns in four blocks. First block gives the annotat
 
 ## meta data file
 
-The meta data file connects each sample as defined in the mutation file with the sampling location and time.
+The meta data file connects each sample as defined in the mutation file with the sampling location and time. Each samples included in allele frequency file must be specified here.
 
 | Col | HEADER                  |  EXAMPLE VALUE   | DESCRIPTION                 |
 | --- |                     --: |  :--             | :--                         |
@@ -76,8 +161,24 @@ The marker mutation file links the mutation expected to be seen in a variant (se
 | $6  |           Gene |  S               | Gene                                |
 | $7  |  Sensitivities |  1;0.87;0.96     | Sensitivity in each of the variants |
 | $8  |             AA |  S:Y144del       | Mutation in AA nomenclature         |
-| $9  v            NUC |  TTTA21990T      | Mutation in nucc nomenclature       |
+| $9  |            NUC |  TTTA21990T      | Mutation in nucc nomenclature       |
 
 
 
 ## Output
+
+### globalFittedData.csv
+
+Table holding the deduced variant frequencies.
+
+### globalFullData.csv
+
+Table holding the observed allele frequencies and the deduced variant frequencies.
+
+### summary.csv
+
+List of all plots produced.
+
+### Figure directory
+
+Timecourse plots and map represention of results, to be included in a report.
