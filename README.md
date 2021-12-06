@@ -9,7 +9,8 @@ Takes allele frequencies in table formate and associated meta data and quantifie
 
 ## mutation file
 
-
+| Col | HEADER               | EXAMPLE VALUE      |
+| --- |                  --: |  :--               |
 | $1  |                CHROM |  NC_045512.2       | 
 | $2  |                  POS |  3002              | 
 | $3  |                  REF |  G                 | 
