@@ -7,7 +7,9 @@ Takes allele frequencies in table formate and associated meta data and quantifie
 
 ## Input
 
-## mutation file
+## allele frequency file
+
+A TAB separated table with columns in four blocks. First block gives the annotatio of the associated mutation (column 1-18). The next block of N columns (with n samples) specify the allele frequencies. Thereby the column header is named SAMPLE:AF. The next block of N columns specify the read depth in each sample for taht mutation. Thereby the column header is named SAMPLE:DP.  The last block of n columns provides the quality value for the mutation calling. Thereby the column header is named SAMPLE:PQ. 
 
 | Col | HEADER               | EXAMPLE VALUE      | DESCRIPTION                  |
 | --- |                  --: |  :--               | :--                          |
@@ -38,6 +40,8 @@ Takes allele frequencies in table formate and associated meta data and quantifie
 
 ## meta data file
 
+The meta data file connects each sample as defined in the mutation file with the sampling location and time.
+
 | Col | HEADER                  |  EXAMPLE VALUE   | DESCRIPTION                 |
 | --- |                     --: |  :--             | :--                         |
 | $1  |                 BSF_run |  BSF_0895        | Sequencing batch            |
@@ -56,6 +60,23 @@ Takes allele frequencies in table formate and associated meta data and quantifie
 | $14 |         report_category |  fictional       | included in which report    |
 | $15 |             sample_date |  2020-12-20      | sample date                 |
 | $16 |                  status |  passed_qc       | status (passed|failed)      |
+
+## marker mutation definition
+
+The marker mutation file links the mutation expected to be seen in a variant (sensitivity) for all variants. Table is comma separated. If one mutation is sensitive for more than one variants, a list of variants (semicolon separated) can be provided in columns 1.
+
+
+| Col | HEADER         |  EXAMPLE VALUE   | DESCRIPTION                         |
+| --- |            --: |  :--             | :--                                 |
+| $1  |       Variants |  AV.1;B.1.1.318  | List of Variants (seperated by ";") | 
+| $2  |      Chromosom |  NC_045512.2     | Chromosome name                     |
+| $3  |        Postion |  21990           | Chromosome position                 |
+| $4  |            REF |  TTTA            | Reference base(s)                   |
+| $5  |            ALT |  T               | Alternative base(s)                 |
+| $6  |           Gene |  S               | Gene                                |
+| $7  |  Sensitivities |  1;0.87;0.96     | Sensitivity in each of the variants |
+| $8  |             AA |  S:Y144del       | Mutation in AA nomenclature         |
+| $9  v            NUC |  TTTA21990T      | Mutation in nucc nomenclature       |
 
 
 
