@@ -190,37 +190,20 @@ Timecourse plots and map represention of results, to be included in a report.
 
 The following R packages must be pre-installed: 
 
-"tidyr"
-
-"ggplot2"
-
-"reshape2"
-
-"dplyr"
-
-"data.table"
-
-"gamlss"
-
-"ggmap"
-
-"tmaptools"
-
-"ggrepel"
-
-"scales"
-
-"betareg"
-
-"ggspatial"
-
-"sf"
-
-"rnaturalearth"
-
-"rnaturalearthdata"
-
-"optparse"
-
-"stringr"
-
+- tidyr
+- ggplot2
+- reshape2
+- dplyr
+- data.table
+- gamlss
+- ggmap
+- tmaptools
+- ggrepel
+- scales
+- betareg
+- ggspatial
+- sf
+- rnaturalearth
+- rnaturalearthdata
+- optparse
+- stringr
