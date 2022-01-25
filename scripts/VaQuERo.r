@@ -78,13 +78,20 @@ opt = parse_args(opt_parser);
 `%notin%` <- Negate(`%in%`)
 options(warn=-1)
 
+## print parameter to Log
+
+print("##~LOG~PARAMETERS~####################")
+print(opt)
+print("##~LOG~PARAMETERS~####################")
 
 ## read in config file to overwrite all para below
 
 ## read in mutations and meta data 
-metaDT       <- fread(file = opt$metadata)
-sewage_samps <- read.table(opt$data , header=TRUE, sep="\t" ,na.strings = ".")
 
+print(paste0("LOG: read meta data "))
+metaDT       <- fread(file = opt$metadata)
+print(paste0("LOG: read AF data "))
+sewage_samps <- read.table(opt$data , header=TRUE, sep="\t" ,na.strings = ".")
 
 ## set variable parameters
 summaryDataFile <- paste0(opt$dir, "/summary.csv")
@@ -99,6 +106,7 @@ plotHeight <- opt$plotheight
 
 
 ## create directory to write plots
+print(paste0("LOG: create directory "))
 outdir = opt$dir
 if( ! dir.exists(outdir)){
   dir.create(outdir, showWarnings = FALSE)
@@ -140,8 +148,8 @@ minMarkerRatio <- opt$minmarkfrac # minmal fraction of sensitive markers that va
 timeLag <- opt$smoothingsamples # number of previous timepoints use for smoothing
 timeStart <- 1 # set to 1 if all time points should be considered; 2 if first should not be considered
 timeLagDay <- opt$smoothingtime # previous timepoints for smoothing are ignored if more days before
-VoI                 <- unlist(str_split(opt$voi, pattern=";"))
-highlightedVariants <- unlist(str_split(opt$highlight, pattern=";"))
+VoI                 <- unlist(str_split(opt$voi, pattern=c(";",",")))
+highlightedVariants <- unlist(str_split(opt$highlight, pattern=c(";",",")))
   
 ## define global variables to fill
 globalFittedData <- data.table(variant = character(), LocationID_coronA = character(), LocationName_coronA  = character(), sample_id = character(), sample_date = character(), value = numeric() )
@@ -482,7 +490,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID_coronA))) {
         left_join(x = spemut_draw2, y = soi, by = "NUC") -> spemut_draw2
         colnames(spemut_draw2)[colnames(spemut_draw2) == "Variants"] <- "variant"
         q2 + geom_point(data = spemut_draw2, aes(x = as.Date(sample_date), y = value.freq, shape = AA, fill = AA), color = "black", size = 2, alpha = .45) -> q2
-        q2 + scale_shape_manual(values = 15:25) -> q2
+        q2 + scale_shape_manual(values = 1:25) -> q2
         q2 + guides(shape = guide_legend(title = "Spezial-\nMutationen", nrow = 2, title.position = "top"), fill = guide_legend(title = "Spezial-\nMutationen", nrow = 2, title.position = "top"), col = guide_legend(title = "Varianten", nrow = 2, title.position = "top")) -> q2
         print(paste0("LOG: draw special mutation for ", roi))
         
@@ -504,7 +512,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID_coronA))) {
         left_join(x = spemut_draw1, y = soi, by = "NUC") -> spemut_draw1
         colnames(spemut_draw1)[colnames(spemut_draw1) == "Variants"] <- "variant"
         q1 + geom_point(data = spemut_draw1, aes(x = as.Date(sample_date), y = value.freq, shape = AA, fill = AA), color = "black", size = 2, alpha = .45) -> q1
-        q1 + scale_shape_manual(values = 15:25) -> q1
+        q1 + scale_shape_manual(values = 1:25) -> q1
         q1 + guides(shape = guide_legend(title = "Spezial-\nMutationen", nrow = 2, title.position = "top"), fill = guide_legend(title = "Spezial-\nMutationen", nrow = 2, title.position = "top"), col = guide_legend(title = "Varianten", nrow = 2, title.position = "top")) -> q1
         print(paste0("LOG: draw special mutation for ", roi))
     
