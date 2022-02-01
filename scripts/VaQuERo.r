@@ -157,7 +157,7 @@ globalFullData <- data.table(variant = character(), LocationID_coronA = characte
 
 
 # define which locations are used for the report
-metaDT %>% filter(grepl("general", report_category))  %>% dplyr::select("LocationID_coronA") -> locationsReportedOn
+metaDT %>% filter(grepl("general", report_category))  %>% dplyr::select("LocationID_coronA") %>% distinct() -> locationsReportedOn
 
 
 # Generate map of all locations sequenced in current run
@@ -386,6 +386,9 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID_coronA))) {
 
         ## transform to avoid 1
         ssdt %>% mutate(value.freq = (value.freq * (value.depth-1) + 0.5)/value.depth) -> ssdt
+        
+        ## remove "OTHERS"
+        ssdt %>% filter(!grepl("other", Variants)) -> ssdt
       
         ## generate regression formula
         if ( length(specifiedLineages) > 1 ){
