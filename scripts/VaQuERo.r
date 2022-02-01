@@ -38,6 +38,8 @@ option_list = list(
               help="Path to marker mutation input file [default %default]", metavar="character"),
   make_option(c("--smarker"), type="character", default="resources/mutations_special.csv", 
               help="Path to special mutation input file [default %default]", metavar="character"),
+  make_option(c("--pmarker"), type="character", default="resources/mutations_problematic_all.csv", 
+              help="Path to problematic mutation input file, which will be ignored throughout the analysis [default %default]", metavar="character"),
   make_option(c("--data"), type="character", default="data/mutationDataSub.tsv", 
               help="Path to data input file [default %default]", metavar="character"),
   make_option(c("--plotwidth"), type="double", default=8, 
@@ -97,6 +99,7 @@ sewage_samps <- read.table(opt$data , header=TRUE, sep="\t" ,na.strings = ".")
 summaryDataFile <- paste0(opt$dir, "/summary.csv")
 markermutationFile  <- opt$marker
 specialmutationFile <- opt$smarker
+problematicmutationFile <- opt$pmarker
 
 mapCountry  <- opt$country
 mapMargines <- c(opt$bbsouth,opt$bbwest,opt$bbnorth,opt$bbeast)
@@ -157,7 +160,7 @@ globalFullData <- data.table(variant = character(), LocationID_coronA = characte
 
 
 # define which locations are used for the report
-metaDT %>% filter(grepl("general", report_category))  %>% dplyr::select("LocationID_coronA") %>% distinct() -> locationsReportedOn
+metaDT %>% dplyr::select("LocationID_coronA") %>% distinct() -> locationsReportedOn
 
 
 # Generate map of all locations sequenced in current run
@@ -217,6 +220,16 @@ soi <- fread(file = specialmutationFile)
 unite(soi, NUC, c(4,3,5), ALT, sep = "", remove = FALSE) -> soi
 soi %>% dplyr::select("Variants","NUC", "AA") -> special
 
+## read special mutations of interest from file
+poi <- fread(file = problematicmutationFile)
+unite(poi, NUC, c(4,3,5), ALT, sep = "", remove = FALSE) -> poi
+poi %>% dplyr::select("PrimerSet","NUC", "AA") -> problematic
+
+## remove all problematic sites from soi and moi
+moi %>% filter(NUC %notin% poi$NUC) -> moi
+soi %>% filter(NUC %notin% poi$NUC) -> soi
+
+## define subset of marker and special mutations
 allmut   <- unique(c(moi$NUC, soi$NUC))
 exsoimut <- allmut[allmut %notin% moi$NUC]
 soimut   <- soi$NUC
@@ -263,6 +276,9 @@ sample_names = gsub("\\.AF$","",sample_names)
 ## remove all positions which are not mutations of interest
 unite(sewage_samps, NUC, c(3,2,4), ALT, sep = "", remove = FALSE) -> sewage_samps
 sewage_samps[sewage_samps$NUC %in% allmut,] -> sewage_samps
+
+## remove all positions which are problematic
+sewage_samps[sewage_samps$NUC %notin% poi$NUC,] -> sewage_samps
 
 ## tidy up sewage data table
 sewage_samps[,-c(10:18)] -> sewage_samps
