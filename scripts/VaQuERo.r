@@ -76,6 +76,23 @@ option_list = list(
 opt_parser = OptionParser(option_list=option_list);
 opt = parse_args(opt_parser);
 
+#opt$dir = "sandbox"
+#opt$metadata = "data/metaData_canal.csv"
+#opt$data="data/sewage_samples_merge_samp_lofreq_dp_AF001.snpeff_afs.dp.pq.tab"
+#opt$marker="VaQuERo/resources/mutations_list_grouped_2022-01-04.csv"
+#opt$smarker="VaQuERo/resources/mutations_special_2022-01-10.csv"
+#opt$pmarker="VaQuERo/resources/mutations_problematic_vss1_v3.csv"
+#opt$zero=0.02
+#opt$depth=250
+#opt$minuniqmark=3
+#opt$minuniqmarkfrac=0.15
+#opt$minqmark=3
+#opt$minmarkfrac=0.15
+#opt$smoothingsamples=0
+#opt$smoothingtime=8
+#opt$voi="BA.1,BA.2,B.1.640,B.1.351,P.1,B.1.617.2,B.1.621,B.1.1.7"
+#opt$highlight="BA.1,BA.2,B.1.640,B.1.617.2,B.1.1.7"
+
 ## define functions
 `%notin%` <- Negate(`%in%`)
 options(warn=-1)
@@ -334,6 +351,11 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID_coronA))) {
     
     ## count how many sample from this plant were in the last BSF run
     metaDT %>% filter(BSF_sample_name %in% sdt$ID) %>% filter(BSF_run %in% last_BSF_run_id) %>% dplyr::select(BSF_run) %>% group_by(BSF_run) %>% summarize(n = n()) -> count_last_BSF_run_id
+    
+    ## check if different samples if same sample date are present
+    ## change sample_date to sample time to seperate those too
+    metaDT %>% filter(BSF_sample_name %in% sdt$ID)  %>% group_by(sample_date) %>% mutate(n = rank(BSF_sample_name)-1)  %>% ungroup() %>% mutate(sample_time = strftime(as.POSIXct(as.Date(sample_date)-n/100), format="%Y-%m-%d %H:%M:%S", tz="UCT")) -> metaDT
+
     
     ## define variants for which at least minUniqMarker are found in any timepoint
     ## at least minUniqMarkerRatio of all uniq markers are found in any timepoint
