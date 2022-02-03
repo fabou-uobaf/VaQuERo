@@ -81,22 +81,25 @@ opt = parse_args(opt_parser);
 
 #####################################################
 #### easi parameter setting for interactive debugging
-#opt$dir = "sandbox"
-#opt$metadata = "data/metaData_canal.csv"
-#opt$data="data/sewage_samples_merge_samp_lofreq_dp_AF001.snpeff_afs.dp.pq.tab"
-#opt$marker="VaQuERo/resources/mutations_list_grouped_2022-01-04.csv"
-#opt$smarker="VaQuERo/resources/mutations_special_2022-01-10.csv"
-#opt$pmarker="VaQuERo/resources/mutations_problematic_vss1_v3.csv"
-#opt$zero=0.02
-#opt$depth=250
-#opt$minuniqmark=3
-#opt$minuniqmarkfrac=0.15
-#opt$minqmark=3
-#opt$minmarkfrac=0.15
-#opt$smoothingsamples=2
-#opt$smoothingtime=8
-#opt$voi="BA.1,BA.2,B.1.640,B.1.351,P.1,B.1.617.2,B.1.621,B.1.1.7"
-#opt$highlight="BA.1,BA.2,B.1.640,B.1.617.2,B.1.1.7"
+if(FALSE){
+  opt$dir = "sandbox"
+  opt$metadata = "data/metaDataSub.tsv"
+  opt$data="data/mutationDataSub.tsv"
+  opt$marker="VaQuERo/resources/mutations_list_grouped_2022-01-04.csv"
+  opt$smarker="VaQuERo/resources/mutations_special_2022-01-10.csv"
+  opt$pmarker="VaQuERo/resources/mutations_problematic_vss1_v3.csv"
+  opt$zero=0.02
+  opt$depth=250
+  opt$minuniqmark=3
+  opt$minuniqmarkfrac=0.15
+  opt$minqmark=3
+  opt$minmarkfrac=0.15
+  opt$smoothingsamples=2
+  opt$smoothingtime=8
+  opt$voi="BA.1,BA.2,B.1.640,B.1.351,P.1,B.1.617.2,B.1.621,B.1.1.7"
+  opt$highlight="BA.1,BA.2,B.1.640,B.1.617.2,B.1.1.7"
+  print("Warning: command line option overwritten")
+}
 #####################################################
 
 ## define functions
@@ -539,7 +542,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID_coronA))) {
         plantFittedData2 <- plantFittedData
         plantFittedData2$variant <- factor(plantFittedData2$variant, levels = rev(c(highlightedVariants, unique(plantFittedData2$variant)[unique(plantFittedData2$variant) %notin% highlightedVariants])))
       
-        plantFittedData2 %>% group_by(LocationID_coronA) %>% mutate(n = length(unique(sample_date))) %>% ungroup() %>% group_by(LocationID_coronA, LocationName_coronA, sample_date, variant) %>% summarize(value = mean(value)) %>% ungroup() %>% group_by(LocationID_coronA, LocationName_coronA, sample_date) %>% mutate(T = sum(value)) %>% rowwise() %>% mutate(value = ifelse(T>1, value/(T+0.00001), value)) %>% ggplot(aes(x = as.Date(sample_date), y = value, fill = variant)) + geom_area(position = "stack", alpha = 0.6) + geom_vline(xintercept = as.Date(latestSample$latest), linetype = "dotdash", color = "grey", size =  0.5) + facet_wrap(~LocationName_coronA, ncol = 4) + scale_fill_viridis_d(alpha = 0.6, begin = .05, end = .95, option = "H", direction = +1, name="") + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1)) + theme_bw() + theme(legend.position="bottom", strip.text.x = element_text(size = 4.5), panel.grid.minor = element_blank(), panel.spacing.y = unit(0, "lines"),  strip.background = element_rect(fill="grey97")) + scale_x_date(date_breaks = "2 month", date_labels =  "%b %d", limits = c(as.Date(NA), as.Date(latestSample$latest))) + ylab(paste0("Variantenanteil [1/1]") ) + xlab("") -> q3
+        plantFittedData2 %>% group_by(LocationID_coronA) %>% mutate(n = length(unique(sample_date))) %>% ungroup() %>% group_by(LocationID_coronA, LocationName_coronA, sample_date, variant) %>% summarize(value = mean(value), .groups = "drop") %>% ungroup() %>% group_by(LocationID_coronA, LocationName_coronA, sample_date) %>% mutate(T = sum(value)) %>% rowwise() %>% summarize(variant = variant, value = ifelse(T>1, value/(T+0.00001), value), .groups = "drop") %>% ggplot(aes(x = as.Date(sample_date), y = value, fill = variant)) + geom_area(position = "stack", alpha = 0.6) + geom_vline(xintercept = as.Date(latestSample$latest), linetype = "dotdash", color = "grey", size =  0.5) + facet_wrap(~LocationName_coronA, ncol = 4) + scale_fill_viridis_d(alpha = 0.6, begin = .05, end = .95, option = "H", direction = +1, name="") + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1)) + theme_bw() + theme(legend.position="bottom", strip.text.x = element_text(size = 4.5), panel.grid.minor = element_blank(), panel.spacing.y = unit(0, "lines"),  strip.background = element_rect(fill="grey97")) + scale_x_date(date_breaks = "2 month", date_labels =  "%b %d", limits = c(as.Date(NA), as.Date(latestSample$latest))) + ylab(paste0("Variantenanteil [1/1]") ) + xlab("") -> q3
         filename <- paste0(outdir, '/figs/stackview', paste('/klaerwerk', roi, "all", sep="_"), ".pdf")
         ggsave(filename = filename, plot = q3, width = plotWidth, height = plotHeight)
         fwrite(as.list(c("stackOverview", c( ifelse(dim(count_last_BSF_run_id)[1] > 0, "current", "old"), roiname, "all", filename))), file = summaryDataFile, append = TRUE, sep = "\t")
@@ -635,7 +638,7 @@ fwrite(globalFullData, file = paste0(outdir, "/globalFullData.csv"), sep = "\t")
 
 ## print overview of all VoI and all plants
 print(paste("PROGRESS: start plotting overviews"))
-globalFittedData %>% group_by(LocationID_coronA) %>% mutate(n = length(unique(sample_date))) %>% filter(n > tpLimitToPlot*2) %>% filter(variant %in% VoI) %>% ungroup() %>% group_by(LocationID_coronA, LocationName_coronA, sample_date, variant) %>% summarize(value = mean(value)) -> globalFittedData2
+globalFittedData %>% group_by(LocationID_coronA) %>% mutate(n = length(unique(sample_date))) %>% filter(n > tpLimitToPlot*2) %>% filter(variant %in% VoI) %>% ungroup() %>% group_by(LocationID_coronA, LocationName_coronA, sample_date, variant) %>% summarize(value = mean(value), .groups = "drop") -> globalFittedData2
 if (dim(globalFittedData2)[1] >= tpLimitToPlot){
   print(paste("     PROGRESS: plotting overview VoI"))
   ggplot(data = globalFittedData2, aes(x = as.Date(sample_date), y = value, fill = variant)) + geom_area(position = "stack", alpha = 0.7)  + facet_wrap(~LocationName_coronA) + scale_fill_viridis_d(alpha = 0.6, begin = .05, end = .95, option = "H", direction = +1, name="") + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1)) + theme_minimal() + theme(legend.position="bottom", strip.text.x = element_text(size = 4.5), panel.grid.minor = element_blank(), panel.spacing.y = unit(0, "lines"), legend.direction="horizontal") + guides(fill = guide_legend(title = "", ncol = 10)) + scale_x_date(date_breaks = "2 month", date_labels =  "%b") + ylab(paste0("Variantenanteil [1/1]") ) + xlab("") -> r2
@@ -648,7 +651,7 @@ rm(globalFittedData2)
 
 ## print overview of all variants and all plants
 globalFittedData$variant <- factor(globalFittedData$variant, levels = rev(c(highlightedVariants, unique(globalFittedData$variant)[unique(globalFittedData$variant) %notin% highlightedVariants])))
-globalFittedData %>% group_by(LocationID_coronA) %>% mutate(n = length(unique(sample_date))) %>% filter(n > tpLimitToPlot*2) %>% ungroup() %>% group_by(LocationID_coronA, LocationName_coronA, sample_date, variant) %>% summarize(value = mean(value)) -> globalFittedData2
+globalFittedData %>% group_by(LocationID_coronA) %>% mutate(n = length(unique(sample_date))) %>% filter(n > tpLimitToPlot*2) %>% ungroup() %>% group_by(LocationID_coronA, LocationName_coronA, sample_date, variant) %>% summarize(value = mean(value), .groups = "drop") -> globalFittedData2
 if (dim(globalFittedData2)[1] >= tpLimitToPlot){
   print(paste("     PROGRESS: plotting overview"))
   ggplot(data = globalFittedData2, aes(x = as.Date(sample_date), y = value, fill = variant)) + geom_area(position = "stack", alpha = 0.7)  + facet_wrap(~LocationName_coronA) + scale_fill_viridis_d(alpha = 0.6, begin = .05, end = .95, option = "H", direction = +1, name="") + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1)) + theme_minimal() + theme(legend.position="bottom", strip.text.x = element_text(size = 4.5), panel.grid.minor = element_blank(), panel.spacing.y = unit(0, "lines"), legend.direction="horizontal") + guides(fill = guide_legend(title = "", ncol = 10)) + scale_x_date(date_breaks = "2 month", date_labels =  "%b") + ylab(paste0("Variantenanteil [1/1]") ) + xlab("") -> r1
