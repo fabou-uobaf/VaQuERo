@@ -15,82 +15,85 @@ scripts/VaQuERo.r [options]
 
 ## Options
 	--dir=CHARACTER
-		Directory to write results [default ExampleOutput]
+		Directory to write results [default: ExampleOutput]
 
 	--country=CHARACTER
-		Name of country used to produce map [default Austria]
+		Name of country used to produce map [default: Austria]
 
 	--bbsouth=CHARACTER
-		Bounding box most south point [default 46.38]
+		Bounding box most south point [default: 46.38]
 
 	--bbnorth=CHARACTER
-		Bounding box most norther point [default 49.01]
+		Bounding box most norther point [default: 49.01]
 
 	--bbwest=CHARACTER
-		Bounding box most western point [default 9.53]
+		Bounding box most western point [default: 9.53]
 
 	--bbeast=CHARACTER
-		Bounding box most easter point [default 17.15]
+		Bounding box most easter point [default: 17.15]
 
 	--metadata=CHARACTER
-		Path to meta data input file [default data/metaDataSub.tsv]
+		Path to meta data input file [default: data/metaDataSub.tsv]
 
 	--marker=CHARACTER
-		Path to marker mutation input file [default resources/mutations_list.csv]
+		Path to marker mutation input file [default: resources/mutations_list.csv]
 
 	--smarker=CHARACTER
-		Path to special mutation input file [default resources/mutations_special.csv]
+		Path to special mutation input file [default: resources/mutations_special.csv]
+
+        --pmarker=CHARACTER
+                Path to problematic mutations input file, which will be omitted throughout [default: resources/mutations_problematic_all.csv]
 
 	--data=CHARACTER
-		Path to data input file [default data/mutationDataSub.tsv]
+		Path to data input file [default: data/mutationDataSub.tsv]
 
 	--plotwidth=CHARACTER
-		Base size of plot width [default 8]
+		Base size of plot width [default: 8]
 
 	--plotheight=CHARACTER
-		Base size of plot height [default 4.5]
+		Base size of plot height [default: 4.5]
 
 	--ninconsens=CHARACTER
-		Minimal fraction of genome covered by reads to be considered (0-1) [default 0.4]
+		Minimal fraction of genome covered by reads to be considered (0-1) [default: 0.4]
 
 	--zero=DOUBLE
-		Minimal allele frequency to be considered [default 0.02]
+		Minimal allele frequency to be considered [default: 0.02]
 
 	--depth=CHARACTER
-		Minimal depth at mutation locus to be considered [default 75]
+		Minimal depth at mutation locus to be considered [default: 75]
 
 	--recent=CHARACTER
-		How old (in days) most recent sample might be to be still considered in overview maps [default 99]
+		How old (in days) most recent sample might be to be still considered in overview maps [default: 99]
 
 	--plottp=CHARACTER
-		Produce timecourse plots only if more than this timepoints are available [default 3]
+		Produce timecourse plots only if more than this timepoints are available [default: 3]
 
 	--minuniqmark=CHARACTER
-		Minimal absolute number of uniq markers that variant is considered detected [default 3]
+		Minimal absolute number of uniq markers that variant is considered detected [default: 3]
 
 	--minuniqmarkfrac=CHARACTER
-		Minimal fraction of uniq markers that variant is considered detected [default 0]
+		Minimal fraction of uniq markers that variant is considered detected [default: 0]
 
 	--minqmark=CHARACTER
-		Minimal absolute number of markers that variant is considered detected [default 3]
+		Minimal absolute number of markers that variant is considered detected [default: 3]
 
 	--minmarkfrac=CHARACTER
-		Minimal fraction of markers that variant is considered detected [default 0]
+		Minimal fraction of markers that variant is considered detected [default: 0]
 
 	--smoothingsamples=CHARACTER
-		Number of previous timepoints use for smoothing [default 1]
+		Number of previous timepoints use for smoothing [default: 1]
 
 	--smoothingtime=CHARACTER
-		Previous timepoints for smoothing are ignored if more days than this days apart [default 8]
+		Previous timepoints for smoothing are ignored if more days than this days apart [default: 8]
 
 	--voi=CHARACTER
-		List of variants which should be plotted in more detail. List separated by semicolon [default B.1.1.7;B.1.617.2;P.1;B.1.351]
+		List of variants which should be plotted in more detail. List separated by semicolon [default: B.1.1.7;B.1.617.2;P.1;B.1.351]
 
 	--highlight=CHARACTER
-		List of variants which should be plotted at the bottom axis. List separated by semicolon [default B.1.1.7;B.1.617.2]
+		List of variants which should be plotted at the bottom axis. List separated by semicolon [default: B.1.1.7;B.1.617.2]
 
 	-h, --help
-		Show this help message and exit
+		Show help message and exit.
 
 
 ## Input
