@@ -138,13 +138,13 @@ The meta data file connects each sample as defined in the mutation file with the
 | $1  |                 BSF_run |  BSF_0895        | Sequencing batch            |
 | $2  |         BSF_sample_name |  SAMPLE1         | Seq. sample name            |
 | $3  |          BSF_start_date |  2021-01-18      | Seq. date                   |
-| $4  |       LocationID_coronA |  ATTP_10-Krezlin | Sample loction ID           |
-| $5  |     LocationName_coronA |  Krezlin         | Sample location name        |
+| $4  |       LocationID |  ATTP_10-Krezlin | Sample loction ID           |
+| $5  |     LocationName |  Krezlin         | Sample location name        |
 | $6  |          N_in_Consensus |  125             | Nr. Of N in consensus seq   |
 | $7  |              RNA_ID_int |  SAMPLE1         | Sample name                 |
 | $8  |  additional_information |  Ct = xx.2       | any add. info               |
 | $9  |             adress_town |  Krezlin         | Sampling Town               |
-| $10 |   connected_people_2018 |  1234567         | Nr. of conncected people    |
+| $10 |   connected_people |  1234567         | Nr. of conncected people    |
 | $11 |             dcpLatitude |  48.50452605     | latitude                    |
 | $12 |            dcpLongitude |  11.70669547     | lingitude                   |
 | $13 |       include_in_report |  TRUE            | should be reported (F|T)    |

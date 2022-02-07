@@ -1,218 +1,238 @@
-BSF_run	BSF_sample_name	BSF_start_date	LocationID_coronA	LocationName_coronA	N_in_Consensus	RNA_ID_int	additional_information	adress_town	connected_people_2018	dcpLatitude	dcpLongitude	include_in_report	report_category	sample_date	status
-BSF_0886	CoV_2231_S74681	2021-01-12	ATTP_8-Bregenz	Bregenz	548	CoV_2231	target for Ct=N1 (CDC-Primer),	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2020-12-16	passed_qc
-BSF_0886	CoV_2235_S74677	2021-01-12	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	26763	CoV_2235	idente Rohprobe zu 2236, unter. Extraktionsmethode, Extract A; same Raw sample diffrent extraction method	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-01-11	fail
-BSF_0886	CoV_2236_S74676	2021-01-12	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	24224	CoV_2236	idente Rohprobe zu 2235, unter. Extraktionsmethode, Extract B; same Raw sample diffrent extraction method	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-01-11	fail
-BSF_0895	CoV_3049_S75374	2021-01-18	ATTP_8-Bregenz	Bregenz	125	CoV_3049	Ct according to N1-PrimerProbeSEt	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2020-12-20	passed_qc
-BSF_0895	CoV_3050_S75329	2021-01-18	ATTP_8-Bregenz	Bregenz	5565	CoV_3050	Ct according to N1-PrimerProbeSEt	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-01-06	passed_qc
-BSF_0895	CoV_3051_S75460	2021-01-18	ATTP_8-Bregenz	Bregenz	717	CoV_3051	Ct according to N1-PrimerProbeSEt	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-01-10	passed_qc
-BSF_0895	CoV_3069_S75355	2021-01-18	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	18562	CoV_3069	HKA 22.12.	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2020-12-22	fail
-BSF_0895	CoV_3070_S75343	2021-01-18	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	3657	CoV_3070	HKA 29.12.	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2020-12-29	passed_qc
-BSF_0895	CoV_3071_S75396	2021-01-18	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	1979	CoV_3071	HKA 3.1.	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-01-03	passed_qc
-BSF_0895	CoV_3121_S75340	2021-01-18	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	3838	CoV_3121	Std Extrakton	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-01-11	passed_qc
-BSF_0895	CoV_3122_S75325	2021-01-18	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	10723	CoV_3122	Std Extrakton	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-01-13	passed_qc
-BSF_0898	CoV_3170_S75900	2021-01-26	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	2048	CoV_3170	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-01-18	passed_qc
-BSF_0903	CoV_3270_S76301	2021-02-01	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	9338	CoV_3270	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-01-21	passed_qc
-BSF_0903	CoV_3271_S76263	2021-02-01	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	12900	CoV_3271	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-01-21	passed_qc
-BSF_0903	CoV_3272_S76241	2021-02-01	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	530	CoV_3272	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-01-25	passed_qc
-BSF_0903	CoV_3287_S76332	2021-02-01	ATTP_8-Bregenz	Bregenz	123	CoV_3287	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-01-17	passed_qc
-BSF_0908	CoV_3679_S76856	2021-02-08	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	3730	CoV_3679	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-02-02	passed_qc
-BSF_0908	CoV_3680_S76818	2021-02-08	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	25835	CoV_3680	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-02-03	fail
-BSF_0908	CoV_3682_S76801	2021-02-08	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	5629	CoV_3682	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-01-31	passed_qc
-BSF_0908	CoV_3684_S76885	2021-02-08	ATTP_8-Bregenz	Bregenz	2350	CoV_3684	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-01-31	passed_qc
-BSF_0913	CoV_3796_S77778	2021-02-15	ATTP_8-Bregenz	Bregenz	997	CoV_3796	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-02-02	passed_qc
-BSF_0913	CoV_3797_S77791	2021-02-15	ATTP_8-Bregenz	Bregenz	973	CoV_3797	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-02-06	passed_qc
-BSF_0913	CoV_3839_S77514	2021-02-15	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	3322	CoV_3839	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-02-07	passed_qc
-BSF_0913	CoV_3840_S77802	2021-02-15	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	6283	CoV_3840	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-02-09	passed_qc
-BSF_0913	CoV_3845_S77866	2021-02-15	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	22227	CoV_3845	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-02-11	fail
-BSF_0917	CoV_4209_S78818	2021-02-22	ATTP_8-Bregenz	Bregenz	7313	CoV_4209	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-02-10	passed_qc
-BSF_0917	CoV_4210_S78819	2021-02-22	ATTP_8-Bregenz	Bregenz	4308	CoV_4210	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-02-14	passed_qc
-BSF_0917	CoV_4256_S78612	2021-02-22	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	1130	CoV_4256	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-02-14	passed_qc
-BSF_0917	CoV_4257_S78599	2021-02-22	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	326	CoV_4257	Extraktionsmethode A	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-02-16	passed_qc
-BSF_0917	CoV_4258_S78603	2021-02-22	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	419	CoV_4258	Extraktionsmethode C	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-02-16	passed_qc
-BSF_0924	CoV_4479_S79566	2021-03-01	ATTP_8-Bregenz	Bregenz	396	CoV_4479	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-02-18	passed_qc
-BSF_0924	CoV_4480_S79570	2021-03-01	ATTP_8-Bregenz	Bregenz	3007	CoV_4480	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-02-20	passed_qc
-BSF_0924	CoV_4522_S79801	2021-03-01	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	4420	CoV_4522	Prio 1	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-02-18	passed_qc
-BSF_0924	CoV_4523_S79798	2021-03-01	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	326	CoV_4523	Prio 1	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-02-21	passed_qc
-BSF_0924	CoV_4524_S79738	2021-03-01	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	601	CoV_4524	Prio 1	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-02-21	passed_qc
-BSF_0927	CoV_5032_S80094	2021-03-08	ATTP_8-Bregenz	Bregenz	469	CoV_5032	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-02-24	passed_qc
-BSF_0927	CoV_5033_S80098	2021-03-08	ATTP_8-Bregenz	Bregenz	6059	CoV_5033	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-02-28	passed_qc
-BSF_0927	CoV_5093_S79834	2021-03-08	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	127	CoV_5093	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-02-28	passed_qc
-BSF_0927	CoV_5094_S79891	2021-03-08	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	124	CoV_5094	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-03-02	passed_qc
-BSF_0935	CoV_5595_S80749	2021-03-15	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	402	CoV_5595	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-03-07	passed_qc
-BSF_0935	CoV_5596_S80770	2021-03-15	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	622	CoV_5596	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-03-09	passed_qc
-BSF_0935	CoV_5664_S80945	2021-03-15	ATTP_8-Bregenz	Bregenz	384	CoV_5664	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-03-04	passed_qc
-BSF_0935	CoV_5665_S80897	2021-03-15	ATTP_8-Bregenz	Bregenz	1012	CoV_5665	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-03-06	passed_qc
-BSF_0940	CoV_6105_S81415	2021-03-19	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	1369	CoV_6105	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-03-17	passed_qc
-BSF_0940	CoV_6110_S81442	2021-03-19	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	11324	CoV_6110	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-03-18	passed_qc
-BSF_0940	CoV_6111_S81454	2021-03-19	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	3893	CoV_6111	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-03-18	passed_qc
-BSF_0940	CoV_6119_S81455	2021-03-19	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	6750	CoV_6119	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-03-14	passed_qc
-BSF_0940	CoV_6150_S81246	2021-03-22	ATTP_8-Bregenz	Bregenz	3114	CoV_6150	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-03-08	passed_qc
-BSF_0940	CoV_6151_S81265	2021-03-22	ATTP_8-Bregenz	Bregenz	4622	CoV_6151	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-03-12	passed_qc
-BSF_0940	CoV_6152_S81231	2021-03-22	ATTP_8-Bregenz	Bregenz	4921	CoV_6152	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-03-14	passed_qc
-BSF_0942	CoV_6454_S81910	2021-03-26	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	3974	CoV_6454	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-03-24	passed_qc
-BSF_0942	CoV_6534_S81951	2021-03-26	ATTP_8-Bregenz	Bregenz	1331	CoV_6534	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-03-18	passed_qc
-BSF_0942	CoV_6535_S81939	2021-03-26	ATTP_8-Bregenz	Bregenz	3436	CoV_6535	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-03-21	passed_qc
-BSF_0944	CoV_6720_S82077	2021-04-06	ATTP_8-Bregenz	Bregenz	122	CoV_6720	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-03-25	passed_qc
-BSF_0944	CoV_6976_S82313	2021-04-06	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	448	CoV_6976	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-03-28	passed_qc
-BSF_0944	CoV_6978_S82291	2021-04-06	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	121	CoV_6978	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-03-31	passed_qc
-BSF_0947	CoV_7226_S83133	2021-04-09	ATTP_8-Bregenz	Bregenz	13813	CoV_7226	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-04-02	passed_qc
-BSF_0947	CoV_7227_S83154	2021-04-09	ATTP_8-Bregenz	Bregenz	1119	CoV_7227	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-04-04	passed_qc
-BSF_0947	CoV_7323_S83151	2021-04-09	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	122	CoV_7323	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-04-05	passed_qc
-BSF_0947	CoV_7324_S83263	2021-04-12	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	399	CoV_7324	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-04-07	passed_qc
-BSF_0956	CoV_7714_S83535	2021-04-19	ATTP_8-Bregenz	Bregenz	122	CoV_7714	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-04-06	passed_qc
-BSF_0956	CoV_7715_S83552	2021-04-19	ATTP_8-Bregenz	Bregenz	121	CoV_7715	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-04-08	passed_qc
-BSF_0956	CoV_7716_S83573	2021-04-19	ATTP_8-Bregenz	Bregenz	416	CoV_7716	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-04-10	passed_qc
-BSF_0956	CoV_7769_S83536	2021-04-19	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	3558	CoV_7769	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-04-11	passed_qc
-BSF_0956	CoV_7770_S83559	2021-04-19	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	1467	CoV_7770	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-04-14	passed_qc
-BSF_0964	CoV_8147_S84105	2021-04-26	ATTP_8-Bregenz	Bregenz	362	CoV_8147	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-04-14	passed_qc
-BSF_0964	CoV_8148_S84177	2021-04-26	ATTP_8-Bregenz	Bregenz	29572	CoV_8148	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-04-18	fail
-BSF_0964	CoV_8207_S84114	2021-04-26	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	25526	CoV_8207	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-04-18	fail
-BSF_0964	CoV_8208_S84118	2021-04-26	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	4394	CoV_8208	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-04-21	passed_qc
-BSF_0969	CoV_8346_S84777	2021-04-30	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	386	CoV_8346	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-04-25	passed_qc
-BSF_0969	CoV_8347_S84822	2021-04-30	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	453	CoV_8347	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-04-28	passed_qc
-BSF_0969	CoV_8348_S84774	2021-04-30	ATTP_8-Bregenz	Bregenz	121	CoV_8348	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-04-20	passed_qc
-BSF_0969	CoV_8349_S84825	2021-04-30	ATTP_8-Bregenz	Bregenz	123	CoV_8349	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-04-24	passed_qc
-BSF_0971	CoV_8864_S85914	2021-05-10	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	1615	CoV_8864	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-05-02	passed_qc
-BSF_0971	CoV_8865_S85972	2021-05-10	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	4375	CoV_8865	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-05-05	passed_qc
-BSF_0971	CoV_8880_S85816	2021-05-10	ATTP_8-Bregenz	Bregenz	122	CoV_8880	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-04-28	passed_qc
-BSF_0971	CoV_8881_S85819	2021-05-10	ATTP_8-Bregenz	Bregenz	121	CoV_8881	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-05-02	passed_qc
-BSF_0974	CoV_8962_S86504	2021-05-17	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	3917	CoV_8962	wierd pre-screening: N501Y negative,  452R positivem	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-05-09	passed_qc
-BSF_0974	CoV_8963_S86157	2021-05-17	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	1013	CoV_8963	wierd pre-screening: N501Y negative,  452R positivem	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-05-11	passed_qc
-BSF_0974	CoV_9168_S86184	2021-05-17	ATTP_8-Bregenz	Bregenz	122	CoV_9168	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-05-06	passed_qc
-BSF_0974	CoV_9169_S86206	2021-05-17	ATTP_8-Bregenz	Bregenz	3121	CoV_9169	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-05-08	passed_qc
-BSF_0980	CoV_9245_S87110	2021-05-25	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	10088	CoV_9245	40mL extracted	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-05-20	passed_qc
-BSF_0980	CoV_9246_S87122	2021-05-25	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	20252	CoV_9246	80 mL extracted	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-05-20	fail
-BSF_0980	CoV_9266_S87075	2021-05-25	ATTP_8-Bregenz	Bregenz	123	CoV_9266	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-05-12	passed_qc
-BSF_0980	CoV_9267_S87097	2021-05-25	ATTP_8-Bregenz	Bregenz	123	CoV_9267	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-05-16	passed_qc
-BSF_0985	CoV_9713_S87883	2021-05-31	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	3020	CoV_9713	wierd pre-screening: N501Y negative,  452R positivem	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-05-24	passed_qc
-BSF_0985	CoV_9726_S87866	2021-05-31	ATTP_8-Bregenz	Bregenz	4347	CoV_9726	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-05-18	passed_qc
-BSF_0985	CoV_9727_S87855	2021-05-31	ATTP_8-Bregenz	Bregenz	124	CoV_9727	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-05-22	passed_qc
-BSF_0985	CoV_9728_S87844	2021-05-31	ATTP_8-Bregenz	Bregenz	607	CoV_9728	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-05-24	passed_qc
-BSF_0994	CoV_11191_S89621	2021-06-07	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	4964	CoV_11191	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-05-26	passed_qc
-BSF_0994	CoV_11192_S89642	2021-06-07	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	11398	CoV_11192	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-05-30	passed_qc
-BSF_0994	CoV_11193_S89528	2021-06-07	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	20995	CoV_11193	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-06-01	fail
-BSF_0994	CoV_11278_S89596	2021-06-07	ATTP_8-Bregenz	Bregenz	121	CoV_11278	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-05-28	passed_qc
-BSF_0994	CoV_11279_S89603	2021-06-07	ATTP_8-Bregenz	Bregenz	1153	CoV_11279	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-05-30	passed_qc
-BSF_1003	CoV_11338_S90315	2021-06-14	ATTP_8-Bregenz	Bregenz	26523	CoV_11338	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-06-03	fail
-BSF_1003	CoV_11339_S90294	2021-06-14	ATTP_8-Bregenz	Bregenz	15191	CoV_11339	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-06-05	passed_qc
-BSF_1003	CoV_11371_S90298	2021-06-14	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	24838	CoV_11371	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-06-06	fail
-BSF_1003	CoV_11372_S90208	2021-06-14	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	29903	CoV_11372	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-06-09	fail
-BSF_1006	CoV_11668_S90694	2021-06-21	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	23906	CoV_11668	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-06-13	fail
-BSF_1006	CoV_11675_S90683	2021-06-21	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	28772	CoV_11675	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-06-15	fail
-BSF_1006	CoV_11685_S90714	2021-06-21	ATTP_8-Bregenz	Bregenz	26561	CoV_11685	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-06-09	fail
-BSF_1006	CoV_11686_S90634	2021-06-21	ATTP_8-Bregenz	Bregenz	24127	CoV_11686	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-06-13	fail
-BSF_1010	CoV_11966_S91161	2021-06-28	ATTP_8-Bregenz	Bregenz	651	CoV_11966	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-06-15	passed_qc
-BSF_1010	CoV_11967_S91157	2021-06-28	ATTP_8-Bregenz	Bregenz	1850	CoV_11967	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-06-19	passed_qc
-BSF_1010	CoV_12021_S91242	2021-06-28	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	26014	CoV_12021	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-06-20	fail
-BSF_1010	CoV_12022_S91230	2021-06-28	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	23224	CoV_12022	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-06-22	fail
-BSF_1012	CoV_12606_S91532	2021-07-05	ATTP_8-Bregenz	Bregenz	9589	CoV_12606	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-06-21	passed_qc
-BSF_1012	CoV_12607_S91520	2021-07-05	ATTP_8-Bregenz	Bregenz	25631	CoV_12607	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-06-25	fail
-BSF_1012	CoV_12644_S91459	2021-07-05	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	29565	CoV_12644	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-06-24	fail
-BSF_1012	CoV_12645_S91507	2021-07-05	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	28690	CoV_12645	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-06-27	fail
-BSF_1012	CoV_12646_S91527	2021-07-05	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	29903	CoV_12646	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-06-29	fail
-BSF_1014	CoV_12864_S91938	2021-07-12	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	29903	CoV_12864	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-07-04	fail
-BSF_1014	CoV_12865_S91935	2021-07-12	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	21425	CoV_12865	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-07-04	fail
-BSF_1014	CoV_12866_S91916	2021-07-12	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	29903	CoV_12866	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-07-06	fail
-BSF_1014	CoV_12873_S91934	2021-07-12	ATTP_8-Bregenz	Bregenz	15229	CoV_12873	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-06-29	passed_qc
-BSF_1014	CoV_12874_S91917	2021-07-12	ATTP_8-Bregenz	Bregenz	6207	CoV_12874	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-07-01	passed_qc
-BSF_1016	CoV_13210_S93171	2021-07-19	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	17599	CoV_13210	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-07-06	passed_qc
-BSF_1016	CoV_13211_S93180	2021-07-19	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	12428	CoV_13211	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-07-08	passed_qc
-BSF_1016	CoV_13212_S93193	2021-07-19	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	8973	CoV_13212	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-07-13	passed_qc
-BSF_1016	CoV_13213_S93210	2021-07-19	ATTP_8-Bregenz	Bregenz	395	CoV_13213	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-07-07	passed_qc
-BSF_1016	CoV_13214_S93214	2021-07-19	ATTP_8-Bregenz	Bregenz	398	CoV_13214	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-07-11	passed_qc
-BSF_1022	CoV_13635_S93594	2021-07-26	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	17372	CoV_13635	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-07-15	passed_qc
-BSF_1022	CoV_13637_S93557	2021-07-26	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	3765	CoV_13637	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-07-20	passed_qc
-BSF_1022	CoV_13647_S93490	2021-07-26	ATTP_8-Bregenz	Bregenz	7924	CoV_13647	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-07-15	passed_qc
-BSF_1022	CoV_13648_S93595	2021-07-26	ATTP_8-Bregenz	Bregenz	9954	CoV_13648	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-07-17	passed_qc
-BSF_1026	CoV_13980_S94071	2021-08-02	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	7385	CoV_13980	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-07-22	passed_qc
-BSF_1026	CoV_13981_S93968	2021-08-02	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	4925	CoV_13981	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-07-25	passed_qc
-BSF_1026	CoV_13982_S93989	2021-08-02	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	3699	CoV_13982	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-07-27	passed_qc
-BSF_1026	CoV_13993_S94040	2021-08-02	ATTP_8-Bregenz	Bregenz	4230	CoV_13993	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-07-21	passed_qc
-BSF_1026	CoV_13994_S94067	2021-08-02	ATTP_8-Bregenz	Bregenz	4680	CoV_13994	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-07-25	passed_qc
-BSF_1036	CoV_14391_S95253	2021-08-09	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	2548	CoV_14391	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-08-01	passed_qc
-BSF_1036	CoV_14392_S95097	2021-08-09	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	4587	CoV_14392	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-08-03	passed_qc
-BSF_1036	CoV_14395_S95065	2021-08-09	ATTP_8-Bregenz	Bregenz	7645	CoV_14395	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-07-29	passed_qc
-BSF_1036	CoV_14396_S95084	2021-08-09	ATTP_8-Bregenz	Bregenz	10442	CoV_14396	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-07-31	passed_qc
-BSF_1037	CoV_14779_S95635	2021-08-16	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	2520	CoV_14779	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-08-05	passed_qc
-BSF_1037	CoV_14780_S95622	2021-08-16	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	21461	CoV_14780	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-08-08	fail
-BSF_1037	CoV_14781_S95715	2021-08-16	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	6500	CoV_14781	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-08-10	passed_qc
-BSF_1037	CoV_14863_S95716	2021-08-16	ATTP_8-Bregenz	Bregenz	395	CoV_14863	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-08-04	passed_qc
-BSF_1037	CoV_14864_S95697	2021-08-16	ATTP_8-Bregenz	Bregenz	690	CoV_14864	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-08-06	passed_qc
-BSF_1037	CoV_14865_S95693	2021-08-16	ATTP_8-Bregenz	Bregenz	397	CoV_14865	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-08-08	passed_qc
-BSF_1041	CoV_15271_S96150	2021-08-23	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	16349	CoV_15271	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-08-12	passed_qc
-BSF_1041	CoV_15272_S96201	2021-08-23	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	5482	CoV_15272	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-08-15	passed_qc
-BSF_1041	CoV_15273_S96172	2021-08-23	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	5803	CoV_15273	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-08-17	passed_qc
-BSF_1041	CoV_15282_S96120	2021-08-23	ATTP_8-Bregenz	Bregenz	398	CoV_15282	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-08-10	passed_qc
-BSF_1041	CoV_15283_S96108	2021-08-23	ATTP_8-Bregenz	Bregenz	3018	CoV_15283	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-08-14	passed_qc
-BSF_1046	CoV_15323_S96535	2021-08-30	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	1538	CoV_15323	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-08-22	passed_qc
-BSF_1046	CoV_15324_S96554	2021-08-30	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	696	CoV_15324	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-08-24	passed_qc
-BSF_1046	CoV_15532_S96495	2021-08-30	ATTP_8-Bregenz	Bregenz	395	CoV_15532	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-08-18	passed_qc
-BSF_1046	CoV_15533_S96514	2021-08-30	ATTP_8-Bregenz	Bregenz	600	CoV_15533	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-08-22	passed_qc
-BSF_1049	CoV_15916_S97035	2021-09-06	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	1041	CoV_15916	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-08-26	passed_qc
-BSF_1049	CoV_15917_S97113	2021-09-06	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	1453	CoV_15917	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-08-29	passed_qc
-BSF_1049	CoV_15918_S97124	2021-09-06	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	1202	CoV_15918	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-08-31	passed_qc
-BSF_1049	CoV_15919_S97120	2021-09-06	ATTP_8-Bregenz	Bregenz	396	CoV_15919	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-08-24	passed_qc
-BSF_1049	CoV_15920_S97071	2021-09-06	ATTP_8-Bregenz	Bregenz	395	CoV_15920	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-08-28	passed_qc
-BSF_1052	CoV_16283_S97378	2021-09-13	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	1099	CoV_16283	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-09-02	passed_qc
-BSF_1052	CoV_16284_S97399	2021-09-13	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	907	CoV_16284	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-09-05	passed_qc
-BSF_1052	CoV_16285_S97403	2021-09-13	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	600	CoV_16285	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-09-07	passed_qc
-BSF_1052	CoV_16296_S97443	2021-09-13	ATTP_8-Bregenz	Bregenz	683	CoV_16296	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-09-05	passed_qc
-BSF_1055	CoV_16355_S98082	2021-09-20	ATTP_8-Bregenz	Bregenz	396	CoV_16355	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-09-07	passed_qc
-BSF_1055	CoV_16356_S98008	2021-09-20	ATTP_8-Bregenz	Bregenz	693	CoV_16356	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-09-11	passed_qc
-BSF_1055	CoV_16413_S97915	2021-09-20	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	1337	CoV_16413	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-09-09	passed_qc
-BSF_1055	CoV_16414_S98019	2021-09-20	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	1202	CoV_16414	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-09-12	passed_qc
-BSF_1055	CoV_16415_S98040	2021-09-20	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	1423	CoV_16415	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-09-14	passed_qc
-BSF_1060	CoV_16723_S99418	2021-09-27	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	907	CoV_16723	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-09-19	passed_qc
-BSF_1060	CoV_16724_S99259	2021-09-27	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	395	CoV_16724	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-09-21	passed_qc
-BSF_1060	CoV_17089_S99244	2021-09-27	ATTP_8-Bregenz	Bregenz	396	CoV_17089	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-09-19	passed_qc
-BSF_1069	CoV_17198_S99762	2021-10-04	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	15600	CoV_17198	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-09-26	passed_qc
-BSF_1069	CoV_17199_S99766	2021-10-04	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	11574	CoV_17199	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-09-28	passed_qc
-BSF_1069	CoV_17499_S99702	2021-10-04	ATTP_8-Bregenz	Bregenz	600	CoV_17499	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-09-25	passed_qc
-BSF_1077	CoV_17886_S100355	2021-10-11	ATTP_8-Bregenz	Bregenz	2524	CoV_17886	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-10-03	passed_qc
-BSF_1077	CoV_17918_S100296	2021-10-11	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	20182	CoV_17918	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-10-03	fail
-BSF_1077	CoV_17919_S100267	2021-10-11	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	9041	CoV_17919	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-10-05	passed_qc
-BSF_1076	CoV_17922_S100753	2021-10-18	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	1099	CoV_17922	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-10-10	passed_qc
-BSF_1076	CoV_17923_S100804	2021-10-18	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	2178	CoV_17923	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-10-12	passed_qc
-BSF_1076	CoV_18142_S100799	2021-10-18	ATTP_8-Bregenz	Bregenz	19732	CoV_18142	target for Ct=N1 (CDC-Primer)	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-10-05	fail
-BSF_1078	CoV_18542_S101262	2021-10-25	ATTP_8-Bregenz	Bregenz	93	CoV_18542	""	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-10-15	passed_qc
-BSF_1078	CoV_18565_S101258	2021-10-25	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	1857	CoV_18565	W001-211019	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-10-19	passed_qc
-BSF_1078	CoV_18567_S101267	2021-10-25	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	94	CoV_18567	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-10-19	passed_qc
-BSF_1080	CoV_18937_S101609	2021-11-02	ATTP_8-Bregenz	Bregenz	92	CoV_18937	""	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-10-19	passed_qc
-BSF_1080	CoV_18939_S101571	2021-11-02	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	279	CoV_18939	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-10-26	passed_qc
-BSF_1080	CoV_18944_S101534	2021-11-02	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	18710	CoV_18944	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-10-24	fail
-BSF_1084	CoV_19339_S102571	2021-11-08	ATTP_8-Bregenz	Bregenz	92	CoV_19339	""	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-10-31	passed_qc
-BSF_1084	CoV_19341_S102580	2021-11-08	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	968	CoV_19341	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-11-02	passed_qc
-BSF_1084	CoV_19369_S102492	2021-11-08	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	2831	CoV_19369	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-10-31	passed_qc
-BSF_1086	CoV_19734_S102968	2021-11-15	ATTP_8-Bregenz	Bregenz	91	CoV_19734	60	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-11-06	passed_qc
-BSF_1086	CoV_19736_S102914	2021-11-15	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	28558	CoV_19736	62	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-11-09	fail
-BSF_1086	CoV_19762_S103024	2021-11-15	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	519	CoV_19762	90	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-11-07	passed_qc
-BSF_1087	CoV_20089_S103413	2021-11-22	ATTP_8-Bregenz	Bregenz	92	CoV_20089	60	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-11-14	passed_qc
-BSF_1087	CoV_20091_S103492	2021-11-22	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	28098	CoV_20091	62	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-11-16	fail
-BSF_1087	CoV_20112_S103421	2021-11-22	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	21967	CoV_20112	90	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-11-14	fail
-BSF_1091	CoV_20534_S103917	2021-11-29	ATTP_8-Bregenz	Bregenz	91	CoV_20534	""	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-11-20	passed_qc
-BSF_1091	CoV_20536_S103943	2021-11-29	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	16422	CoV_20536	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-11-23	passed_qc
-BSF_1098	CoV_20936_S104498	2021-12-06	ATTP_8-Bregenz	Bregenz	149	CoV_20936	UINN	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-11-28	passed_qc
-BSF_1098	CoV_20938_S104488	2021-12-06	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	29359	CoV_20938	TU-Wien	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-11-30	fail
-BSF_1098	CoV_20966_S104543	2021-12-06	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	2187	CoV_20966	TU-Wien	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-11-28	passed_qc
-BSF_1098	CoV_21015_S104506	2021-12-06	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	9191	CoV_21015	Sewer, Wien	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-11-28	passed_qc
-BSF_1103	CoV_21273_S105035	2021-12-13	ATTP_8-Bregenz	Bregenz	149	CoV_21273	UINN	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-12-04	passed_qc
-BSF_1103	CoV_21275_S105044	2021-12-13	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	13281	CoV_21275	TU-Wien	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-12-08	passed_qc
-BSF_1103	CoV_21303_S104810	2021-12-13	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	149	CoV_21303	TU-Wien	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-12-05	passed_qc
-BSF_1108	CoV_21412_S105526	2022-01-03	ATTP_8-Bregenz	Bregenz	149	CoV_21412	UINN	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-12-12	passed_qc
-BSF_1108	CoV_21441_S105473	2022-01-03	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	28993	CoV_21441	TU-Wien extractionmethod Std	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-12-14	fail
-BSF_1108	CoV_21442_S105515	2022-01-03	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	25790	CoV_21442	TU-Wien extractionmethod Mod	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-12-14	fail
-BSF_1108	CoV_21494_S105743	2022-01-03	ATTP_8-Bregenz	Bregenz	150	CoV_21494	UINN	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-12-18	passed_qc
-BSF_1108	CoV_21496_S105720	2022-01-03	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	12651	CoV_21496	TU-Wien	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-12-26	passed_qc
-BSF_1108	CoV_21520_S105717	2022-01-03	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	1342	CoV_21520	TU-Wien	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-12-19	passed_qc
-BSF_1108	CoV_21521_S105716	2022-01-03	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	20213	CoV_21521	TU-Wien	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-12-23	fail
-BSF_1108	CoV_21583_S105813	2022-01-03	ATTP_8-Bregenz	Bregenz	149	CoV_21583	UINN	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2021-12-26	passed_qc
-BSF_1108	CoV_21585_S105690	2022-01-03	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	4007	CoV_21585	TU-Wien	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2021-12-28	passed_qc
-BSF_1114	CoV_21879_S105960	2022-01-10	ATTP_8-Bregenz	Bregenz	150	CoV_21879	UINN	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2022-01-01	passed_qc
-BSF_1114	CoV_21881_S105984	2022-01-10	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	8775	CoV_21881	TU-Wien	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2022-01-02	passed_qc
-BSF_1114	CoV_21898_S105998	2022-01-10	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	383	CoV_21898	TU-Wien	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2022-01-04	passed_qc
-BSF_1119	CoV_22346_S106701	2022-01-17	ATTP_8-Bregenz	Bregenz	150	CoV_22346	UINN	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2022-01-09	passed_qc
-BSF_1119	CoV_22347_S106713	2022-01-17	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	22574	CoV_22347	TU-Wien	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2022-01-09	fail
-BSF_1121	CoV_22675_S107347	2022-01-24	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	150	CoV_22675	""	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2022-01-16	passed_qc
-BSF_1121	CoV_22733_S107075	2022-01-24	ATTP_8-Bregenz	Bregenz	157	CoV_22733	UINN	Bregenz	32471	47.50452605	9.706695472	TRUE	general; alps	2022-01-15	passed_qc
-BSF_1121	CoV_22735_S107099	2022-01-24	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	149	CoV_22735	TU-Wien	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2022-01-18	passed_qc
-BSF_1121	CoV_22766_S107091	2022-01-24	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	7913	CoV_22766	TU-Wien	Wien	1900000	48.17226662	16.46526508	TRUE	general; alps	2022-01-16	passed_qc
+BSF_run	BSF_sample_name	BSF_start_date	LocationID	LocationName	N_in_Consensus	RNA_ID_int	additional_information	adress_town	connected_people	dcpLatitude	dcpLongitude	include_in_report	report_category	sample_date	status
+BSF_0886	CoV_2231_S74681	2021-01-12	ATTP_8-Bregenz	Bregenz	548	CoV_2231	target for Ct=N1 (CDC-Primer),	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2020-12-16	passed_qc
+BSF_0886	CoV_2235_S74677	2021-01-12	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	26763	CoV_2235	idente Rohprobe zu 2236, unter. Extraktionsmethode, Extract A; same Raw sample diffrent extraction method	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-01-11	fail
+BSF_0886	CoV_2236_S74676	2021-01-12	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	24224	CoV_2236	idente Rohprobe zu 2235, unter. Extraktionsmethode, Extract B; same Raw sample diffrent extraction method	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-01-11	fail
+BSF_0895	CoV_3049_S75374	2021-01-18	ATTP_8-Bregenz	Bregenz	125	CoV_3049	Ct according to N1-PrimerProbeSEt	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2020-12-20	passed_qc
+BSF_0895	CoV_3050_S75329	2021-01-18	ATTP_8-Bregenz	Bregenz	5565	CoV_3050	Ct according to N1-PrimerProbeSEt	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-01-06	passed_qc
+BSF_0895	CoV_3051_S75460	2021-01-18	ATTP_8-Bregenz	Bregenz	717	CoV_3051	Ct according to N1-PrimerProbeSEt	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-01-10	passed_qc
+BSF_0895	CoV_3069_S75355	2021-01-18	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	18562	CoV_3069	HKA 22.12.	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2020-12-22	fail
+BSF_0895	CoV_3070_S75343	2021-01-18	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	3657	CoV_3070	HKA 29.12.	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2020-12-29	passed_qc
+BSF_0895	CoV_3071_S75396	2021-01-18	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	1979	CoV_3071	HKA 3.1.	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-01-03	passed_qc
+BSF_0895	CoV_3121_S75340	2021-01-18	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	3838	CoV_3121	Std Extrakton	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-01-11	passed_qc
+BSF_0895	CoV_3122_S75325	2021-01-18	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	10723	CoV_3122	Std Extrakton	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-01-13	passed_qc
+BSF_0898	CoV_3170_S75900	2021-01-26	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	2048	CoV_3170	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-01-18	passed_qc
+BSF_0903	CoV_3270_S76301	2021-02-01	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	9338	CoV_3270	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-01-21	passed_qc
+BSF_0903	CoV_3271_S76263	2021-02-01	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	12900	CoV_3271	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-01-21	passed_qc
+BSF_0903	CoV_3272_S76241	2021-02-01	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	530	CoV_3272	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-01-25	passed_qc
+BSF_0903	CoV_3287_S76332	2021-02-01	ATTP_8-Bregenz	Bregenz	123	CoV_3287	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-01-17	passed_qc
+BSF_0908	CoV_3679_S76856	2021-02-08	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	3730	CoV_3679	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-02-02	passed_qc
+BSF_0908	CoV_3680_S76818	2021-02-08	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	25835	CoV_3680	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-02-03	fail
+BSF_0908	CoV_3682_S76801	2021-02-08	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	5629	CoV_3682	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-01-31	passed_qc
+BSF_0908	CoV_3684_S76885	2021-02-08	ATTP_8-Bregenz	Bregenz	2350	CoV_3684	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-01-31	passed_qc
+BSF_0913	CoV_3796_S77778	2021-02-15	ATTP_8-Bregenz	Bregenz	997	CoV_3796	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-02-02	passed_qc
+BSF_0913	CoV_3797_S77791	2021-02-15	ATTP_8-Bregenz	Bregenz	973	CoV_3797	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-02-06	passed_qc
+BSF_0913	CoV_3839_S77514	2021-02-15	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	3322	CoV_3839	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-02-07	passed_qc
+BSF_0913	CoV_3840_S77802	2021-02-15	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	6283	CoV_3840	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-02-09	passed_qc
+BSF_0913	CoV_3845_S77866	2021-02-15	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	22227	CoV_3845	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-02-11	fail
+BSF_0917	CoV_4209_S78818	2021-02-22	ATTP_8-Bregenz	Bregenz	7313	CoV_4209	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-02-10	passed_qc
+BSF_0917	CoV_4210_S78819	2021-02-22	ATTP_8-Bregenz	Bregenz	4308	CoV_4210	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-02-14	passed_qc
+BSF_0917	CoV_4256_S78612	2021-02-22	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	1130	CoV_4256	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-02-14	passed_qc
+BSF_0917	CoV_4257_S78599	2021-02-22	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	326	CoV_4257	Extraktionsmethode A	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-02-16	passed_qc
+BSF_0917	CoV_4258_S78603	2021-02-22	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	419	CoV_4258	Extraktionsmethode C	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-02-16	passed_qc
+BSF_0924	CoV_4479_S79566	2021-03-01	ATTP_8-Bregenz	Bregenz	396	CoV_4479	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-02-18	passed_qc
+BSF_0924	CoV_4480_S79570	2021-03-01	ATTP_8-Bregenz	Bregenz	3007	CoV_4480	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-02-20	passed_qc
+BSF_0924	CoV_4522_S79801	2021-03-01	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	4420	CoV_4522	Prio 1	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-02-18	passed_qc
+BSF_0924	CoV_4523_S79798	2021-03-01	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	326	CoV_4523	Prio 1	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-02-21	passed_qc
+BSF_0924	CoV_4524_S79738	2021-03-01	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	601	CoV_4524	Prio 1	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-02-21	passed_qc
+BSF_0927	CoV_5032_S80094	2021-03-08	ATTP_8-Bregenz	Bregenz	469	CoV_5032	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-02-24	passed_qc
+BSF_0927	CoV_5033_S80098	2021-03-08	ATTP_8-Bregenz	Bregenz	6059	CoV_5033	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-02-28	passed_qc
+BSF_0927	CoV_5093_S79834	2021-03-08	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	127	CoV_5093	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-02-28	passed_qc
+BSF_0927	CoV_5094_S79891	2021-03-08	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	124	CoV_5094	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-03-02	passed_qc
+BSF_0935	CoV_5595_S80749	2021-03-15	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	402	CoV_5595	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-03-07	passed_qc
+BSF_0935	CoV_5596_S80770	2021-03-15	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	622	CoV_5596	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-03-09	passed_qc
+BSF_0935	CoV_5664_S80945	2021-03-15	ATTP_8-Bregenz	Bregenz	384	CoV_5664	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-03-04	passed_qc
+BSF_0935	CoV_5665_S80897	2021-03-15	ATTP_8-Bregenz	Bregenz	1012	CoV_5665	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-03-06	passed_qc
+BSF_0940	CoV_6105_S81415	2021-03-19	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	1369	CoV_6105	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-03-17	passed_qc
+BSF_0940	CoV_6110_S81442	2021-03-19	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	11324	CoV_6110	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-03-18	passed_qc
+BSF_0940	CoV_6111_S81454	2021-03-19	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	3893	CoV_6111	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-03-18	passed_qc
+BSF_0940	CoV_6119_S81455	2021-03-19	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	6750	CoV_6119	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-03-14	passed_qc
+BSF_0940	CoV_6150_S81246	2021-03-22	ATTP_8-Bregenz	Bregenz	3114	CoV_6150	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-03-08	passed_qc
+BSF_0940	CoV_6151_S81265	2021-03-22	ATTP_8-Bregenz	Bregenz	4622	CoV_6151	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-03-12	passed_qc
+BSF_0940	CoV_6152_S81231	2021-03-22	ATTP_8-Bregenz	Bregenz	4921	CoV_6152	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-03-14	passed_qc
+BSF_0942	CoV_6454_S81910	2021-03-26	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	3974	CoV_6454	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-03-24	passed_qc
+BSF_0942	CoV_6534_S81951	2021-03-26	ATTP_8-Bregenz	Bregenz	1331	CoV_6534	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-03-18	passed_qc
+BSF_0942	CoV_6535_S81939	2021-03-26	ATTP_8-Bregenz	Bregenz	3436	CoV_6535	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-03-21	passed_qc
+BSF_0944	CoV_6720_S82077	2021-04-06	ATTP_8-Bregenz	Bregenz	122	CoV_6720	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-03-25	passed_qc
+BSF_0944	CoV_6976_S82313	2021-04-06	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	448	CoV_6976	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-03-28	passed_qc
+BSF_0944	CoV_6978_S82291	2021-04-06	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	121	CoV_6978	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-03-31	passed_qc
+BSF_0947	CoV_7226_S83133	2021-04-09	ATTP_8-Bregenz	Bregenz	13813	CoV_7226	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-04-02	passed_qc
+BSF_0947	CoV_7227_S83154	2021-04-09	ATTP_8-Bregenz	Bregenz	1119	CoV_7227	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-04-04	passed_qc
+BSF_0947	CoV_7323_S83151	2021-04-09	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	122	CoV_7323	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-04-05	passed_qc
+BSF_0947	CoV_7324_S83263	2021-04-12	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	399	CoV_7324	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-04-07	passed_qc
+BSF_0956	CoV_7714_S83535	2021-04-19	ATTP_8-Bregenz	Bregenz	122	CoV_7714	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-04-06	passed_qc
+BSF_0956	CoV_7715_S83552	2021-04-19	ATTP_8-Bregenz	Bregenz	121	CoV_7715	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-04-08	passed_qc
+BSF_0956	CoV_7716_S83573	2021-04-19	ATTP_8-Bregenz	Bregenz	416	CoV_7716	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-04-10	passed_qc
+BSF_0956	CoV_7769_S83536	2021-04-19	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	3558	CoV_7769	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-04-11	passed_qc
+BSF_0956	CoV_7770_S83559	2021-04-19	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	1467	CoV_7770	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-04-14	passed_qc
+BSF_0964	CoV_8147_S84105	2021-04-26	ATTP_8-Bregenz	Bregenz	362	CoV_8147	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-04-14	passed_qc
+BSF_0964	CoV_8148_S84177	2021-04-26	ATTP_8-Bregenz	Bregenz	29572	CoV_8148	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-04-18	fail
+BSF_0964	CoV_8207_S84114	2021-04-26	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	25526	CoV_8207	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-04-18	fail
+BSF_0964	CoV_8208_S84118	2021-04-26	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	4394	CoV_8208	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-04-21	passed_qc
+BSF_0969	CoV_8346_S84777	2021-04-30	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	386	CoV_8346	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-04-25	passed_qc
+BSF_0969	CoV_8347_S84822	2021-04-30	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	453	CoV_8347	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-04-28	passed_qc
+BSF_0969	CoV_8348_S84774	2021-04-30	ATTP_8-Bregenz	Bregenz	121	CoV_8348	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-04-20	passed_qc
+BSF_0969	CoV_8349_S84825	2021-04-30	ATTP_8-Bregenz	Bregenz	123	CoV_8349	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-04-24	passed_qc
+BSF_0971	CoV_8864_S85914	2021-05-10	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	1615	CoV_8864	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-05-02	passed_qc
+BSF_0971	CoV_8865_S85972	2021-05-10	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	4375	CoV_8865	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-05-05	passed_qc
+BSF_0971	CoV_8880_S85816	2021-05-10	ATTP_8-Bregenz	Bregenz	122	CoV_8880	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-04-28	passed_qc
+BSF_0971	CoV_8881_S85819	2021-05-10	ATTP_8-Bregenz	Bregenz	121	CoV_8881	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-05-02	passed_qc
+BSF_0974	CoV_8962_S86504	2021-05-17	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	3917	CoV_8962	wierd pre-screening: N501Y negative,  452R positivem	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-05-09	passed_qc
+BSF_0974	CoV_8963_S86157	2021-05-17	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	1013	CoV_8963	wierd pre-screening: N501Y negative,  452R positivem	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-05-11	passed_qc
+BSF_0974	CoV_9168_S86184	2021-05-17	ATTP_8-Bregenz	Bregenz	122	CoV_9168	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-05-06	passed_qc
+BSF_0974	CoV_9169_S86206	2021-05-17	ATTP_8-Bregenz	Bregenz	3121	CoV_9169	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-05-08	passed_qc
+BSF_0980	CoV_9245_S87110	2021-05-25	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	10088	CoV_9245	40mL extracted	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-05-20	passed_qc
+BSF_0980	CoV_9246_S87122	2021-05-25	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	20252	CoV_9246	80 mL extracted	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-05-20	fail
+BSF_0980	CoV_9266_S87075	2021-05-25	ATTP_8-Bregenz	Bregenz	123	CoV_9266	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-05-12	passed_qc
+BSF_0980	CoV_9267_S87097	2021-05-25	ATTP_8-Bregenz	Bregenz	123	CoV_9267	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-05-16	passed_qc
+BSF_0985	CoV_9713_S87883	2021-05-31	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	3020	CoV_9713	wierd pre-screening: N501Y negative,  452R positivem	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-05-24	passed_qc
+BSF_0985	CoV_9726_S87866	2021-05-31	ATTP_8-Bregenz	Bregenz	4347	CoV_9726	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-05-18	passed_qc
+BSF_0985	CoV_9727_S87855	2021-05-31	ATTP_8-Bregenz	Bregenz	124	CoV_9727	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-05-22	passed_qc
+BSF_0985	CoV_9728_S87844	2021-05-31	ATTP_8-Bregenz	Bregenz	607	CoV_9728	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-05-24	passed_qc
+BSF_0994	CoV_11191_S89621	2021-06-07	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	4964	CoV_11191	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-05-26	passed_qc
+BSF_0994	CoV_11192_S89642	2021-06-07	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	11398	CoV_11192	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-05-30	passed_qc
+BSF_0994	CoV_11193_S89528	2021-06-07	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	20995	CoV_11193	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-06-01	fail
+BSF_0994	CoV_11278_S89596	2021-06-07	ATTP_8-Bregenz	Bregenz	121	CoV_11278	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-05-28	passed_qc
+BSF_0994	CoV_11279_S89603	2021-06-07	ATTP_8-Bregenz	Bregenz	1153	CoV_11279	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-05-30	passed_qc
+BSF_1003	CoV_11338_S90315	2021-06-14	ATTP_8-Bregenz	Bregenz	26523	CoV_11338	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-06-03	fail
+BSF_1003	CoV_11339_S90294	2021-06-14	ATTP_8-Bregenz	Bregenz	15191	CoV_11339	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-06-05	passed_qc
+BSF_1003	CoV_11371_S90298	2021-06-14	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	24838	CoV_11371	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-06-06	fail
+BSF_1003	CoV_11372_S90208	2021-06-14	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	29903	CoV_11372	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-06-09	fail
+BSF_1006	CoV_11668_S90694	2021-06-21	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	23906	CoV_11668	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-06-13	fail
+BSF_1006	CoV_11675_S90683	2021-06-21	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	28772	CoV_11675	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-06-15	fail
+BSF_1006	CoV_11685_S90714	2021-06-21	ATTP_8-Bregenz	Bregenz	26561	CoV_11685	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-06-09	fail
+BSF_1006	CoV_11686_S90634	2021-06-21	ATTP_8-Bregenz	Bregenz	24127	CoV_11686	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-06-13	fail
+BSF_1010	CoV_11966_S91161	2021-06-28	ATTP_8-Bregenz	Bregenz	651	CoV_11966	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-06-15	passed_qc
+BSF_1010	CoV_11967_S91157	2021-06-28	ATTP_8-Bregenz	Bregenz	1850	CoV_11967	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-06-19	passed_qc
+BSF_1010	CoV_12021_S91242	2021-06-28	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	26014	CoV_12021	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-06-20	fail
+BSF_1010	CoV_12022_S91230	2021-06-28	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	23224	CoV_12022	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-06-22	fail
+BSF_1012	CoV_12606_S91532	2021-07-05	ATTP_8-Bregenz	Bregenz	9589	CoV_12606	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-06-21	passed_qc
+BSF_1012	CoV_12607_S91520	2021-07-05	ATTP_8-Bregenz	Bregenz	25631	CoV_12607	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-06-25	fail
+BSF_1012	CoV_12644_S91459	2021-07-05	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	29565	CoV_12644	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-06-24	fail
+BSF_1012	CoV_12645_S91507	2021-07-05	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	28690	CoV_12645	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-06-27	fail
+BSF_1012	CoV_12646_S91527	2021-07-05	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	29903	CoV_12646	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-06-29	fail
+BSF_1014	CoV_12864_S91938	2021-07-12	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	29903	CoV_12864	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-07-04	fail
+BSF_1014	CoV_12865_S91935	2021-07-12	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	21425	CoV_12865	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-07-04	fail
+BSF_1014	CoV_12866_S91916	2021-07-12	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	29903	CoV_12866	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-07-06	fail
+BSF_1014	CoV_12873_S91934	2021-07-12	ATTP_8-Bregenz	Bregenz	15229	CoV_12873	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-06-29	passed_qc
+BSF_1014	CoV_12874_S91917	2021-07-12	ATTP_8-Bregenz	Bregenz	6207	CoV_12874	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-07-01	passed_qc
+BSF_1016	CoV_13210_S93171	2021-07-19	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	17599	CoV_13210	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-07-06	passed_qc
+BSF_1016	CoV_13211_S93180	2021-07-19	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	12428	CoV_13211	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-07-08	passed_qc
+BSF_1016	CoV_13212_S93193	2021-07-19	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	8973	CoV_13212	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-07-13	passed_qc
+BSF_1016	CoV_13213_S93210	2021-07-19	ATTP_8-Bregenz	Bregenz	395	CoV_13213	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-07-07	passed_qc
+BSF_1016	CoV_13214_S93214	2021-07-19	ATTP_8-Bregenz	Bregenz	398	CoV_13214	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-07-11	passed_qc
+BSF_1022	CoV_13635_S93594	2021-07-26	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	17372	CoV_13635	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-07-15	passed_qc
+BSF_1022	CoV_13637_S93557	2021-07-26	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	3765	CoV_13637	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-07-20	passed_qc
+BSF_1022	CoV_13647_S93490	2021-07-26	ATTP_8-Bregenz	Bregenz	7924	CoV_13647	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-07-15	passed_qc
+BSF_1022	CoV_13648_S93595	2021-07-26	ATTP_8-Bregenz	Bregenz	9954	CoV_13648	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-07-17	passed_qc
+BSF_1026	CoV_13980_S94071	2021-08-02	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	7385	CoV_13980	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-07-22	passed_qc
+BSF_1026	CoV_13981_S93968	2021-08-02	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	4925	CoV_13981	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-07-25	passed_qc
+BSF_1026	CoV_13982_S93989	2021-08-02	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	3699	CoV_13982	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-07-27	passed_qc
+BSF_1026	CoV_13993_S94040	2021-08-02	ATTP_8-Bregenz	Bregenz	4230	CoV_13993	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-07-21	passed_qc
+BSF_1026	CoV_13994_S94067	2021-08-02	ATTP_8-Bregenz	Bregenz	4680	CoV_13994	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-07-25	passed_qc
+BSF_1036	CoV_14391_S95253	2021-08-09	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	2548	CoV_14391	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-08-01	passed_qc
+BSF_1036	CoV_14392_S95097	2021-08-09	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	4587	CoV_14392	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-08-03	passed_qc
+BSF_1036	CoV_14395_S95065	2021-08-09	ATTP_8-Bregenz	Bregenz	7645	CoV_14395	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-07-29	passed_qc
+BSF_1036	CoV_14396_S95084	2021-08-09	ATTP_8-Bregenz	Bregenz	10442	CoV_14396	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-07-31	passed_qc
+BSF_1037	CoV_14779_S95635	2021-08-16	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	2520	CoV_14779	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-08-05	passed_qc
+BSF_1037	CoV_14780_S95622	2021-08-16	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	21461	CoV_14780	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-08-08	fail
+BSF_1037	CoV_14781_S95715	2021-08-16	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	6500	CoV_14781	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-08-10	passed_qc
+BSF_1037	CoV_14863_S95716	2021-08-16	ATTP_8-Bregenz	Bregenz	395	CoV_14863	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-08-04	passed_qc
+BSF_1037	CoV_14864_S95697	2021-08-16	ATTP_8-Bregenz	Bregenz	690	CoV_14864	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-08-06	passed_qc
+BSF_1037	CoV_14865_S95693	2021-08-16	ATTP_8-Bregenz	Bregenz	397	CoV_14865	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-08-08	passed_qc
+BSF_1041	CoV_15271_S96150	2021-08-23	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	16349	CoV_15271	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-08-12	passed_qc
+BSF_1041	CoV_15272_S96201	2021-08-23	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	5482	CoV_15272	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-08-15	passed_qc
+BSF_1041	CoV_15273_S96172	2021-08-23	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	5803	CoV_15273	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-08-17	passed_qc
+BSF_1041	CoV_15282_S96120	2021-08-23	ATTP_8-Bregenz	Bregenz	398	CoV_15282	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-08-10	passed_qc
+BSF_1041	CoV_15283_S96108	2021-08-23	ATTP_8-Bregenz	Bregenz	3018	CoV_15283	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-08-14	passed_qc
+BSF_1046	CoV_15323_S96535	2021-08-30	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	1538	CoV_15323	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-08-22	passed_qc
+BSF_1046	CoV_15324_S96554	2021-08-30	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	696	CoV_15324	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-08-24	passed_qc
+BSF_1046	CoV_15532_S96495	2021-08-30	ATTP_8-Bregenz	Bregenz	395	CoV_15532	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-08-18	passed_qc
+BSF_1046	CoV_15533_S96514	2021-08-30	ATTP_8-Bregenz	Bregenz	600	CoV_15533	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-08-22	passed_qc
+BSF_1049	CoV_15916_S97035	2021-09-06	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	1041	CoV_15916	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-08-26	passed_qc
+BSF_1049	CoV_15917_S97113	2021-09-06	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	1453	CoV_15917	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-08-29	passed_qc
+BSF_1049	CoV_15918_S97124	2021-09-06	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	1202	CoV_15918	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-08-31	passed_qc
+BSF_1049	CoV_15919_S97120	2021-09-06	ATTP_8-Bregenz	Bregenz	396	CoV_15919	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-08-24	passed_qc
+BSF_1049	CoV_15920_S97071	2021-09-06	ATTP_8-Bregenz	Bregenz	395	CoV_15920	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-08-28	passed_qc
+BSF_1052	CoV_16283_S97378	2021-09-13	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	1099	CoV_16283	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-09-02	passed_qc
+BSF_1052	CoV_16284_S97399	2021-09-13	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	907	CoV_16284	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-09-05	passed_qc
+BSF_1052	CoV_16285_S97403	2021-09-13	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	600	CoV_16285	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-09-07	passed_qc
+BSF_1052	CoV_16296_S97443	2021-09-13	ATTP_8-Bregenz	Bregenz	683	CoV_16296	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-09-05	passed_qc
+BSF_1055	CoV_16355_S98082	2021-09-20	ATTP_8-Bregenz	Bregenz	396	CoV_16355	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-09-07	passed_qc
+BSF_1055	CoV_16356_S98008	2021-09-20	ATTP_8-Bregenz	Bregenz	693	CoV_16356	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-09-11	passed_qc
+BSF_1055	CoV_16413_S97915	2021-09-20	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	1337	CoV_16413	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-09-09	passed_qc
+BSF_1055	CoV_16414_S98019	2021-09-20	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	1202	CoV_16414	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-09-12	passed_qc
+BSF_1055	CoV_16415_S98040	2021-09-20	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	1423	CoV_16415	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-09-14	passed_qc
+BSF_1060	CoV_16723_S99418	2021-09-27	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	907	CoV_16723	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-09-19	passed_qc
+BSF_1060	CoV_16724_S99259	2021-09-27	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	395	CoV_16724	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-09-21	passed_qc
+BSF_1060	CoV_17089_S99244	2021-09-27	ATTP_8-Bregenz	Bregenz	396	CoV_17089	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-09-19	passed_qc
+BSF_1069	CoV_17198_S99762	2021-10-04	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	15600	CoV_17198	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-09-26	passed_qc
+BSF_1069	CoV_17199_S99766	2021-10-04	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	11574	CoV_17199	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-09-28	passed_qc
+BSF_1069	CoV_17499_S99702	2021-10-04	ATTP_8-Bregenz	Bregenz	600	CoV_17499	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-09-25	passed_qc
+BSF_1077	CoV_17886_S100355	2021-10-11	ATTP_8-Bregenz	Bregenz	2524	CoV_17886	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-10-03	passed_qc
+BSF_1077	CoV_17918_S100296	2021-10-11	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	20182	CoV_17918	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-10-03	fail
+BSF_1077	CoV_17919_S100267	2021-10-11	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	9041	CoV_17919	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-10-05	passed_qc
+BSF_1076	CoV_17922_S100753	2021-10-18	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	1099	CoV_17922	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-10-10	passed_qc
+BSF_1076	CoV_17923_S100804	2021-10-18	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	2178	CoV_17923	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-10-12	passed_qc
+BSF_1076	CoV_18142_S100799	2021-10-18	ATTP_8-Bregenz	Bregenz	19732	CoV_18142	target for Ct=N1 (CDC-Primer)	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-10-05	fail
+BSF_1078	CoV_18542_S101262	2021-10-25	ATTP_8-Bregenz	Bregenz	93	CoV_18542	""	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-10-15	passed_qc
+BSF_1078	CoV_18565_S101258	2021-10-25	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	1857	CoV_18565	W001-211019	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-10-19	passed_qc
+BSF_1078	CoV_18567_S101267	2021-10-25	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	94	CoV_18567	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-10-19	passed_qc
+BSF_1080	CoV_18937_S101609	2021-11-02	ATTP_8-Bregenz	Bregenz	92	CoV_18937	""	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-10-19	passed_qc
+BSF_1080	CoV_18939_S101571	2021-11-02	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	279	CoV_18939	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-10-26	passed_qc
+BSF_1080	CoV_18944_S101534	2021-11-02	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	18710	CoV_18944	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-10-24	fail
+BSF_1084	CoV_19339_S102571	2021-11-08	ATTP_8-Bregenz	Bregenz	92	CoV_19339	""	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-10-31	passed_qc
+BSF_1084	CoV_19341_S102580	2021-11-08	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	968	CoV_19341	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-11-02	passed_qc
+BSF_1084	CoV_19369_S102492	2021-11-08	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	2831	CoV_19369	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-10-31	passed_qc
+BSF_1086	CoV_19734_S102968	2021-11-15	ATTP_8-Bregenz	Bregenz	91	CoV_19734	60	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-11-06	passed_qc
+BSF_1086	CoV_19736_S102914	2021-11-15	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	28558	CoV_19736	62	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-11-09	fail
+BSF_1086	CoV_19762_S103024	2021-11-15	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	519	CoV_19762	90	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-11-07	passed_qc
+BSF_1087	CoV_20089_S103413	2021-11-22	ATTP_8-Bregenz	Bregenz	92	CoV_20089	60	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-11-14	passed_qc
+BSF_1087	CoV_20091_S103492	2021-11-22	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	28098	CoV_20091	62	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-11-16	fail
+BSF_1087	CoV_20112_S103421	2021-11-22	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	21967	CoV_20112	90	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-11-14	fail
+BSF_1091	CoV_20534_S103917	2021-11-29	ATTP_8-Bregenz	Bregenz	91	CoV_20534	""	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-11-20	passed_qc
+BSF_1091	CoV_20536_S103943	2021-11-29	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	16422	CoV_20536	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-11-23	passed_qc
+BSF_1098	CoV_20936_S104498	2021-12-06	ATTP_8-Bregenz	Bregenz	149	CoV_20936	UINN	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-11-28	passed_qc
+BSF_1098	CoV_20938_S104488	2021-12-06	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	29359	CoV_20938	TU-Wien	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-11-30	fail
+BSF_1098	CoV_20966_S104543	2021-12-06	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	2187	CoV_20966	TU-Wien	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-11-28	passed_qc
+BSF_1098	CoV_21015_S104506	2021-12-06	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	9191	CoV_21015	Sewer, Wien	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-11-28	passed_qc
+BSF_1103	CoV_21273_S105035	2021-12-13	ATTP_8-Bregenz	Bregenz	149	CoV_21273	UINN	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-12-04	passed_qc
+BSF_1103	CoV_21275_S105044	2021-12-13	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	13281	CoV_21275	TU-Wien	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-12-08	passed_qc
+BSF_1103	CoV_21303_S104810	2021-12-13	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	149	CoV_21303	TU-Wien	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-12-05	passed_qc
+BSF_1108	CoV_21412_S105526	2022-01-03	ATTP_8-Bregenz	Bregenz	149	CoV_21412	UINN	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-12-12	passed_qc
+BSF_1108	CoV_21441_S105473	2022-01-03	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	28993	CoV_21441	TU-Wien extractionmethod Std	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-12-14	fail
+BSF_1108	CoV_21442_S105515	2022-01-03	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	25790	CoV_21442	TU-Wien extractionmethod Mod	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-12-14	fail
+BSF_1108	CoV_21494_S105743	2022-01-03	ATTP_8-Bregenz	Bregenz	150	CoV_21494	UINN	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-12-18	passed_qc
+BSF_1108	CoV_21496_S105720	2022-01-03	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	12651	CoV_21496	TU-Wien	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-12-26	passed_qc
+BSF_1108	CoV_21520_S105717	2022-01-03	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	1342	CoV_21520	TU-Wien	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-12-19	passed_qc
+BSF_1108	CoV_21521_S105716	2022-01-03	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	20213	CoV_21521	TU-Wien	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-12-23	fail
+BSF_1108	CoV_21583_S105813	2022-01-03	ATTP_8-Bregenz	Bregenz	149	CoV_21583	UINN	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-12-26	passed_qc
+BSF_1108	CoV_21585_S105690	2022-01-03	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	4007	CoV_21585	TU-Wien	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-12-28	passed_qc
+BSF_1114	CoV_21879_S105960	2022-01-10	ATTP_8-Bregenz	Bregenz	150	CoV_21879	UINN	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2022-01-01	passed_qc
+BSF_1114	CoV_21881_S105984	2022-01-10	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	8775	CoV_21881	TU-Wien	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2022-01-02	passed_qc
+BSF_1114	CoV_21898_S105998	2022-01-10	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	383	CoV_21898	TU-Wien	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2022-01-04	passed_qc
+BSF_1119	CoV_22346_S106701	2022-01-17	ATTP_8-Bregenz	Bregenz	150	CoV_22346	UINN	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2022-01-09	passed_qc
+BSF_1119	CoV_22347_S106713	2022-01-17	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	22574	CoV_22347	TU-Wien	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2022-01-09	fail
+BSF_1121	CoV_22675_S107347	2022-01-24	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	150	CoV_22675	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2022-01-16	passed_qc
+BSF_1121	CoV_22733_S107075	2022-01-24	ATTP_8-Bregenz	Bregenz	157	CoV_22733	UINN	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2022-01-15	passed_qc
+BSF_1121	CoV_22735_S107099	2022-01-24	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	149	CoV_22735	TU-Wien	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2022-01-18	passed_qc
+BSF_1121	CoV_22766_S107091	2022-01-24	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	7913	CoV_22766	TU-Wien	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2022-01-16	passed_qc
+BSF_1125	CoV_23148_S107948	2022-01-31	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	149	CoV_23148	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2022-01-18	passed_qc
+BSF_1125	CoV_23161_S107914	2022-01-31	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	150	CoV_23161	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2022-01-23	passed_qc
+BSF_1125	CoV_23230_S108071	2022-01-31	ATTP_8-Bregenz	Bregenz	151	CoV_23230	UINN	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2022-01-23	passed_qc
+BSF_1125	CoV_23232_S108002	2022-01-31	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	602	CoV_23232	TU-Wien	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2022-01-25	passed_qc
+BSF_1125	CoV_23261_S108063	2022-01-31	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	1256	CoV_23261	TU-Wien	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2022-01-20	passed_qc
+BSF_1125	CoV_23263_S107892	2022-01-31	ATTP_8-Bregenz	Bregenz	149	CoV_23263	""	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-12-12	passed_qc
+BSF_1125	CoV_23264_S107904	2022-01-31	ATTP_8-Bregenz	Bregenz	150	CoV_23264	""	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-12-14	passed_qc
+BSF_1125	CoV_23266_S107916	2022-01-31	ATTP_8-Bregenz	Bregenz	149	CoV_23266	""	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-12-22	passed_qc
+BSF_1125	CoV_23267_S107928	2022-01-31	ATTP_8-Bregenz	Bregenz	149	CoV_23267	""	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-12-24	passed_qc
+BSF_1125	CoV_23269_S107940	2022-01-31	ATTP_8-Bregenz	Bregenz	150	CoV_23269	""	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-12-28	passed_qc
+BSF_1125	CoV_23270_S107952	2022-01-31	ATTP_8-Bregenz	Bregenz	150	CoV_23270	""	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2021-12-30	passed_qc
+BSF_1125	CoV_23272_S107964	2022-01-31	ATTP_8-Bregenz	Bregenz	152	CoV_23272	""	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2022-01-07	passed_qc
+BSF_1125	CoV_23274_S107976	2022-01-31	ATTP_8-Bregenz	Bregenz	150	CoV_23274	""	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2022-01-11	passed_qc
+BSF_1125	CoV_23275_S107891	2022-01-31	ATTP_8-Bregenz	Bregenz	152	CoV_23275	""	Bregenz	33189	47.5045260470001	9.70669547200004	TRUE	general; alps	2022-01-13	passed_qc
+BSF_1125	CoV_23317_S107982	2022-01-31	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	13803	CoV_23317	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-12-12	passed_qc
+BSF_1125	CoV_23319_S108006	2022-01-31	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	3167	CoV_23319	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-12-16	passed_qc
+BSF_1125	CoV_23320_S108018	2022-01-31	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	13490	CoV_23320	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-12-21	passed_qc
+BSF_1125	CoV_23322_S108030	2022-01-31	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	17195	CoV_23322	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2021-12-30	passed_qc
+BSF_1125	CoV_23323_S108054	2022-01-31	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	19148	CoV_23323	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2022-01-06	fail
+BSF_1125	CoV_23325_S108042	2022-01-31	ATTP_9-HKA-Simmering	EMREG_BE_ebswien hauptkläranlage	4878	CoV_23325	""	Wien	1900000	48.172266623	16.465265077	TRUE	general; alps	2022-01-13	passed_qc

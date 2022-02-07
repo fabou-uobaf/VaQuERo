@@ -204,15 +204,15 @@ VoI                 <- unlist(str_split(opt$voi, pattern=c(";",",")))
 highlightedVariants <- unlist(str_split(opt$highlight, pattern=c(";",",")))
   
 ## define global variables to fill
-globalFittedData <- data.table(variant = character(), LocationID_coronA = character(), LocationName_coronA  = character(), sample_id = character(), sample_date = character(), value = numeric() )
-globalFullData <- data.table(variant = character(), LocationID_coronA = character(), LocationName_coronA  = character(), sample_date = character(), value = numeric(), marker = character(), singlevalue = numeric() )
+globalFittedData <- data.table(variant = character(), LocationID = character(), LocationName  = character(), sample_id = character(), sample_date = character(), value = numeric() )
+globalFullData <- data.table(variant = character(), LocationID = character(), LocationName  = character(), sample_date = character(), value = numeric(), marker = character(), singlevalue = numeric() )
 
 # check for same date, same location issue
 # introduce artifical decimal date
-metaDT %>% group_by(LocationID_coronA, sample_date) %>% mutate(n = rank(BSF_sample_name)-1)  %>% ungroup() %>% mutate(sample_date_decimal = decimalDate(sample_date, n)) %>% dplyr::select(-n) -> metaDT
+metaDT %>% group_by(LocationID, sample_date) %>% mutate(n = rank(BSF_sample_name)-1)  %>% ungroup() %>% mutate(sample_date_decimal = decimalDate(sample_date, n)) %>% dplyr::select(-n) -> metaDT
 
 # define which locations are used for the report
-metaDT %>% dplyr::select("LocationID_coronA") %>% distinct() -> locationsReportedOn
+metaDT %>% dplyr::select("LocationID") %>% distinct() -> locationsReportedOn
 
 
 # Generate map of all locations sequenced in current run
@@ -252,7 +252,7 @@ s <- s + coord_sf(ylim = mapMargines[c(1,3)], xlim = mapMargines[c(2,4)], expand
 s <- s + annotation_scale(location = "bl")
 s <- s + annotation_north_arrow(location = "tl", which_north = "true", pad_x = unit(0.75, "in"), pad_y = unit(0.5, "in"), style = north_arrow_fancy_orienteering)
 s <- s + theme(axis.text = element_blank(), legend.direction = "vertical", legend.box = "horizontal", legend.position = "bottom")
-s <- s + geom_point(data=mapSeqDT, aes(y=dcpLatitude, x=dcpLongitude, shape = status, fill = status, size = as.numeric(connected_people_2018)), alpha = 0.25)
+s <- s + geom_point(data=mapSeqDT, aes(y=dcpLatitude, x=dcpLongitude, shape = status, fill = status, size = as.numeric(connected_people)), alpha = 0.25)
 s <- s + scale_fill_manual(values = c("detected" = "deepskyblue", "fail" = "firebrick", "passed_qc" = "limegreen"), name = "Seq. Status")
 s <- s + guides(size = guide_legend(title = "Population", nrow = 2))
 s <- s + scale_size(range = c(1, 10), labels = scales::comma, breaks = c(50000, 100000, 500000, 1000000))
@@ -342,7 +342,7 @@ inner_join(dt_AF, dt_DP, by =  c("CHROM", "NUC", "POS", "REF", "ALT", "ANN.GENE"
 
 ## add location to sewage_samps.dt
 sewage_samps.dt %>% mutate(RNA_ID_int = gsub("_S\\d+$","", ID)) -> sewage_samps.dt
-metaDT %>% filter(! is.na(LocationID_coronA) ) %>% dplyr::select("RNA_ID_int", "LocationID_coronA", "LocationName_coronA") -> sample_location
+metaDT %>% filter(! is.na(LocationID) ) %>% dplyr::select("RNA_ID_int", "LocationID", "LocationName") -> sample_location
 left_join(x = sewage_samps.dt, y = sample_location, by = "RNA_ID_int") -> sewage_samps.dt
 
 ## remove samples which are not include_in_report == TRUE
@@ -372,19 +372,19 @@ print(paste("LOG: latest sample in current run:", latestSample$latest))
 
 ### FROM HERE LOOP OVER EACH SEWAGE PLANTS
 print(paste("PROGRESS: start to loop over WWTP"))
-for (r in 1:length(unique(sewage_samps.dt$LocationID_coronA))) {
-    roi = unique(sewage_samps.dt$LocationID_coronA)[r]
-    roiname = unique(sewage_samps.dt$LocationName_coronA)[r]
+for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
+    roi = unique(sewage_samps.dt$LocationID)[r]
+    roiname = unique(sewage_samps.dt$LocationName)[r]
     print(paste("     PROGRESS:", roiname))
         
     ### define data collector
-    plantFittedData <- data.table(variant = character(), LocationID_coronA = character(), LocationName_coronA  = character(), sample_id = character(), sample_date = character(), value = numeric() )
-    plantFullData <- data.table(variant = character(), LocationID_coronA = character(), LocationName_coronA  = character(), sample_date = character(), value = numeric(), marker = character(), singlevalue = numeric() )
-    plantFullSoiData <- data.table(variant = character(), LocationID_coronA = character(), LocationName_coronA  = character(), sample_date = character(), value = numeric(), marker = character(), singlevalue = numeric(), AA = character() )
+    plantFittedData <- data.table(variant = character(), LocationID = character(), LocationName  = character(), sample_id = character(), sample_date = character(), value = numeric() )
+    plantFullData <- data.table(variant = character(), LocationID = character(), LocationName  = character(), sample_date = character(), value = numeric(), marker = character(), singlevalue = numeric() )
+    plantFullSoiData <- data.table(variant = character(), LocationID = character(), LocationName  = character(), sample_date = character(), value = numeric(), marker = character(), singlevalue = numeric(), AA = character() )
     
     ### filter data set for current location
-    sewage_samps.dt %>% filter(LocationID_coronA == roi) %>% dplyr::select("Variants", "ID", "sample_date", "sample_date_decimal", "value.freq", "value.depth", "LocationID_coronA", "LocationName_coronA", "NUC") %>% filter(NUC %notin% exsoimut) -> sdt
-    sewage_samps.dt %>% filter(LocationID_coronA == roi) %>% dplyr::select("Variants", "ID", "sample_date", "sample_date_decimal", "value.freq", "value.depth", "LocationID_coronA", "LocationName_coronA", "NUC") %>% filter(NUC %in% soimut) -> spemut_sdt
+    sewage_samps.dt %>% filter(LocationID == roi) %>% dplyr::select("Variants", "ID", "sample_date", "sample_date_decimal", "value.freq", "value.depth", "LocationID", "LocationName", "NUC") %>% filter(NUC %notin% exsoimut) -> sdt
+    sewage_samps.dt %>% filter(LocationID == roi) %>% dplyr::select("Variants", "ID", "sample_date", "sample_date_decimal", "value.freq", "value.depth", "LocationID", "LocationName", "NUC") %>% filter(NUC %in% soimut) -> spemut_sdt
     
     ## count how many sample from this plant were in the last BSF run
     metaDT %>% filter(BSF_sample_name %in% sdt$ID) %>% filter(BSF_run %in% last_BSF_run_id) %>% dplyr::select(BSF_run) %>% group_by(BSF_run) %>% summarize(n = n()) -> count_last_BSF_run_id
@@ -512,15 +512,15 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID_coronA))) {
         }
         
         ssdt %>% ungroup() %>% filter(Variants %in% specifiedLineagesTimecourse) %>% mutate(T = unique(ssdtFit$T)) %>% mutate(fit2 = ifelse(T > 1, fit1/T, fit1)) %>% filter(sample_date_decimal == timepoint) -> ssdt2
-        plantFullData <- rbind(plantFullData, data.table(variant = ssdt2$Variants, LocationID_coronA =  rep(roi, length(ssdt2$fit1)), LocationName_coronA  =  rep(roiname, length(ssdt2$fit1)), sample_date = as.character(ssdt2$sample_date), value = ssdt2$fit2, marker = ssdt2$NUC, singlevalue = ssdt2$value.freq ))
+        plantFullData <- rbind(plantFullData, data.table(variant = ssdt2$Variants, LocationID =  rep(roi, length(ssdt2$fit1)), LocationName  =  rep(roiname, length(ssdt2$fit1)), sample_date = as.character(ssdt2$sample_date), value = ssdt2$fit2, marker = ssdt2$NUC, singlevalue = ssdt2$value.freq ))
       
         ## save norm.fitted values into global DF; set all untested variants to 0
         for (j in specifiedLineagesTimecourse){
           ssdtFit %>% filter(Variants == j) -> extractedFt
           if (dim(extractedFt)[1] > 0){
-            plantFittedData <- rbind(plantFittedData, data.table(variant = rep(j, length(extractedFt$fit2)), LocationID_coronA =  rep(roi, length(extractedFt$fit2)), LocationName_coronA  =  rep(roiname, length(extractedFt$fit2)), sample_id = extractedFt$ID, sample_date =  rep(as.character(unique(ssdt2$sample_date)), length(extractedFt$fit2)), value = extractedFt$fit2 ))
+            plantFittedData <- rbind(plantFittedData, data.table(variant = rep(j, length(extractedFt$fit2)), LocationID =  rep(roi, length(extractedFt$fit2)), LocationName  =  rep(roiname, length(extractedFt$fit2)), sample_id = extractedFt$ID, sample_date =  rep(as.character(unique(ssdt2$sample_date)), length(extractedFt$fit2)), value = extractedFt$fit2 ))
           } else{    
-            plantFittedData <- rbind(plantFittedData, data.table(variant = j, LocationID_coronA = roi, LocationName_coronA  = roiname, sample_id = extractedFt$ID, sample_date = as.character(unique(ssdt2$sample_date)), value = 0 ))
+            plantFittedData <- rbind(plantFittedData, data.table(variant = j, LocationID = roi, LocationName  = roiname, sample_id = extractedFt$ID, sample_date = as.character(unique(ssdt2$sample_date)), value = 0 ))
           }
         }
         rm(formula, fit1, ssdt, ssdt2)
@@ -542,7 +542,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID_coronA))) {
         plantFittedData2 <- plantFittedData
         plantFittedData2$variant <- factor(plantFittedData2$variant, levels = rev(c(highlightedVariants, unique(plantFittedData2$variant)[unique(plantFittedData2$variant) %notin% highlightedVariants])))
       
-        plantFittedData2 %>% group_by(LocationID_coronA) %>% mutate(n = length(unique(sample_date))) %>% ungroup() %>% group_by(LocationID_coronA, LocationName_coronA, sample_date, variant) %>% summarize(value = mean(value), .groups = "drop") %>% ungroup() %>% group_by(LocationID_coronA, LocationName_coronA, sample_date) %>% mutate(T = sum(value)) %>% rowwise() %>% summarize(variant = variant, value = ifelse(T>1, value/(T+0.00001), value), .groups = "drop") %>% ggplot(aes(x = as.Date(sample_date), y = value, fill = variant)) + geom_area(position = "stack", alpha = 0.6) + geom_vline(xintercept = as.Date(latestSample$latest), linetype = "dotdash", color = "grey", size =  0.5) + facet_wrap(~LocationName_coronA, ncol = 4) + scale_fill_viridis_d(alpha = 0.6, begin = .05, end = .95, option = "H", direction = +1, name="") + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1)) + theme_bw() + theme(legend.position="bottom", strip.text.x = element_text(size = 4.5), panel.grid.minor = element_blank(), panel.spacing.y = unit(0, "lines"),  strip.background = element_rect(fill="grey97")) + scale_x_date(date_breaks = "2 month", date_labels =  "%b %d", limits = c(as.Date(NA), as.Date(latestSample$latest))) + ylab(paste0("Variantenanteil [1/1]") ) + xlab("") -> q3
+        plantFittedData2 %>% group_by(LocationID) %>% mutate(n = length(unique(sample_date))) %>% ungroup() %>% group_by(LocationID, LocationName, sample_date, variant) %>% summarize(value = mean(value), .groups = "drop") %>% ungroup() %>% group_by(LocationID, LocationName, sample_date) %>% mutate(T = sum(value)) %>% rowwise() %>% summarize(variant = variant, value = ifelse(T>1, value/(T+0.00001), value), .groups = "drop") %>% ggplot(aes(x = as.Date(sample_date), y = value, fill = variant)) + geom_area(position = "stack", alpha = 0.6) + geom_vline(xintercept = as.Date(latestSample$latest), linetype = "dotdash", color = "grey", size =  0.5) + facet_wrap(~LocationName, ncol = 4) + scale_fill_viridis_d(alpha = 0.6, begin = .05, end = .95, option = "H", direction = +1, name="") + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1)) + theme_bw() + theme(legend.position="bottom", strip.text.x = element_text(size = 4.5), panel.grid.minor = element_blank(), panel.spacing.y = unit(0, "lines"),  strip.background = element_rect(fill="grey97")) + scale_x_date(date_breaks = "2 month", date_labels =  "%b %d", limits = c(as.Date(NA), as.Date(latestSample$latest))) + ylab(paste0("Variantenanteil [1/1]") ) + xlab("") -> q3
         filename <- paste0(outdir, '/figs/stackview', paste('/klaerwerk', roi, "all", sep="_"), ".pdf")
         ggsave(filename = filename, plot = q3, width = plotWidth, height = plotHeight)
         fwrite(as.list(c("stackOverview", c( ifelse(dim(count_last_BSF_run_id)[1] > 0, "current", "old"), roiname, "all", filename))), file = summaryDataFile, append = TRUE, sep = "\t")
@@ -559,7 +559,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID_coronA))) {
         ## print faceted line plot of fitted values for all detected lineages
         plantFittedData %>% ggplot(aes(x = as.Date(sample_date), y = value, col = variant)) + geom_line(alpha = 0.6) + geom_point(alpha = 0.66, shape = 13) + geom_vline(xintercept = as.Date(latestSample$latest), linetype = "dotdash", color = "grey", size =  0.5) + scale_color_manual(values = colorAssignment$fill, breaks = colorAssignment$category, name = "Varianten") + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1)) + theme_bw() + theme(legend.position="bottom", strip.background = element_rect(fill="grey97")) + scale_x_date(date_breaks = "2 month", date_labels =  "%b", limits = c(as.Date(NA), as.Date(latestSample$latest))) + ylab(paste0("Variantenanteil [1/1]") ) + xlab("") -> q2
       
-        spemut_sdt %>% filter(value.freq > zeroo) %>% dplyr::select("ID", "sample_date", "value.freq", "LocationID_coronA", "LocationName_coronA", "NUC") -> spemut_draw2
+        spemut_sdt %>% filter(value.freq > zeroo) %>% dplyr::select("ID", "sample_date", "value.freq", "LocationID", "LocationName", "NUC") -> spemut_draw2
         if(dim(spemut_draw2)[1] > 0){
           print(paste("     PROGRESS: plotting special mutations", roiname))
           left_join(x = spemut_draw2, y = soi, by = "NUC") -> spemut_draw2
@@ -582,7 +582,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID_coronA))) {
         colorAssignment %>% filter(category %in% VoI) -> colorAssignmentVoI
         plantFittedData %>% filter(variant %in% VoI) %>% ggplot(aes(x = as.Date(sample_date), y = value, col = variant)) + geom_line(alpha = 0.6) + geom_point(alpha = 0.66, shape = 13) + geom_vline(xintercept = as.Date(latestSample$latest), linetype = "dotdash", color = "grey", size =  0.5)  + scale_color_manual(values = colorAssignmentVoI$fill, breaks = colorAssignmentVoI$category, name = "Varianten") + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1)) + theme_bw() + theme(legend.position="bottom", strip.background = element_rect(fill="grey97")) + scale_x_date(date_breaks = "2 month", date_labels =  "%b", limits = c(as.Date(NA), as.Date(latestSample$latest))) + ylab(paste0("Variantenanteil [1/1]") ) + xlab("") -> q1
       
-        spemut_sdt %>% filter(value.freq > zeroo) %>% dplyr::select("ID", "sample_date", "value.freq", "LocationID_coronA", "LocationName_coronA", "NUC") -> spemut_draw1
+        spemut_sdt %>% filter(value.freq > zeroo) %>% dplyr::select("ID", "sample_date", "value.freq", "LocationID", "LocationName", "NUC") -> spemut_draw1
         if(dim(spemut_draw1)[1] > 0){
           print(paste("     PROGRESS: plotting special mutations VoI", roiname))
           left_join(x = spemut_draw1, y = soi, by = "NUC") -> spemut_draw1
@@ -638,10 +638,10 @@ fwrite(globalFullData, file = paste0(outdir, "/globalFullData.csv"), sep = "\t")
 
 ## print overview of all VoI and all plants
 print(paste("PROGRESS: start plotting overviews"))
-globalFittedData %>% group_by(LocationID_coronA) %>% mutate(n = length(unique(sample_date))) %>% filter(n > tpLimitToPlot*2) %>% filter(variant %in% VoI) %>% ungroup() %>% group_by(LocationID_coronA, LocationName_coronA, sample_date, variant) %>% summarize(value = mean(value), .groups = "drop") -> globalFittedData2
+globalFittedData %>% group_by(LocationID) %>% mutate(n = length(unique(sample_date))) %>% filter(n > tpLimitToPlot*2) %>% filter(variant %in% VoI) %>% ungroup() %>% group_by(LocationID, LocationName, sample_date, variant) %>% summarize(value = mean(value), .groups = "drop") -> globalFittedData2
 if (dim(globalFittedData2)[1] >= tpLimitToPlot){
   print(paste("     PROGRESS: plotting overview VoI"))
-  ggplot(data = globalFittedData2, aes(x = as.Date(sample_date), y = value, fill = variant)) + geom_area(position = "stack", alpha = 0.7)  + facet_wrap(~LocationName_coronA) + scale_fill_viridis_d(alpha = 0.6, begin = .05, end = .95, option = "H", direction = +1, name="") + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1)) + theme_minimal() + theme(legend.position="bottom", strip.text.x = element_text(size = 4.5), panel.grid.minor = element_blank(), panel.spacing.y = unit(0, "lines"), legend.direction="horizontal") + guides(fill = guide_legend(title = "", ncol = 10)) + scale_x_date(date_breaks = "2 month", date_labels =  "%b") + ylab(paste0("Variantenanteil [1/1]") ) + xlab("") -> r2
+  ggplot(data = globalFittedData2, aes(x = as.Date(sample_date), y = value, fill = variant)) + geom_area(position = "stack", alpha = 0.7)  + facet_wrap(~LocationName) + scale_fill_viridis_d(alpha = 0.6, begin = .05, end = .95, option = "H", direction = +1, name="") + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1)) + theme_minimal() + theme(legend.position="bottom", strip.text.x = element_text(size = 4.5), panel.grid.minor = element_blank(), panel.spacing.y = unit(0, "lines"), legend.direction="horizontal") + guides(fill = guide_legend(title = "", ncol = 10)) + scale_x_date(date_breaks = "2 month", date_labels =  "%b") + ylab(paste0("Variantenanteil [1/1]") ) + xlab("") -> r2
   filename <- paste0(outdir, '/figs/fullview', paste('/klaerwerke', "VoI", sep="_"), ".pdf")
   ggsave(filename = filename, plot = r2, width = plotWidth, height = plotHeight)
   fwrite(as.list(c("fullOverview", c(roiname, "VoI", filename))), file = summaryDataFile, append = TRUE, sep = "\t")
@@ -651,10 +651,10 @@ rm(globalFittedData2)
 
 ## print overview of all variants and all plants
 globalFittedData$variant <- factor(globalFittedData$variant, levels = rev(c(highlightedVariants, unique(globalFittedData$variant)[unique(globalFittedData$variant) %notin% highlightedVariants])))
-globalFittedData %>% group_by(LocationID_coronA) %>% mutate(n = length(unique(sample_date))) %>% filter(n > tpLimitToPlot*2) %>% ungroup() %>% group_by(LocationID_coronA, LocationName_coronA, sample_date, variant) %>% summarize(value = mean(value), .groups = "drop") -> globalFittedData2
+globalFittedData %>% group_by(LocationID) %>% mutate(n = length(unique(sample_date))) %>% filter(n > tpLimitToPlot*2) %>% ungroup() %>% group_by(LocationID, LocationName, sample_date, variant) %>% summarize(value = mean(value), .groups = "drop") -> globalFittedData2
 if (dim(globalFittedData2)[1] >= tpLimitToPlot){
   print(paste("     PROGRESS: plotting overview"))
-  ggplot(data = globalFittedData2, aes(x = as.Date(sample_date), y = value, fill = variant)) + geom_area(position = "stack", alpha = 0.7)  + facet_wrap(~LocationName_coronA) + scale_fill_viridis_d(alpha = 0.6, begin = .05, end = .95, option = "H", direction = +1, name="") + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1)) + theme_minimal() + theme(legend.position="bottom", strip.text.x = element_text(size = 4.5), panel.grid.minor = element_blank(), panel.spacing.y = unit(0, "lines"), legend.direction="horizontal") + guides(fill = guide_legend(title = "", ncol = 10)) + scale_x_date(date_breaks = "2 month", date_labels =  "%b") + ylab(paste0("Variantenanteil [1/1]") ) + xlab("") -> r1
+  ggplot(data = globalFittedData2, aes(x = as.Date(sample_date), y = value, fill = variant)) + geom_area(position = "stack", alpha = 0.7)  + facet_wrap(~LocationName) + scale_fill_viridis_d(alpha = 0.6, begin = .05, end = .95, option = "H", direction = +1, name="") + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1)) + theme_minimal() + theme(legend.position="bottom", strip.text.x = element_text(size = 4.5), panel.grid.minor = element_blank(), panel.spacing.y = unit(0, "lines"), legend.direction="horizontal") + guides(fill = guide_legend(title = "", ncol = 10)) + scale_x_date(date_breaks = "2 month", date_labels =  "%b") + ylab(paste0("Variantenanteil [1/1]") ) + xlab("") -> r1
   filename <- paste0(outdir, '/figs/fullview', paste('/klaerwerke', "all", sep="_"), ".pdf")
   ggsave(filename = filename, plot = r1, width = plotWidth, height = plotHeight)
   fwrite(as.list(c("fullOverview", c(roiname, "all", filename))), file = summaryDataFile, append = TRUE, sep = "\t")
@@ -671,15 +671,15 @@ for (voi in VoI){
 
   globalFittedData %>% filter(variant == voi) %>% filter(! is.na(sample_id) ) -> mapdata
   metaDT$sample_date <- as.character(metaDT$sample_date)
-  left_join(x = mapdata, y = metaDT, by = c("sample_id" = "BSF_sample_name", "LocationName_coronA", "LocationID_coronA", "sample_date")) -> mapdata
+  left_join(x = mapdata, y = metaDT, by = c("sample_id" = "BSF_sample_name", "LocationName", "LocationID", "sample_date")) -> mapdata
   
   if (dim(mapdata)[1] > 0){
-    mapdata %>% group_by(LocationID_coronA) %>% mutate(latest = max(as.Date(sample_date))) %>% filter(latest == sample_date) %>% filter(BSF_run == last_BSF_run_id) %>% filter( (as.Date(format(Sys.time(), "%Y-%m-%d")) - recentEnought) < sample_date) -> mapdata
+    mapdata %>% group_by(LocationID) %>% mutate(latest = max(as.Date(sample_date))) %>% filter(latest == sample_date) %>% filter(BSF_run == last_BSF_run_id) %>% filter( (as.Date(format(Sys.time(), "%Y-%m-%d")) - recentEnought) < sample_date) -> mapdata
     mapdata %>% filter(value > 0) -> mapdata
   
     if (length(mapdata$value) > 0 ){
       print(paste("     PROGRESS: plotting map for", voi))
-      print(data.frame(location=mapdata$LocationName_coronA, dates = mapdata$sample_date, values = mapdata$value))
+      print(data.frame(location=mapdata$LocationName, dates = mapdata$sample_date, values = mapdata$value))
   
       s <- ggplot()
       s <- s + geom_sf(data = World, fill = "grey95")
@@ -688,8 +688,8 @@ for (voi in VoI){
       s <- s + coord_sf(ylim = mapMargines[c(1,3)], xlim = mapMargines[c(2,4)], expand = FALSE)
       s <- s + annotation_scale(location = "bl")
       s <- s + annotation_north_arrow(location = "tl", which_north = "true", pad_x = unit(0.75, "in"), pad_y = unit(0.5, "in"), style = north_arrow_fancy_orienteering)
-      s <- s + geom_point(data=subset(metaDT, status == "passed_qc"), aes(y=dcpLatitude, x=dcpLongitude, size = as.numeric(connected_people_2018)), alpha = 1, shape = 3)
-      s <- s + geom_point(data=mapdata, aes(y=dcpLatitude, x=dcpLongitude, size = as.numeric(connected_people_2018), col = as.numeric(value)), alpha = 0.8) 
+      s <- s + geom_point(data=subset(metaDT, status == "passed_qc"), aes(y=dcpLatitude, x=dcpLongitude, size = as.numeric(connected_people)), alpha = 1, shape = 3)
+      s <- s + geom_point(data=mapdata, aes(y=dcpLatitude, x=dcpLongitude, size = as.numeric(connected_people), col = as.numeric(value)), alpha = 0.8) 
       s <- s + facet_wrap(~variant, nrow = 2) 
       s <- s + theme(axis.text = element_blank(), legend.direction = "vertical", legend.box = "horizontal", legend.position = "bottom")
       s <- s + guides(size = guide_legend(title = "Population", nrow = 2), col = guide_colourbar(title = paste0("Anteil ", voi), direction = "horizontal", title.position = "top"))
