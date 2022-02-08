@@ -290,13 +290,13 @@ soimut   <- soi$NUC
 ## exchange VoI with merged VoI
 VoIm <- unique(moi$Variants[grep(";", moi$Variants, invert = TRUE)])
 for (i in 1:length(VoI)){
-  if(any(grepl(VoI[i], VoIm, fixed = TRUE))){
-    VoI[i] <- VoIm[grep(VoI[i], VoIm, fixed = TRUE)]
-  }
+    if (VoI[i] %in% VoIm){
+      VoI[i] <- VoIm[VoI[i] == VoIm]
+    }
 }
 for (i in 1:length(highlightedVariants)){
-  if(any(grepl(highlightedVariants[i], VoIm, fixed = TRUE))){
-    highlightedVariants[i] <- VoIm[grep(highlightedVariants[i], VoIm, fixed = TRUE)]
+  if (highlightedVariants[i] %in% VoIm){
+    highlightedVariants[i] <- VoIm[highlightedVariants[i] == VoIm]
   }
 }
 
