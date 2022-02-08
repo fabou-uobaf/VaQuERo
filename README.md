@@ -41,7 +41,7 @@ scripts/VaQuERo.r [options]
 	--smarker=CHARACTER
 		Path to special mutation input file [default: resources/mutations_special.csv]
 
-        --pmarker=CHARACTER
+	--pmarker=CHARACTER
                 Path to problematic mutations input file, which will be omitted throughout [default: resources/mutations_problematic_all.csv]
 
 	--data=CHARACTER
