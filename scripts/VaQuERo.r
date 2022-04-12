@@ -186,7 +186,7 @@ if( ! dir.exists(paste0(outdir, "/figs/maps"))){
 ### how many none-N in consensus may be seen to be called detected 
 ### genome_size - amplicon_covered_genome_size * 5%
 N_in_Consensus_detection_filter <- 29903 - 29781 * 0.05 
-### how many non-N in consensus may be seen to be called passed_qc
+### how many non-N in consensus may be seen to be called "pass"
 N_in_Consensus_filter <- 29903 - 29781 * opt$ninconsens
 
 zeroo <- opt$zero      # marker below this value are considered to be zero
@@ -224,7 +224,7 @@ print(paste("LOG: last_BSF_run_id", last_BSF_run_id))
 ## modify status of samples in last run based on number N in consensus
 metaDT %>% filter(BSF_run == last_BSF_run_id) %>% filter( (as.Date(format(Sys.time(), "%Y-%m-%d")) - recentEnought) < sample_date) -> mapSeqDT 
 mapSeqDT %>% mutate(status = ifelse(is.na(status), "fail", status)) -> mapSeqDT
-mapSeqDT %>% mutate(status = ifelse(N_in_Consensus > N_in_Consensus_filter & status == "passed_qc", "fail", status)) -> mapSeqDT
+mapSeqDT %>% mutate(status = ifelse(N_in_Consensus > N_in_Consensus_filter & status == "pass", "fail", status)) -> mapSeqDT
 mapSeqDT %>% mutate(status = ifelse(status == "fail" & N_in_Consensus < N_in_Consensus_detection_filter, "detected", status)) -> mapSeqDT
 
 ## remove samples with "in_run" flag set in status
@@ -253,10 +253,10 @@ s <- s + annotation_scale(location = "bl")
 s <- s + annotation_north_arrow(location = "tl", which_north = "true", pad_x = unit(0.75, "in"), pad_y = unit(0.5, "in"), style = north_arrow_fancy_orienteering)
 s <- s + theme(axis.text = element_blank(), legend.direction = "vertical", legend.box = "horizontal", legend.position = "bottom")
 s <- s + geom_point(data=mapSeqDT, aes(y=dcpLatitude, x=dcpLongitude, shape = status, fill = status, size = as.numeric(connected_people)), alpha = 0.25)
-s <- s + scale_fill_manual(values = c("detected" = "deepskyblue", "fail" = "firebrick", "passed_qc" = "limegreen"), name = "Seq. Status")
+s <- s + scale_fill_manual(values = c("detected" = "deepskyblue", "fail" = "firebrick", "pass" = "limegreen"), name = "Seq. Status")
 s <- s + guides(size = guide_legend(title = "Population", nrow = 2))
-s <- s + scale_size(range = c(1, 10), labels = scales::comma, breaks = c(50000, 100000, 500000, 1000000))
-s <- s + scale_shape_manual(values = c("detected" = 24, "fail" = 25, "passed_qc" = 21), name = "Seq. Status") # set to c(24,25,21)
+s <- s + scale_size(range = c(2, 6), labels = scales::comma, breaks = c(50000, 100000, 500000, 1000000))
+s <- s + scale_shape_manual(values = c("detected" = 24, "fail" = 25, "pass" = 21), name = "Seq. Status") # set to c(24,25,21)
 s <- s + xlab("") + ylab("")
 filename <- paste0(outdir, "/figs/maps/STATUS.pdf")
 ggsave(filename = filename, plot = s)
@@ -688,13 +688,13 @@ for (voi in VoI){
       s <- s + coord_sf(ylim = mapMargines[c(1,3)], xlim = mapMargines[c(2,4)], expand = FALSE)
       s <- s + annotation_scale(location = "bl")
       s <- s + annotation_north_arrow(location = "tl", which_north = "true", pad_x = unit(0.75, "in"), pad_y = unit(0.5, "in"), style = north_arrow_fancy_orienteering)
-      s <- s + geom_point(data=subset(metaDT, status == "passed_qc"), aes(y=dcpLatitude, x=dcpLongitude, size = as.numeric(connected_people)), alpha = 1, shape = 3)
+      s <- s + geom_point(data=subset(metaDT, status == "pass"), aes(y=dcpLatitude, x=dcpLongitude, size = as.numeric(connected_people)), alpha = 1, shape = 3)
       s <- s + geom_point(data=mapdata, aes(y=dcpLatitude, x=dcpLongitude, size = as.numeric(connected_people), col = as.numeric(value)), alpha = 0.8) 
       s <- s + facet_wrap(~variant, nrow = 2) 
       s <- s + theme(axis.text = element_blank(), legend.direction = "vertical", legend.box = "horizontal", legend.position = "bottom")
       s <- s + guides(size = guide_legend(title = "Population", nrow = 2), col = guide_colourbar(title = paste0("Anteil ", voi), direction = "horizontal", title.position = "top"))
       s <- s + scale_color_viridis_c(limits = c(0,1), direction = 1, begin = .05, end = .95, option = "C")
-      s <- s + scale_size(range = c(1, 10), labels = scales::comma, breaks = c(50000, 100000, 500000, 1000000))
+      s <- s + scale_size(range = c(2, 6), labels = scales::comma, breaks = c(50000, 100000, 500000, 1000000))
   
       filename <- paste0(outdir, '/figs/maps/', voi, ".pdf")
       ggsave(filename = filename, plot = s)

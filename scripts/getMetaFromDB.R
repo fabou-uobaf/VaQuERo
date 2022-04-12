@@ -67,6 +67,9 @@
   ## filter for data set fullfiling all criteria
   samples_with_seqdata_with_wwplants_db %>% filter(! is.na(BSF_run) & ! is.na(BSF_sample_name) & ! is.na(BSF_start_date) & ! is.na(LocationID) & ! is.na(LocationName) & ! is.na(N_in_Consensus) & ! is.na(RNA_ID_int) & ! is.na(adress_town) & ! is.na(connected_people) & ! is.na(dcpLatitude) & ! is.na(dcpLongitude) & ! is.na(include_in_report) & ! is.na(report_category) & ! is.na(sample_date) & ! is.na(status)) -> samples_with_seqdata_with_wwplants_db
   
+  ## set status to pass if regex fit with pass (e.g. passed_qc; in former pango version)
+  samples_with_seqdata_with_wwplants_db %>% mutate(status = ifelse(grepl("^pass", status), "pass", status)) -> samples_with_seqdata_with_wwplants_db
+  
   coi <- c("BSF_run", "BSF_sample_name", "BSF_start_date", "LocationID", "LocationName", "N_in_Consensus", "RNA_ID_int", "additional_information", "adress_town", "connected_people", "dcpLatitude", "dcpLongitude", "include_in_report", "report_category", "sample_date", "status")
 
   samples_with_seqdata_with_wwplants_db %>% select(all_of(coi)) -> metaData  
