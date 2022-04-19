@@ -8,6 +8,8 @@
   option_list = list(
   make_option(c("--cat"), type="character", default="general", 
               help="Report categories to be considered [default %default]", metavar="character"),
+  make_option(c("--samples"), type="character", default=NA, 
+              help="List of samples to be considered [default %default]", metavar="character"),
   make_option(c("--server"), type="character", default="undisclosed", 
               help="Server name [default %default]", metavar="character"),
   make_option(c("--db"), type="character", default="undisclosed", 
@@ -23,7 +25,11 @@
   opt = parse_args(opt_parser);
   
   # samples considered if asociated with any of the following tags
-  reportcategories <- unlist(str_split(opt$cat, pattern=c(";",",")))
+  reportcategories <- unique(unlist(str_split(opt$cat, pattern=c(";",","))))
+  
+  # samples considered by sample ID
+  reportsamples <- unique(unlist(str_split(opt$samples, pattern=c(";", ","))))
+  reportsamples <- reportsamples[!grepl(paste(c(";", ","), collapse="|"), reportsamples)]
 
   # connect to data base
   con <- dbConnect(odbc(),
@@ -49,9 +55,16 @@
   
   left_join(x = samples_with_seqdata_db, y = sewagePlants_db, by = "LocationID", suffix = c(".db",".location")) -> samples_with_seqdata_with_wwplants_db
   
-  samples_with_seqdata_with_wwplants_db %>% filter(host == "wastewater")  %>% filter(include_in_report == TRUE | is.na(include_in_report)) %>% mutate(include_in_report = TRUE) %>% filter(!is.na(sample_date)) -> samples_with_seqdata_with_wwplants_db
+  if (all(is.na(reportsamples))){
+    samples_with_seqdata_with_wwplants_db %>% filter(host == "wastewater")  %>% filter(include_in_report == TRUE | is.na(include_in_report)) %>% mutate(include_in_report = TRUE) %>% filter(!is.na(sample_date)) -> samples_with_seqdata_with_wwplants_db
   
-  samples_with_seqdata_with_wwplants_db  %>% filter(grepl(paste(reportcategories,collapse="|"), report_category)) -> samples_with_seqdata_with_wwplants_db
+    samples_with_seqdata_with_wwplants_db  %>% filter(grepl(paste(reportcategories,collapse="|"), report_category)) -> samples_with_seqdata_with_wwplants_db
+  } else{
+    samples_with_seqdata_with_wwplants_db %>% mutate(include_in_report = TRUE) %>% filter(!is.na(sample_date)) -> samples_with_seqdata_with_wwplants_db
+  
+    samples_with_seqdata_with_wwplants_db  %>% filter(RNA_ID_int %in% reportsamples ) -> samples_with_seqdata_with_wwplants_db
+    
+  }
   
   ## replace unset but essantial fields
   samples_with_seqdata_with_wwplants_db %>% mutate(adress_town = ifelse(is.na(adress_town) & !is.na(connected_towns), connected_towns, adress_town)) -> samples_with_seqdata_with_wwplants_db
