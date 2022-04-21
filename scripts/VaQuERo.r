@@ -206,6 +206,7 @@ highlightedVariants <- unlist(str_split(opt$highlight, pattern=c(";",",")))
 ## define global variables to fill
 globalFittedData <- data.table(variant = character(), LocationID = character(), LocationName  = character(), sample_id = character(), sample_date = character(), value = numeric() )
 globalFullData <- data.table(variant = character(), LocationID = character(), LocationName  = character(), sample_date = character(), value = numeric(), marker = character(), singlevalue = numeric() )
+globalFullSoiData <- data.table(variant = character(), LocationID = character(), LocationName  = character(), sample_date = character(), marker = character(), value = numeric())
 
 # check for same date, same location issue
 # introduce artifical decimal date
@@ -381,11 +382,16 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
     ### define data collector
     plantFittedData <- data.table(variant = character(), LocationID = character(), LocationName  = character(), sample_id = character(), sample_date = character(), value = numeric() )
     plantFullData <- data.table(variant = character(), LocationID = character(), LocationName  = character(), sample_date = character(), value = numeric(), marker = character(), singlevalue = numeric() )
-    plantFullSoiData <- data.table(variant = character(), LocationID = character(), LocationName  = character(), sample_date = character(), value = numeric(), marker = character(), singlevalue = numeric(), AA = character() )
+    plantFullSoiData <- data.table(variant = character(), LocationID = character(), LocationName  = character(), sample_date = character(), marker = character(), value = numeric())
     
     ### filter data set for current location
     sewage_samps.dt %>% filter(LocationID == roi) %>% dplyr::select("Variants", "ID", "sample_date", "sample_date_decimal", "value.freq", "value.depth", "LocationID", "LocationName", "NUC") %>% filter(NUC %notin% exsoimut) -> sdt
     sewage_samps.dt %>% filter(LocationID == roi) %>% dplyr::select("Variants", "ID", "sample_date", "sample_date_decimal", "value.freq", "value.depth", "LocationID", "LocationName", "NUC") %>% filter(NUC %in% soimut) -> spemut_sdt
+    
+    ### collect frequency of special mutations
+    left_join(x = spemut_sdt, y = soi, by = "NUC") %>% rowwise() %>% mutate(marker = paste(sep = "|", NUC, paste(Gene, AA, sep = ":"), paste0("[", Variants.y, "]")) ) %>% dplyr::select(Variants.y, LocationID, LocationName, sample_date, marker, value.freq) -> plantFullSoiData
+    colnames(plantFullSoiData) <- c("variant", "LocationID", "LocationName", "sample_date", "marker", "value")
+    rbind(plantFullSoiData, globalFullSoiData) -> globalFullSoiData
     
     ## count how many sample from this plant were in the last BSF run
     metaDT %>% filter(BSF_sample_name %in% sdt$ID) %>% filter(BSF_run %in% last_BSF_run_id) %>% dplyr::select(BSF_run) %>% group_by(BSF_run) %>% summarize(n = n()) -> count_last_BSF_run_id
@@ -564,9 +570,9 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
         if(dim(spemut_draw2)[1] > 0){
           print(paste("     PROGRESS: plotting special mutations", roiname))
           left_join(x = spemut_draw2, y = soi, by = "NUC") -> spemut_draw2
-          spemut_draw2 %>% rowwise() %>% mutate(AAaux = paste(AA, paste0("(", Variants, ")"))) -> spemut_draw2
+          spemut_draw2 %>% rowwise() %>% mutate(marker =  paste(sep = "|", NUC, paste(Gene, AA, sep = ":"), paste0("[", Variants, "]")) ) -> spemut_draw2
           colnames(spemut_draw2)[colnames(spemut_draw2) == "Variants"] <- "variant"
-          q2 + geom_point(data = spemut_draw2, aes(x = as.Date(sample_date), y = value.freq, shape = AAaux, fill = AAaux), color = "black", size = 2, alpha = .45) -> q2
+          q2 + geom_point(data = spemut_draw2, aes(x = as.Date(sample_date), y = value.freq, shape = marker, fill = marker), color = "black", size = 2, alpha = .45) -> q2
           q2 + scale_shape_manual(values = 1:25) -> q2
           q2 + guides(shape = guide_legend(title = "Spezial-\nMutationen", nrow = 2, title.position = "top"), fill = guide_legend(title = "Spezial-\nMutationen", nrow = 2, title.position = "top"), col = guide_legend(title = "Varianten", nrow = 2, title.position = "top")) -> q2
         
@@ -588,9 +594,9 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
         if(dim(spemut_draw1)[1] > 0){
           print(paste("     PROGRESS: plotting special mutations VoI", roiname))
           left_join(x = spemut_draw1, y = soi, by = "NUC") -> spemut_draw1
-          spemut_draw1 %>% rowwise() %>% mutate(AAaux = paste(AA, paste0("(", Variants, ")"))) -> spemut_draw1
+          spemut_draw1 %>% rowwise() %>% mutate(marker = paste(sep = "|", NUC, paste(Gene, AA, sep = ":"), paste0("[", Variants, "]")) ) -> spemut_draw1
           colnames(spemut_draw1)[colnames(spemut_draw1) == "Variants"] <- "variant"
-          q1 + geom_point(data = spemut_draw1, aes(x = as.Date(sample_date), y = value.freq, shape = AAaux, fill = AAaux), color = "black", size = 2, alpha = .45) -> q1
+          q1 + geom_point(data = spemut_draw1, aes(x = as.Date(sample_date), y = value.freq, shape = marker, fill = marker), color = "black", size = 2, alpha = .45) -> q1
           q1 + scale_shape_manual(values = 1:25) -> q1
           q1 + guides(shape = guide_legend(title = "Spezial-\nMutationen", nrow = 2, title.position = "top"), fill = guide_legend(title = "Spezial-\nMutationen", nrow = 2, title.position = "top"), col = guide_legend(title = "Varianten", nrow = 2, title.position = "top")) -> q1
 
@@ -638,6 +644,7 @@ print(paste("PROGRESS: loop over WWTP finished"))
 print(paste("PROGRESS: writing result tables"))
 fwrite(globalFittedData, file = paste0(outdir, "/globalFittedData.csv"), sep = "\t")
 fwrite(globalFullData, file = paste0(outdir, "/globalFullData.csv"), sep = "\t")
+fwrite(globalFullSoiData, file = paste0(outdir, "/globalSpecialmutData.csv"), sep = "\t")
 
 ## print overview of all VoI and all plants
 print(paste("PROGRESS: start plotting overviews"))
