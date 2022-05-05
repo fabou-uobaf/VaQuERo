@@ -80,13 +80,13 @@ opt = parse_args(opt_parser);
 
 
 #####################################################
-#### easi parameter setting for interactive debugging
+####  parameter setting for interactive debugging
 if(FALSE){
   opt$dir = "sandbox"
   opt$metadata = "data/metaDataSub.tsv"
   opt$data="data/mutationDataSub.tsv"
   opt$marker="VaQuERo/resources/mutations_list_grouped_2022-04-11_Austria.csv"
-  opt$smarker="VaQuERo/resources/mutations_special_2022-04-19.csv"
+  opt$smarker="VaQuERo/resources/mutations_special_2022-05-03.csv"
   opt$pmarker="VaQuERo/resources/mutations_problematic_vss1_v3.csv"
   opt$zero=0.02
   opt$depth=250
@@ -564,9 +564,9 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
         rm(q3, filename, plantFittedData2, FillIdx, LabelTxt, GrpIdx, g)
       
         ## print faceted line plot of fitted values for all detected lineages
-        plantFittedData %>% ggplot(aes(x = as.Date(sample_date), y = value, col = variant)) + geom_line(alpha = 0.6) + geom_point(alpha = 0.66, shape = 13) + geom_vline(xintercept = as.Date(latestSample$latest), linetype = "dotdash", color = "grey", size =  0.5) + scale_color_manual(values = colorAssignment$fill, breaks = colorAssignment$category, name = "Varianten") + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1)) + theme_bw() + theme(legend.position="bottom", strip.background = element_rect(fill="grey97")) + scale_x_date(date_breaks = "2 weeks", date_labels =  "%b %d", limits = c(as.Date(latestSample$latest)-90, as.Date(latestSample$latest))) + ylab(paste0("Variantenanteil [1/1]") ) + xlab("") -> q2
+        plantFittedData %>% filter(sample_date > as.Date(latestSample$latest)-61) %>% group_by(variant) %>% mutate(maxValue = max(value)) %>% filter(maxValue > 0) %>% ggplot(aes(x = as.Date(sample_date), y = value, col = variant)) + geom_line(alpha = 0.6) + geom_point(alpha = 0.66, shape = 13) + geom_vline(xintercept = as.Date(latestSample$latest), linetype = "dotdash", color = "grey", size =  0.5) + scale_color_manual(values = colorAssignment$fill, breaks = colorAssignment$category, name = "Varianten") + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1)) + theme_bw() + theme(legend.position="bottom", strip.background = element_rect(fill="grey97")) + scale_x_date(date_breaks = "2 weeks", date_labels =  "%b %d", limits = c(as.Date(latestSample$latest)-61, as.Date(latestSample$latest))) + ylab(paste0("Variantenanteil [1/1]") ) + xlab("") -> q2
       
-        spemut_sdt %>% filter(value.freq > zeroo) %>% dplyr::select("ID", "sample_date", "value.freq", "LocationID", "LocationName", "NUC") -> spemut_draw2
+        spemut_sdt %>% filter(value.freq > 0) %>% dplyr::select("ID", "sample_date", "value.freq", "LocationID", "LocationName", "NUC") %>% filter(sample_date > as.Date(latestSample$latest)-61) -> spemut_draw2
         if(dim(spemut_draw2)[1] > 0){
           print(paste("     PROGRESS: plotting special mutations", roiname))
           left_join(x = spemut_draw2, y = soi, by = "NUC") -> spemut_draw2
@@ -574,10 +574,10 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
           colnames(spemut_draw2)[colnames(spemut_draw2) == "Variants"] <- "variant"
           q2 + geom_point(data = spemut_draw2, aes(x = as.Date(sample_date), y = value.freq, shape = marker, fill = marker), color = "black", size = 2, alpha = .45) -> q2
           q2 + scale_shape_manual(values = 1:25) -> q2
-          q2 + guides(shape = guide_legend(title = "Spezial-\nMutationen", nrow = 2, title.position = "top"), fill = guide_legend(title = "Spezial-\nMutationen", nrow = 2, title.position = "top"), col = guide_legend(title = "Varianten", nrow = 2, title.position = "top")) -> q2
+          q2 + guides(shape = guide_legend(title = "Spezial-Mutationen", ncol = 2, title.position = "top"), fill = guide_legend(title = "Spezial-Mutationen", ncol = 2, title.position = "top"), col = guide_legend(title = "Varianten", ncol = 1, title.position = "top")) -> q2
         
           filename <- paste0(outdir, '/figs/specialMutations', paste('/klaerwerk', roi, "all", sep="_"), ".pdf")
-          ggsave(filename = filename, plot = q2, width = plotWidth, height = plotHeight)
+          #ggsave(filename = filename, plot = q2, width = plotWidth, height = plotHeight)
           fwrite(as.list(c("specialMutations", c( ifelse(dim(count_last_BSF_run_id)[1] > 0, "current", "old"), roiname, "all",filename))), file = summaryDataFile, append = TRUE, sep = "\t")
         }
         rm(q2,filename,spemut_draw2)
@@ -588,9 +588,9 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 
         ## print faceted line plot of fitted values for all VoI
         colorAssignment %>% filter(category %in% VoI) -> colorAssignmentVoI
-        plantFittedData %>% filter(variant %in% VoI) %>% ggplot(aes(x = as.Date(sample_date), y = value, col = variant)) + geom_line(alpha = 0.6) + geom_point(alpha = 0.66, shape = 13) + geom_vline(xintercept = as.Date(latestSample$latest), linetype = "dotdash", color = "grey", size =  0.5)  + scale_color_manual(values = colorAssignmentVoI$fill, breaks = colorAssignmentVoI$category, name = "Varianten") + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1)) + theme_bw() + theme(legend.position="bottom", strip.background = element_rect(fill="grey97")) + scale_x_date(date_breaks = "2 weeks", date_labels =  "%b %d", limits = c(as.Date(latestSample$latest)-90, as.Date(latestSample$latest))) + ylab(paste0("Variantenanteil [1/1]") ) + xlab("") -> q1
+        plantFittedData %>% filter(variant %in% VoI) %>% filter(sample_date > as.Date(latestSample$latest)-61) %>% group_by(variant) %>% mutate(maxValue = max(value)) %>% filter(maxValue > 0) %>% ggplot(aes(x = as.Date(sample_date), y = value, col = variant)) + geom_line(alpha = 0.6) + geom_point(alpha = 0.66, shape = 13) + geom_vline(xintercept = as.Date(latestSample$latest), linetype = "dotdash", color = "grey", size =  0.5)  + scale_color_manual(values = colorAssignmentVoI$fill, breaks = colorAssignmentVoI$category, name = "Varianten") + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1)) + theme_bw() + theme(legend.position="bottom", strip.background = element_rect(fill="grey97")) + scale_x_date(date_breaks = "2 weeks", date_labels =  "%b %d", limits = c(as.Date(latestSample$latest)-61, as.Date(latestSample$latest))) + ylab(paste0("Variantenanteil [1/1]") ) + xlab("") -> q1
       
-        spemut_sdt %>% filter(value.freq > zeroo) %>% dplyr::select("ID", "sample_date", "value.freq", "LocationID", "LocationName", "NUC") -> spemut_draw1
+        spemut_sdt %>% filter(value.freq > 0) %>% dplyr::select("ID", "sample_date", "value.freq", "LocationID", "LocationName", "NUC")  %>% filter(sample_date > as.Date(latestSample$latest)-61) -> spemut_draw1
         if(dim(spemut_draw1)[1] > 0){
           print(paste("     PROGRESS: plotting special mutations VoI", roiname))
           left_join(x = spemut_draw1, y = soi, by = "NUC") -> spemut_draw1
@@ -598,7 +598,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
           colnames(spemut_draw1)[colnames(spemut_draw1) == "Variants"] <- "variant"
           q1 + geom_point(data = spemut_draw1, aes(x = as.Date(sample_date), y = value.freq, shape = marker, fill = marker), color = "black", size = 2, alpha = .45) -> q1
           q1 + scale_shape_manual(values = 1:25) -> q1
-          q1 + guides(shape = guide_legend(title = "Spezial-\nMutationen", nrow = 2, title.position = "top"), fill = guide_legend(title = "Spezial-\nMutationen", nrow = 2, title.position = "top"), col = guide_legend(title = "Varianten", nrow = 2, title.position = "top")) -> q1
+          q1 + guides(shape = guide_legend(title = "Spezial-Mutationen", ncol = 2, title.position = "top"), fill = guide_legend(title = "Spezial-Mutationen", ncol = 2, title.position = "top"), col = guide_legend(title = "Varianten", ncol = 1, title.position = "top")) -> q1
 
       
           filename <- paste0(outdir, '/figs/specialMutations', paste('/klaerwerk', roi, "VoI", sep="_"), ".pdf")
