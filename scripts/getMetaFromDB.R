@@ -19,7 +19,9 @@
   make_option(c("--pwd"), type="character", default="undisclosed", 
               help="Password for DB [default %default]", metavar="character"),
   make_option(c("--out"), type="character", default="metaData_general.csv", 
-              help="path to outputfile [default %default]", metavar="character")
+              help="path to outputfile [default %default]", metavar="character"),
+  make_option(c("--since"), type="character", default="2020-01-01", 
+              help="earliest time point [default %default]", metavar="character")
   );
   opt_parser = OptionParser(option_list=option_list);
   opt = parse_args(opt_parser);
@@ -30,6 +32,9 @@
   # samples considered by sample ID
   reportsamples <- unique(unlist(str_split(opt$samples, pattern=c(";", ","))))
   reportsamples <- reportsamples[!grepl(paste(c(";", ","), collapse="|"), reportsamples)]
+  
+  # set time limit from when on samples shall be considered
+  periodStart = opt$since
 
   # connect to data base
   con <- dbConnect(odbc(),
@@ -85,6 +90,11 @@
   
   coi <- c("BSF_run", "BSF_sample_name", "BSF_start_date", "LocationID", "LocationName", "N_in_Consensus", "RNA_ID_int", "additional_information", "adress_town", "connected_people", "dcpLatitude", "dcpLongitude", "include_in_report", "report_category", "sample_date", "status")
 
-  samples_with_seqdata_with_wwplants_db %>% select(all_of(coi)) -> metaData  
+  samples_with_seqdata_with_wwplants_db %>% select(all_of(coi)) -> metaData
+  
+  ## filter samples after periodStart
+  metaData %>% filter(as.Date(sample_date) >= as.Date(periodStart)) -> metaData
+  
+  ## write data to file
   fwrite(metaData, file = opt$out, sep = "\t", col.names = T, row.names = F)
 
