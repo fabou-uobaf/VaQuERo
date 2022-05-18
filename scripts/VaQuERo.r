@@ -83,9 +83,9 @@ opt = parse_args(opt_parser);
 ####  parameter setting for interactive debugging
 if(FALSE){
   opt$dir = "sandbox"
-  opt$metadata = "data/metaDataSub.tsv"
-  opt$data="data/mutationDataSub.tsv"
-  opt$marker="VaQuERo/resources/mutations_list_grouped_2022-04-11_Austria.csv"
+  opt$metadata = "VaQuERo/data/metaDataSub.tsv"
+  opt$data="VaQuERo/data/mutationDataSub.tsv"
+  opt$marker="VaQuERo/resources/mutations_list_grouped_2022-05-17_Austria.csv"
   opt$smarker="VaQuERo/resources/mutations_special_2022-05-03.csv"
   opt$pmarker="VaQuERo/resources/mutations_problematic_vss1_v3.csv"
   opt$zero=0.02
@@ -96,8 +96,8 @@ if(FALSE){
   opt$minmarkfrac=0.15
   opt$smoothingsamples=2
   opt$smoothingtime=8
-  opt$voi="BA.1,BA.2,B.1.640,B.1.351,P.1,B.1.617.2,B.1.621,B.1.1.7"
-  opt$highlight="BA.1,BA.2,B.1.640,B.1.617.2,B.1.1.7"
+  opt$voi="BA.4,BA.5,BA.1,BA.2,B.1.617.2,B.1.1.7"
+  opt$highlight="BA.4,BA.5,BA.1,BA.2,B.1.617.2,B.1.1.7"
   print("Warning: command line option overwritten")
 }
 #####################################################
@@ -137,13 +137,6 @@ writeLines("\n\n\n")
 
 ## read in config file to overwrite all para below
 
-## read in mutations and meta data 
-
-print(paste0("PROGRESS: read meta data "))
-metaDT       <- fread(file = opt$metadata)
-print(paste0("PROGRESS: read AF data "))
-sewage_samps <- read.table(opt$data , header=TRUE, sep="\t" ,na.strings = ".")
-
 ## set variable parameters
 summaryDataFile <- paste0(opt$dir, "/summary.csv")
 markermutationFile  <- opt$marker
@@ -159,6 +152,7 @@ plotHeight <- opt$plotheight
 
 ## create directory to write plots
 print(paste0("PROGRESS: create directory "))
+timestamp()
 outdir = opt$dir
 if( ! dir.exists(outdir)){
   dir.create(outdir, showWarnings = FALSE)
@@ -208,6 +202,49 @@ globalFittedData <- data.table(variant = character(), LocationID = character(), 
 globalFullData <- data.table(variant = character(), LocationID = character(), LocationName  = character(), sample_date = character(), value = numeric(), marker = character(), singlevalue = numeric() )
 globalFullSoiData <- data.table(variant = character(), LocationID = character(), LocationName  = character(), sample_date = character(), marker = character(), value = numeric())
 
+
+## read in mutations and meta data 
+print(paste0("PROGRESS: read meta data "))
+metaDT       <- fread(file = opt$metadata)
+print(paste0("PROGRESS: read AF data "))
+timestamp()
+sewage_samps <- read.table(opt$data , header=TRUE, sep="\t" ,na.strings = ".")
+
+
+## read mutations of interest from file
+moi <- fread(file = markermutationFile)
+unite(moi, NUC, c(4,3,5), ALT, sep = "", remove = FALSE) -> moi
+
+## read special mutations of interest from file
+soi <- fread(file = specialmutationFile)
+unite(soi, NUC, c(4,3,5), ALT, sep = "", remove = FALSE) -> soi
+soi %>% dplyr::select("Variants","NUC", "AA") -> special
+
+## read special mutations of interest from file
+poi <- fread(file = problematicmutationFile)
+unite(poi, NUC, c(4,3,5), ALT, sep = "", remove = FALSE) -> poi
+poi %>% dplyr::select("PrimerSet","NUC", "AA") -> problematic
+
+## remove all problematic sites from soi and moi
+moi %>% filter(NUC %notin% poi$NUC) -> moi
+soi %>% filter(NUC %notin% poi$NUC) -> soi
+
+## define subset of marker and special mutations
+allmut   <- unique(c(moi$NUC, soi$NUC))
+exsoimut <- allmut[allmut %notin% moi$NUC]
+soimut   <- soi$NUC
+
+## remove mutation positions from input data which is not used further
+sewage_samps %>% filter(POS %in% unique(sort(c(moi$Postion, soi$Postion)))) -> sewage_samps
+
+## check if all voi can be detected in principle given used parameters
+moi %>% filter(!grepl(";", Variants)) %>% group_by(Variants) %>% summarise(n = n()) %>% filter(n < minUniqMarker) -> moi.futile
+if(dim(moi.futile)[1] > 0){
+  for (c in seq_along(moi.futile$Variants)){
+    message(paste("Warning(s):", moi.futile[c,1], "can bnot be detected since only", moi.futile[c,2], "unique markers defined, but", minUniqMarker, "needed"))
+  }
+}
+
 # check for same date, same location issue
 # introduce artifical decimal date
 metaDT %>% group_by(LocationID, sample_date) %>% mutate(n = rank(BSF_sample_name)-1)  %>% ungroup() %>% mutate(sample_date_decimal = decimalDate(sample_date, n)) %>% dplyr::select(-n) -> metaDT
@@ -241,6 +278,7 @@ print(table(mapSeqDT$status))
 
 ## generate empty map
 print(paste0("PROGRESS: print STATUS map"))
+timestamp()
 
 World <- ne_countries(scale = "medium", returnclass = "sf")
 Country <- subset(World, name_sort == mapCountry)
@@ -263,29 +301,6 @@ filename <- paste0(outdir, "/figs/maps/STATUS.pdf")
 ggsave(filename = filename, plot = s)
 fwrite(as.list(c("statusmapplot", "status", filename)), file = summaryDataFile, append = TRUE, sep = "\t")
 rm(s, filename)
-
-## read mutations of interest from file
-moi <- fread(file = markermutationFile)
-unite(moi, NUC, c(4,3,5), ALT, sep = "", remove = FALSE) -> moi
-
-## read special mutations of interest from file
-soi <- fread(file = specialmutationFile)
-unite(soi, NUC, c(4,3,5), ALT, sep = "", remove = FALSE) -> soi
-soi %>% dplyr::select("Variants","NUC", "AA") -> special
-
-## read special mutations of interest from file
-poi <- fread(file = problematicmutationFile)
-unite(poi, NUC, c(4,3,5), ALT, sep = "", remove = FALSE) -> poi
-poi %>% dplyr::select("PrimerSet","NUC", "AA") -> problematic
-
-## remove all problematic sites from soi and moi
-moi %>% filter(NUC %notin% poi$NUC) -> moi
-soi %>% filter(NUC %notin% poi$NUC) -> soi
-
-## define subset of marker and special mutations
-allmut   <- unique(c(moi$NUC, soi$NUC))
-exsoimut <- allmut[allmut %notin% moi$NUC]
-soimut   <- soi$NUC
 
 
 ## exchange VoI with merged VoI
@@ -374,6 +389,7 @@ print(paste("LOG: latest sample in current run:", latestSample$latest))
 
 ### FROM HERE LOOP OVER EACH SEWAGE PLANTS
 print(paste("PROGRESS: start to loop over WWTP"))
+timestamp()
 for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
     roi = unique(sewage_samps.dt$LocationID)[r]
     roiname = unique(sewage_samps.dt$LocationName)[r]
