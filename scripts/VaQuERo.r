@@ -84,17 +84,17 @@ opt = parse_args(opt_parser);
 if(FALSE){
   opt$dir = "sandbox"
   opt$metadata = "VaQuERo/data/metaDataSub.tsv"
-  opt$data="VaQuERo/data/mutationDataSub.tsv"
+  opt$data="VaQuERo/data/mutationDataSub.tsv"    
   opt$marker="VaQuERo/resources/mutations_list_grouped_2022-05-17_Austria.csv"
   opt$smarker="VaQuERo/resources/mutations_special_2022-05-03.csv"
   opt$pmarker="VaQuERo/resources/mutations_problematic_vss1_v3.csv"
   opt$zero=0.02
   opt$depth=250
-  opt$minuniqmark=3
-  opt$minuniqmarkfrac=0.15
-  opt$minqmark=3
+  opt$minuniqmark=3  
+  opt$minuniqmarkfrac=0.15  
+  opt$minqmark=3  
   opt$minmarkfrac=0.15
-  opt$smoothingsamples=2
+  opt$smoothingsamples=2 
   opt$smoothingtime=8
   opt$voi="BA.4,BA.5,BA.1,BA.2,B.1.617.2,B.1.1.7"
   opt$highlight="BA.4,BA.5,BA.1,BA.2,B.1.617.2,B.1.1.7"
@@ -393,7 +393,7 @@ timestamp()
 for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
     roi = unique(sewage_samps.dt$LocationID)[r]
     roiname = unique(sewage_samps.dt$LocationName)[r]
-    print(paste("     PROGRESS:", roiname))
+    print(paste("PROGRESS:", roiname))
         
     ### define data collector
     plantFittedData <- data.table(variant = character(), LocationID = character(), LocationName  = character(), sample_id = character(), sample_date = character(), value = numeric() )
@@ -425,11 +425,15 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
     
     ### FROM HERE LOOP OVER TIME POINTS
     timePoints <- sort(unique(sdt$sample_date_decimal))
+    timePoints_classic <- sort(unique(sdt$sample_date))
+
+    
     if (length(timePoints) >= timeStart){
     for (t in timeStart:length(timePoints)){
 
       timepoint <- timePoints[t]
-      print(paste("             PROGRESS:", roiname, "@", timepoint))
+      timepoint_classic <- timePoints_classic[t]
+      print(paste("PROGRESS:", roiname, "@", timepoint_classic, "(", signif(timepoint, digits = 7), ")"))
             
       lowerDiff <- ifelse(t > timeLag, timeLag, t-1)
       upperDiff <- ifelse((t+timeLag) <= length(timePoints), timeLag, length(timePoints)-t)
@@ -454,15 +458,19 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
       specifiedLineages <- uniqMarkerPerVariant[uniqMarkerPerVariant %in% markerPerVariant]
       rm(ssdt2, ssdt3, uniqMarkerPerVariant, markerPerVariant)
       
-      print(paste("LOG:", timepoint, roiname, paste("(+", length(allTimepoints[allTimepoints %notin% timepoint]), "neighboring TP;", length(specifiedLineages), "detected lineages)")))
+      print(paste("LOG:", timepoint_classic, roiname, paste("(+", length(allTimepoints[allTimepoints %notin% timepoint]), "neighboring TP;", length(specifiedLineages), "detected lineages)")))
       
       
       if( length(specifiedLineages) > 0){
         print(paste("LOG:", "TRY REGRESSION WITH", length(specifiedLineages), "LINEAGES"))
         # join model matrix columns to measured variables
         smmat <- as.data.frame(mmat)[,which(colnames(mmat) %in% c("NUC", specifiedLineages))]
+        if (length(specifiedLineages) > 1){
+          smmat$groupflag <- apply( as.data.frame(mmat)[,which(colnames(mmat) %in% c(specifiedLineages))], 1 , paste , collapse = "" )
+        } else{
+          smmat$groupflag <-  1
+        }
         left_join(x = ssdt, y = smmat, by = c("NUC")) -> ssdt
-      
         
         ## remove mutations which are not marker of any of the specifiedLineages
         ## remove mutations which are marker of all of the specifiedLineages 
@@ -473,15 +481,24 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
           ssdt[as.data.frame(ssdt)[,colnames(ssdt) %in% specifiedLineages ] > 0,] -> ssdt
           ssdt[as.data.frame(ssdt)[,colnames(ssdt) %in% unique(specifiedLineages, highlightedVariants) ] > 0,] -> detour4log
         }
-  
+          
         ## remove zeros and low depth
         ssdt %>% filter(value.freq > zeroo)  %>% filter(value.depth > min.depth) -> ssdt
 
         ## transform to avoid 1
         ssdt %>% mutate(value.freq = (value.freq * (value.depth-1) + 0.5)/value.depth) -> ssdt
+
         
         ## remove "OTHERS"
         ssdt %>% filter(!grepl("other", Variants)) -> ssdt
+
+        ## remove outlier per group flag 
+        dim(ssdt)[1] -> mutationsBeforeOutlierRemoval
+        ssdt %>% group_by(groupflag) %>% mutate(iqr = IQR(value.freq)) %>% mutate(upperbond = quantile(value.freq, 0.75) + 2.5 * iqr, lowerbond = quantile(value.freq, 0.25) - 2.5 * iqr) %>% filter(value.freq < upperbond & value.freq > lowerbond) %>% ungroup() %>% dplyr::select(-"groupflag", -"iqr", -"upperbond", -"lowerbond") -> ssdt
+        dim(ssdt)[1] -> mutationsAfterOutlierRemoval
+        if(mutationsAfterOutlierRemoval < mutationsBeforeOutlierRemoval){
+          print(paste("LOG: ", mutationsBeforeOutlierRemoval-mutationsAfterOutlierRemoval, "mutations ignored since classified as outlier"))
+        }
       
         ## generate regression formula
         if ( length(specifiedLineages) > 1 ){
