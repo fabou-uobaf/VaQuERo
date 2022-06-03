@@ -84,7 +84,7 @@ opt = parse_args(opt_parser);
 if(FALSE){
   opt$dir = "sandbox"
   opt$metadata = "VaQuERo/data/metaDataSub.tsv"
-  opt$data="VaQuERo/data/mutationDataSub.tsv"    
+  opt$data="VaQuERo/data/mutationDataSub.tsv"
   opt$marker="VaQuERo/resources/mutations_list_grouped_2022-05-17_Austria.csv"
   opt$smarker="VaQuERo/resources/mutations_special_2022-05-03.csv"
   opt$pmarker="VaQuERo/resources/mutations_problematic_vss1_v3.csv"
@@ -424,21 +424,25 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 
     
     ### FROM HERE LOOP OVER TIME POINTS
-    timePoints <- sort(unique(sdt$sample_date_decimal))
-    timePoints_classic <- sort(unique(sdt$sample_date))
+    sdt %>% dplyr::select(sample_date_decimal, sample_date) %>% distinct() -> timePointsCombinations
+    timePoints <- timePointsCombinations$sample_date_decimal[order(timePointsCombinations$sample_date_decimal)]
+    timePoints_classic <- timePointsCombinations$sample_date[order(timePointsCombinations$sample_date_decimal)]
 
     
     if (length(timePoints) >= timeStart){
     for (t in timeStart:length(timePoints)){
-
+      
       timepoint <- timePoints[t]
       timepoint_classic <- timePoints_classic[t]
-      print(paste("PROGRESS:", roiname, "@", timepoint_classic, "(", signif(timepoint, digits = 7), ")"))
+      T <- which(timePoints_classic == timepoint_classic)
+      timepoint <- timePoints[T]    
+      print(paste("PROGRESS:", roiname, "@", timepoint_classic, "(", signif(timepoint, digits = 10), ")"))
             
-      lowerDiff <- ifelse(t > timeLag, timeLag, t-1)
-      upperDiff <- ifelse((t+timeLag) <= length(timePoints), timeLag, length(timePoints)-t)
+      lowerDiff <- ifelse(min(T) > timeLag, timeLag, min(T)-1)
+      upperDiff <- ifelse((max(T)+timeLag) <= length(timePoints), timeLag, length(timePoints)-max(T))
       diffs <- (-lowerDiff:upperDiff)
-      allTimepoints <- timePoints[t+diffs]
+      allTimepoints <- timePoints[min(T+diffs):max(T+diffs)]
+      allTimepoints_classic <- timePoints_classic[min(T+diffs):max(T+diffs)]
       if(any(abs(as.numeric(timepoint - allTimepoints)) <= (timeLagDay/(leapYear(floor(timepoint)))))){
         allTimepoints <- allTimepoints[abs(as.numeric(timepoint - allTimepoints)) <= timeLagDay/(leapYear(floor(timepoint)))]
       } else{
@@ -458,7 +462,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
       specifiedLineages <- uniqMarkerPerVariant[uniqMarkerPerVariant %in% markerPerVariant]
       rm(ssdt2, ssdt3, uniqMarkerPerVariant, markerPerVariant)
       
-      print(paste("LOG:", timepoint_classic, roiname, paste("(+", length(allTimepoints[allTimepoints %notin% timepoint]), "neighboring TP;", length(specifiedLineages), "detected lineages)")))
+      print(paste("LOG:", timepoint_classic, roiname, paste("(",length(allTimepoints[allTimepoints %in% timepoint]), "same day;", "+", length(allTimepoints[allTimepoints %notin% timepoint]), "neighboring TP;", length(specifiedLineages), "detected lineages)")))
       
       
       if( length(specifiedLineages) > 0){
@@ -468,9 +472,10 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
         if (length(specifiedLineages) > 1){
           smmat$groupflag <- apply( as.data.frame(mmat)[,which(colnames(mmat) %in% c(specifiedLineages))], 1 , paste , collapse = "" )
         } else{
-          smmat$groupflag <-  1
+          smmat$groupflag <-  as.data.frame(mmat)[,which(colnames(mmat) %in% c(specifiedLineages))]
         }
         left_join(x = ssdt, y = smmat, by = c("NUC")) -> ssdt
+        ssdt %>% ungroup() %>% mutate(groupflag = paste(groupflag, ifelse(grepl(";", Variants), "M", "U"), sample_date_decimal)) -> ssdt
         
         ## remove mutations which are not marker of any of the specifiedLineages
         ## remove mutations which are marker of all of the specifiedLineages 
@@ -489,15 +494,15 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
         ssdt %>% mutate(value.freq = (value.freq * (value.depth-1) + 0.5)/value.depth) -> ssdt
 
         
-        ## remove "OTHERS"
+        # remove "OTHERS"
         ssdt %>% filter(!grepl("other", Variants)) -> ssdt
 
         ## remove outlier per group flag 
         dim(ssdt)[1] -> mutationsBeforeOutlierRemoval
-        ssdt %>% group_by(groupflag) %>% mutate(iqr = IQR(value.freq)) %>% mutate(upperbond = quantile(value.freq, 0.75) + 2.5 * iqr, lowerbond = quantile(value.freq, 0.25) - 2.5 * iqr) %>% filter(value.freq < upperbond & value.freq > lowerbond) %>% ungroup() %>% dplyr::select(-"groupflag", -"iqr", -"upperbond", -"lowerbond") -> ssdt
+        ssdt %>% group_by(groupflag) %>% mutate(iqr = IQR(value.freq)) %>% mutate(upperbond = quantile(value.freq, 0.75) + 1.5 * iqr, lowerbond = quantile(value.freq, 0.25) - 1.5 * iqr) %>% filter(value.freq <= upperbond & value.freq >= lowerbond) %>% ungroup() %>% dplyr::select(-"groupflag", -"iqr", -"upperbond", -"lowerbond") -> ssdt
         dim(ssdt)[1] -> mutationsAfterOutlierRemoval
         if(mutationsAfterOutlierRemoval < mutationsBeforeOutlierRemoval){
-          print(paste("LOG: ", mutationsBeforeOutlierRemoval-mutationsAfterOutlierRemoval, "mutations ignored since classified as outlier"))
+          print(paste("LOG: ", mutationsBeforeOutlierRemoval-mutationsAfterOutlierRemoval, "mutations ignored since classified as outlier", "(", mutationsAfterOutlierRemoval, " remaining from", mutationsBeforeOutlierRemoval, ")"))
         }
       
         ## generate regression formula
@@ -513,15 +518,15 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
         }
         
         ## check if the current timepoint is still represented in the data
-        ssdt %>% filter(sample_date_decimal == timepoint) -> ssdt2
+        ssdt %>% filter(sample_date_decimal %in% timepoint) -> ssdt2
         if(dim(ssdt2)[1] == 0){
           print(paste("LOG: since no mutations found in timepoint of interest (", timepoint, ") regression will be skipped"))
           next;
         }
         
         ## add weight (1/(dayDiff+1)*log10(sequencingdepth)
-        ssdt %>% rowwise() %>%  mutate(timeweight = 1/(abs(timepoint - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(weight = log10(value.depth)*timeweight) -> ssdt
-        detour4log %>% rowwise() %>%  mutate(timeweight = 1/(abs(timepoint - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(weight = log10(value.depth)*timeweight) %>% filter(!grepl(";.+;", Variants)) -> detour4log
+        ssdt %>% rowwise() %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(weight = log10(value.depth)*timeweight) -> ssdt
+        detour4log %>% rowwise() %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(weight = log10(value.depth)*timeweight) %>% filter(!grepl(";.+;", Variants)) -> detour4log
         
         print(data.frame(date = detour4log$sample_date, decimal = detour4log$sample_date_decimal, Tweight = round(detour4log$timeweight, digits = 2), depth = detour4log$value.depth, weight = round(detour4log$weight, digits = 2), value = round(detour4log$value.freq, digits = 2), variants = detour4log$Variants, mutation = detour4log$NUC))
         rm(detour4log)
@@ -534,7 +539,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
           fit1 <- tryCatch(gamlss(formula, data = ssdt, family = BE, trace = FALSE, weights = weight),error=function(e) e, warning=function(w) w)
           print(paste("LOG: fall back to BE"))
           if(any(grepl("warning|error", class(fit1)))){
-            print(paste("LOG: BE did not converge either at", timepoint, " .. skipped"))
+            print(paste("LOG: BE did not converge either at", timePoints[t], " .. skipped"))
             next; ## remove if unconverged BE results should be used
           }
         }
@@ -544,14 +549,14 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
         ssdt %>% filter(!grepl(";", Variants)) %>% filter(Variants %in% specifiedLineages) %>% mutate(fit1 = signif(fit1, 5))%>% dplyr::select("Variants", "fit1") %>% arrange(Variants) %>%  distinct()  %>% ungroup()  %>% mutate(T = sum(fit1)) %>% mutate(fit2 = ifelse(T>1, fit1/(T+0.00001), fit1)) -> ssdtFit
         
         ## add sample ID to output
-        ssdt %>% filter(sample_date_decimal == timepoint) %>% dplyr::select(ID) %>% distinct() -> sample_ID
+        ssdt %>% filter(sample_date_decimal %in% timePoints[T]) %>% dplyr::select(ID) %>% distinct() -> sample_ID
         ssdtFit$ID = rep(unique(sample_ID$ID)[length(unique(sample_ID$ID))], n = length(ssdtFit$Variants))
         
         if(unique(ssdtFit$T)>1){
           print(paste("LOG: fitted value corrected for >1: T =", unique(ssdtFit$T), "; method used =", method))
         }
         
-        ssdt %>% ungroup() %>% filter(Variants %in% specifiedLineagesTimecourse) %>% mutate(T = unique(ssdtFit$T)) %>% mutate(fit2 = ifelse(T > 1, fit1/T, fit1)) %>% filter(sample_date_decimal == timepoint) -> ssdt2
+        ssdt %>% ungroup() %>% filter(Variants %in% specifiedLineagesTimecourse) %>% mutate(T = unique(ssdtFit$T)) %>% mutate(fit2 = ifelse(T > 1, fit1/T, fit1)) %>% filter(sample_date_decimal == timePoints[t]) -> ssdt2
         plantFullData <- rbind(plantFullData, data.table(variant = ssdt2$Variants, LocationID =  rep(roi, length(ssdt2$fit1)), LocationName  =  rep(roiname, length(ssdt2$fit1)), sample_date = as.character(ssdt2$sample_date), value = ssdt2$fit2, marker = ssdt2$NUC, singlevalue = ssdt2$value.freq ))
       
         ## save norm.fitted values into global DF; set all untested variants to 0
@@ -565,7 +570,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
         }
         rm(formula, fit1, ssdt, ssdt2)
       } else {
-        print(paste("LOG:", "NOTHIN FOR REGRESSION AT", timepoint, "since number of lineages detected ==", length(specifiedLineages), "; ... ignore TIMEPOINT"))
+        print(paste("LOG:", "NOTHIN FOR REGRESSION AT", timePoints[t], "since number of lineages detected ==", length(specifiedLineages), "; ... ignore TIMEPOINT"))
         
       
       }
