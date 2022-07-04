@@ -81,7 +81,7 @@ opt = parse_args(opt_parser);
 
 #####################################################
 ####  parameter setting for interactive debugging
-if(FALSE){
+if(TRUE){
   opt$dir = "sandbox"
   opt$metadata = "VaQuERo/data/metaDataSub.tsv"
   opt$data="VaQuERo/data/mutationDataSub.tsv"
@@ -98,6 +98,7 @@ if(FALSE){
   opt$smoothingtime=8
   opt$voi="BA.4,BA.5,BA.1,BA.2,B.1.617.2,B.1.1.7"
   opt$highlight="BA.4,BA.5,BA.1,BA.2,B.1.617.2,B.1.1.7"
+  opt$recent <- 9999
   print("Warning: command line option overwritten")
 }
 #####################################################
