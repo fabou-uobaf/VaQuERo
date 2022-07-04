@@ -209,7 +209,7 @@ print(paste0("PROGRESS: read meta data "))
 metaDT       <- fread(file = opt$metadata)
 print(paste0("PROGRESS: read AF data "))
 timestamp()
-sewage_samps <- read.table(opt$data , header=TRUE, sep="\t" ,na.strings = ".")
+sewage_samps <- fread(opt$data , header=TRUE, sep="\t" ,na.strings = ".", check.names=TRUE)
 
 
 ## read mutations of interest from file
