@@ -98,6 +98,7 @@ if(FALSE){
   opt$smoothingtime=8
   opt$voi="BA.4,BA.5,BA.1,BA.2,B.1.617.2,B.1.1.7"
   opt$highlight="BA.4,BA.5,BA.1,BA.2,B.1.617.2,B.1.1.7"
+  opt$recent <- 9999
   print("Warning: command line option overwritten")
 }
 #####################################################
