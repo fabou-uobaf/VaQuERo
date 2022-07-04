@@ -81,7 +81,7 @@ opt = parse_args(opt_parser);
 
 #####################################################
 ####  parameter setting for interactive debugging
-if(TRUE){
+if(FALSE){
   opt$dir = "sandbox"
   opt$metadata = "VaQuERo/data/metaDataSub.tsv"
   opt$data="VaQuERo/data/mutationDataSub.tsv"
