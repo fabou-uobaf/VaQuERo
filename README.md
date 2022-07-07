@@ -110,7 +110,7 @@ scripts/VaQuERo.r [options]
 
 ### allele frequency file
 
-A TAB separated tidy table, specifying for each mutation and each sample its allele frequency and sequencing depth.
+A TAB separated tidy table, specifying for each mutation and each sample its allele frequency and sequencing depth. The helper script vcf2tsv_long.py assists to ceate this file directly from a list of vcf files.
 
 | Col | HEADER               | EXAMPLE VALUE      | DESCRIPTION                  |
 | --- |                  --: |  :--               | :--                          |
