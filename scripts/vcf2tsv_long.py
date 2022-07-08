@@ -13,8 +13,8 @@ import re
 import argparse
 import glob
 import gzip
-import bz2
-import lzma
+#import bz2
+#import lzma
 from pysam import VariantFile
 
 def open_file(filename, mode='rb'):
@@ -34,20 +34,21 @@ def open_file(filename, mode='rb'):
     """
     if re.search("\.gz$", filename):
         return(gzip.open(filename, mode=mode))
-    elif re.search("\.xz$", filename):
-        return(lzma.open(filename, mode=mode))
-    elif re.search("\.bz2$", filename):
-        return(bz2.open(filename, mode=mode))
+#    elif re.search("\.xz$", filename):
+#        return(lzma.open(filename, mode=mode))
+#    elif re.search("\.bz2$", filename):
+#        return(bz2.open(filename, mode=mode))
     else:
         return(open(filename, mode = mode))
 
 parser = argparse.ArgumentParser(description="""
    This script takes one or multiple vcf files with format fields a list of format types (default AF and DP) and creates a long tsv with the following entries:
     SAMPLEID, CHROM, POS, REF, ALT, GENE, AA, AF, DP 
-    multiple ALTs will be split to only one value per line
+    multiple ALT alleles will be split to only one allele and value per line
     Type will be AF, DP and others and taken from the FORMAT fields
     only alleles in a sample fullfiling a criteria (default AF . 0.01) are output
-    for samples, you can either given an index, a name, or "" which will use all samples in each filezQ?SA<<>X< A 
+    The output is written to stdtout or a filename (gzipped if ending with .gz)
+    For samples, you can either give an index, a name, or "" which will use all samples in each file. 
     If there are annotations in an INFO ANN field, the script extracts the first one for each allele, 
     translates 3 letter AA chagnes to 1 letter, gets rid of the trailing p. and adds them in the gene and AA columns
     """)
@@ -176,7 +177,8 @@ for vcf_fn in vcf_fns:
                     if not args.cond_type in rec.samples[sampleid].keys():
                         continue
                     elif (( vcf_keys[ args.cond_type ] == 'A' and 
-                           ( rec.samples[sampleid][args.cond_type][i] is None or
+                           ( len(rec.samples[sampleid][args.cond_type]) <= i or
+                            rec.samples[sampleid][args.cond_type][i] is None or
                            rec.samples[sampleid][args.cond_type][i] < args.min_af )) or 
                           ( vcf_keys[ args.cond_type ] == 1 and 
                            ( rec.samples[sampleid][args.cond_type] is None or 
