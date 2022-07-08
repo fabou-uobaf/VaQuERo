@@ -1,0 +1,3 @@
+data/vcf2tsv/CoV_29633_S117400.vcf.gz
+data/vcf2tsv/CoV_29634_S117319_ann.vcf
+data/vcf2tsv/merged_samples.vcf.gz

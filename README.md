@@ -110,7 +110,7 @@ scripts/VaQuERo.r [options]
 
 ### allele frequency file
 
-A TAB separated tidy table, specifying for each mutation and each sample its allele frequency and sequencing depth. The helper script vcf2tsv_long.py assists to ceate this file directly from a list of vcf files.
+A TAB separated tidy table, specifying for each mutation and each sample its allele frequency and sequencing depth. The helper script vcf2tsv_long.py assists to create this file directly from a list of vcf files.
 
 | Col | HEADER               | EXAMPLE VALUE      | DESCRIPTION                  |
 | --- |                  --: |  :--               | :--                          |
@@ -125,7 +125,32 @@ A TAB separated tidy table, specifying for each mutation and each sample its all
 | $9  |                   DP |  16855             | Sequencing depth             |
 | $10 |                   PQ |  49314             | positional quality           |
 
-A previously used sparse table file format is still supported for backwards compatibility. See --data2 and --inputformat for details how to invoke it. See the file deprecated_input_specification.md for a specification of this file format. 
+A previously used sparse table file format is still supported for backwards compatibility. See --data2 and --inputformat for details how to invoke it. See the file deprecated_input_specification.md for a specification of this file format.
+
+#### vcf2tsv_long.py
+
+`vcf2tsv_long.py` needs the package `pysam` to be installed (eg. via `pip` or `conda`).
+
+It takes a vcf file, a directory with vcfs, or a list with paths to vcf files as an input and creates a tidy table fit as input for VaQuERo.
+
+You can test it with the vcf files in `data/vcf2tsv` in the following ways on files with and without SNPEFF annotations, merged samples, all vcf files in a directory or a list of files:
+
+```
+python3 scripts/vcf2tsv_long.py -i data/vcf2tsv/CoV_29633_S117400.vcf.gz | less
+python3 scripts/vcf2tsv_long.py -i data/vcf2tsv/CoV_29634_S117319_ann.vcf | less
+python3 scripts/vcf2tsv_long.py -i data/vcf2tsv/merged_samples.vcf.gz | less
+python3 scripts/vcf2tsv_long.py -i data/vcf2tsv/ | less
+python3 scripts/vcf2tsv_long.py -i data/vcf2tsv/vcf_files.txt | less
+```
+
+To redirect output to a new file, append to an existing file and filter with a certain minimal allele frequency (default 0.01):
+
+```
+python3 scripts/vcf2tsv_long.py -i data/vcf2tsv/merged_samples.vcf.gz -m 0.1 -o test_input.tsv.gz
+python3 scripts/vcf2tsv_long.py -i data/vcf2tsv/CoV_29634_S117319_ann.vcf --append -m 0.1 -o test_input.tsv.gz
+```
+
+
 
 ### meta data file
 
