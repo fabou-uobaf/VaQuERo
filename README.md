@@ -179,6 +179,10 @@ Table holding the deduced variant frequencies.
 
 Table holding the observed allele frequencies and the deduced variant frequencies.
 
+### globalSpecialmutData.csv
+
+Table holding the observed allele frequencies and the allels specified in special mutation file.
+
 ### summary.csv
 
 List of all plots produced.
