@@ -42,8 +42,12 @@ option_list = list(
               help="Path to special mutation input file [default %default]", metavar="character"),
   make_option(c("--pmarker"), type="character", default="resources/mutations_problematic_all.csv", 
               help="Path to problematic mutation input file, which will be ignored throughout the analysis [default %default]", metavar="character"),
-  make_option(c("--data"), type="character", default="data/mutationDataSub.tsv", 
-              help="Path to data input file [default %default]", metavar="character"),
+  make_option(c("--data2"), type="character", default="data/mutationDataSub_sparse.tsv", 
+              help="Path to data input file in deprecated sparse matrix format [default %default]", metavar="character"),
+  make_option(c("--data"), type="character", default="data/mutationDataSub.tsv.g", 
+              help="Path to data input file in tidy table format [default %default]", metavar="character"),
+  make_option(c("--inputformat"), type="character", default="tidy", 
+              help="Input data format. Should be 'tidy' or 'sparse' [default %default]", metavar="character"),
   make_option(c("--plotwidth"), type="double", default=8, 
               help="Base size of plot width [default %default]", metavar="character"),
   make_option(c("--plotheight"), type="double", default=4.5, 
@@ -73,7 +77,9 @@ option_list = list(
   make_option(c("--voi"), type="character", default="B.1.1.7;B.1.617.2;P.1;B.1.351", 
               help="List of variants which should be plotted in more detail. List separated by semicolon [default %default]", metavar="character"),
   make_option(c("--highlight"), type="character", default="B.1.1.7;B.1.617.2", 
-              help="List of variants which should be plotted at the bottom axis. List separated by semicolon [default %default]", metavar="character")
+              help="List of variants which should be plotted at the bottom axis. List separated by semicolon [default %default]", metavar="character"),
+  make_option(c("--debug"), type="logical", default="FALSE", 
+              help="Toggle to use run with provided example data [default %default]", metavar="character")
 );
 opt_parser = OptionParser(option_list=option_list);
 opt = parse_args(opt_parser);
@@ -81,20 +87,22 @@ opt = parse_args(opt_parser);
 
 #####################################################
 ####  parameter setting for interactive debugging
-if(FALSE){
+if(opt$debug){
   opt$dir = "sandbox"
   opt$metadata = "VaQuERo/data/metaDataSub.tsv"
-  opt$data="VaQuERo/data/mutationDataSub.tsv"
+  opt$data="VaQuERo/data/mutationDataSub.tsv.gz"
+  opt$data2="VaQuERo/data/mutationDataSub_sparse.tsv"
+  opt$inputformat = "tidy"
   opt$marker="VaQuERo/resources/mutations_list_grouped_2022-05-17_Austria.csv"
   opt$smarker="VaQuERo/resources/mutations_special_2022-05-03.csv"
   opt$pmarker="VaQuERo/resources/mutations_problematic_vss1_v3.csv"
   opt$zero=0.02
   opt$depth=250
-  opt$minuniqmark=3  
-  opt$minuniqmarkfrac=0.15  
+  opt$minuniqmark=1  
+  opt$minuniqmarkfrac=0.4 
   opt$minqmark=3  
-  opt$minmarkfrac=0.15
-  opt$smoothingsamples=2 
+  opt$minmarkfrac=0.0
+  opt$smoothingsamples=1
   opt$smoothingtime=8
   opt$voi="BA.4,BA.5,BA.1,BA.2,B.1.617.2,B.1.1.7"
   opt$highlight="BA.4,BA.5,BA.1,BA.2,B.1.617.2,B.1.1.7"
@@ -204,15 +212,8 @@ globalFullData <- data.table(variant = character(), LocationID = character(), Lo
 globalFullSoiData <- data.table(variant = character(), LocationID = character(), LocationName  = character(), sample_date = character(), marker = character(), value = numeric())
 
 
-## read in mutations and meta data 
-print(paste0("PROGRESS: read meta data "))
-metaDT       <- fread(file = opt$metadata)
-print(paste0("PROGRESS: read AF data "))
-timestamp()
-sewage_samps <- fread(opt$data , header=TRUE, sep="\t" ,na.strings = ".", check.names=TRUE)
-
-
 ## read mutations of interest from file
+print(paste0("PROGRESS: read mutation files "))
 moi <- fread(file = markermutationFile)
 unite(moi, NUC, c(4,3,5), ALT, sep = "", remove = FALSE) -> moi
 
@@ -235,8 +236,10 @@ allmut   <- unique(c(moi$NUC, soi$NUC))
 exsoimut <- allmut[allmut %notin% moi$NUC]
 soimut   <- soi$NUC
 
-## remove mutation positions from input data which is not used further
-sewage_samps %>% filter(POS %in% unique(sort(c(moi$Postion, soi$Postion)))) -> sewage_samps
+## read in meta data 
+print(paste0("PROGRESS: read and process meta data "))
+metaDT       <- fread(file = opt$metadata)
+unique(metaDT$BSF_sample_name) -> sampleoi
 
 ## check if all voi can be detected in principle given used parameters
 moi %>% filter(!grepl(";", Variants)) %>% group_by(Variants) %>% summarise(n = n()) %>% filter(n < minUniqMarker) -> moi.futile
@@ -328,35 +331,73 @@ colnames(mmat) <- unique(marker$Variants)
 rownames(mmat) <- unique(marker$NUC)
 
 for (i in 1:dim(marker)[1]){
-  c <- as.character(marker[i,1])
-  r <- as.character(marker[i,2])
-  mmat[which(rownames(mmat) == r), which(colnames(mmat) == c)] <- 1
+  cc <- as.character(marker[i,1])
+  rr <- as.character(marker[i,2])
+  mmat[which(rownames(mmat) == rr), which(colnames(mmat) == cc)] <- 1
 }
 mmat$NUC <- rownames(mmat)
 
 
-## get sample names
-sample_names = grep("\\.AF$", names(sewage_samps), value = TRUE)
-sample_names = gsub("\\.AF$","",sample_names)
+## read in mutations data 
+if(opt$inputformat == "sparse"){
+  print(paste0("PROGRESS: read AF data (deprecated file format!) "))
+  timestamp()
+  sewage_samps <- fread(opt$data2 , header=TRUE, sep="\t" ,na.strings = ".", check.names=TRUE)
+  
+  ## remove mutation positions from input data which is not used further
+  sewage_samps %>% filter(POS %in% unique(sort(c(moi$Postion, soi$Postion)))) -> sewage_samps
 
-## remove all positions which are not mutations of interest
-unite(sewage_samps, NUC, c(3,2,4), ALT, sep = "", remove = FALSE) -> sewage_samps
-sewage_samps[sewage_samps$NUC %in% allmut,] -> sewage_samps
+  ## get sample names
+  sample_names = grep("\\.AF$", names(sewage_samps), value = TRUE)
+  sample_names = gsub("\\.AF$","",sample_names)
+  
+  ## remove all positions which are not mutations of interest
+  unite(sewage_samps, NUC, c(3,2,4), ALT, sep = "", remove = FALSE) -> sewage_samps
+  sewage_samps[sewage_samps$NUC %in% allmut,] -> sewage_samps
 
-## remove all positions which are problematic
-sewage_samps[sewage_samps$NUC %notin% poi$NUC,] -> sewage_samps
+  ## remove all positions which are problematic
+  sewage_samps[sewage_samps$NUC %notin% poi$NUC,] -> sewage_samps
 
-## set missing mutation frequencies with 0
-sewage_samps[is.na(sewage_samps)] <- 0
+  ## set missing mutation frequencies with 0
+  sewage_samps[is.na(sewage_samps)] <- 0
+  
+  ## tidy up sewage data table
+  sewage_samps[,-c(10:18)] -> sewage_samps
+  sewage_samps.dt <- reshape2::melt(sewage_samps, id.vars=1:10)
+  rm(sewage_samps)
+  sewage_samps.dt %>% separate( col = variable, into = c("ID", "VarType"), sep = "\\.") -> sewage_samps.dt
+  sewage_samps.dt %>% filter(VarType == "AF") -> dt_AF
+  sewage_samps.dt %>% filter(VarType == "DP") -> dt_DP
+  inner_join(dt_AF, dt_DP, by =  c("CHROM", "NUC", "POS", "REF", "ALT", "ANN.GENE", "ANN.FEATUREID", "ANN.EFFECT", "ANN.AA", "EFF", "ID"), suffix = c(".freq", ".depth")) -> sewage_samps.dt
+  
+    ## remove all samples which are not specified in metadata
+  sewage_samps.dt %>% filter(ID %in% sampleoi) -> sewage_samps.dt
 
-## tidy up sewage data table
-sewage_samps[,-c(10:18)] -> sewage_samps
-sewage_samps.dt <- reshape2::melt(sewage_samps, id.vars=1:10)
-rm(sewage_samps)
-sewage_samps.dt %>% separate( col = variable, into = c("ID", "VarType"), sep = "\\.") -> sewage_samps.dt
-sewage_samps.dt %>% filter(VarType == "AF") -> dt_AF
-sewage_samps.dt %>% filter(VarType == "DP") -> dt_DP
-inner_join(dt_AF, dt_DP, by =  c("CHROM", "NUC", "POS", "REF", "ALT", "ANN.GENE", "ANN.FEATUREID", "ANN.EFFECT", "ANN.AA", "EFF", "ID"), suffix = c(".freq", ".depth")) -> sewage_samps.dt
+} else{
+  print(paste0("PROGRESS: read AF data "))
+  timestamp()
+  sewage_samps <- fread(opt$data , header=TRUE, sep="\t" ,na.strings = "NA", check.names=TRUE)
+  colnames(sewage_samps)[colnames(sewage_samps) == "SAMPLEID"] <- "ID"
+  colnames(sewage_samps)[colnames(sewage_samps) == "GENE"] <- "ANN.GENE"
+  colnames(sewage_samps)[colnames(sewage_samps) == "AA"] <- "ANN.AA"
+  colnames(sewage_samps)[colnames(sewage_samps) == "AF"] <- "value.freq"
+  colnames(sewage_samps)[colnames(sewage_samps) == "DP"] <- "value.depth"
+  colnames(sewage_samps)[colnames(sewage_samps) == "PQ"] <- "value.qual"
+  
+  sewage_samps %>% mutate(NUC = paste(REF, POS, ALT, sep = "")) -> sewage_samps.dt
+  sewage_samps.dt$value.freq[is.na(sewage_samps.dt$value.freq)] <- 0
+  sewage_samps.dt$value.depth[is.na(sewage_samps.dt$value.depth)] <- 333  ###########!!! CHANGE TO 0
+  sewage_samps.dt$value.qual[is.na(sewage_samps.dt$value.qual)] <- 0
+  
+  ## remove all positions which are not mutations of interest
+  sewage_samps.dt %>% filter(NUC %in% allmut) -> sewage_samps.dt
+  
+  ## remove all samples which are not specified in metadata
+  sewage_samps.dt %>% filter(ID %in% sampleoi) -> sewage_samps.dt
+
+  rm(sewage_samps)
+}
+
 
 ## add location to sewage_samps.dt
 sewage_samps.dt %>% mutate(RNA_ID_int = gsub("_S\\d+$","", ID)) -> sewage_samps.dt
@@ -372,7 +413,7 @@ metaDT  %>% filter(N_in_Consensus < N_in_Consensus_filter) %>% dplyr::select("RN
 sewage_samps.dt <- sewage_samps.dt[sewage_samps.dt$ID %in% passed_samples$BSF_sample_name,]
 
 ## add variant of interests to table
-left_join(x=sewage_samps.dt, y=moi, by = "NUC") -> sewage_samps.dt
+left_join(x=sewage_samps.dt, y=moi, by = c("POS"="Postion", "REF", "ALT", "NUC")) -> sewage_samps.dt
 
 ## add sampling date
 metaDT %>% dplyr::select("RNA_ID_int", "sample_date", "sample_date_decimal") -> sample_dates
@@ -422,7 +463,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
     uniqMarkerPerVariant <- unique(sdt2$Variants)
     markerPerVariant <- unique(sdt3$Variants)
     specifiedLineagesTimecourse <- uniqMarkerPerVariant[uniqMarkerPerVariant %in% markerPerVariant]
-
+    specifiedLineagesTimecourse[!(is.na(specifiedLineagesTimecourse))] -> specifiedLineagesTimecourse
     
     ### FROM HERE LOOP OVER TIME POINTS
     sdt %>% dplyr::select(sample_date_decimal, sample_date) %>% distinct() -> timePointsCombinations
@@ -445,10 +486,14 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
       allTimepoints <- timePoints[min(T+diffs):max(T+diffs)]
       allTimepoints_classic <- timePoints_classic[min(T+diffs):max(T+diffs)]
       if(any(abs(as.numeric(timepoint - allTimepoints)) <= (timeLagDay/(leapYear(floor(timepoint)))))){
+        allTimepoints_classic <- allTimepoints_classic[abs(as.numeric(timepoint - allTimepoints)) <= timeLagDay/(leapYear(floor(timepoint)))]
         allTimepoints <- allTimepoints[abs(as.numeric(timepoint - allTimepoints)) <= timeLagDay/(leapYear(floor(timepoint)))]
+        
       } else{
         allTimepoints <- timepoint
-      }
+        allTimepoints_classic <- allTimepoints_classic
+      }    
+      
 
 
       
@@ -461,6 +506,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
       uniqMarkerPerVariant <- unique(ssdt2$Variants)
       markerPerVariant <- unique(ssdt3$Variants)
       specifiedLineages <- uniqMarkerPerVariant[uniqMarkerPerVariant %in% markerPerVariant]
+      specifiedLineages[!is.na(specifiedLineages)] -> specifiedLineages
       rm(ssdt2, ssdt3, uniqMarkerPerVariant, markerPerVariant)
       
       print(paste("LOG:", timepoint_classic, roiname, paste("(",length(allTimepoints[allTimepoints %in% timepoint]), "same day;", "+", length(allTimepoints[allTimepoints %notin% timepoint]), "neighboring TP;", length(specifiedLineages), "detected lineages)")))
