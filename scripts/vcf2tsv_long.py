@@ -43,7 +43,7 @@ def open_file(filename, mode='rb'):
 
 parser = argparse.ArgumentParser(description="""
    This script takes one or multiple vcf files with format fields a list of format types (default AF and DP) and creates a long tsv with the following entries:
-    SAMPLEID, CHROM, POS, REF, ALT, GENE, AA, AF, DP 
+    SAMPLEID, CHROM, POS, REF, ALT, GENE, AA, AF, DP, PQ 
     multiple ALT alleles will be split to only one allele and value per line
     Type will be AF, DP and others and taken from the FORMAT fields
     only alleles in a sample fullfiling a criteria (default AF . 0.01) are output
@@ -54,7 +54,7 @@ parser = argparse.ArgumentParser(description="""
     """)
 parser.add_argument("-i", dest="vcf_file", help="vcf input file (extension .vcf or vcf.gz), file with list of files (file not ending with vcf/vcf.gz) or directory containing vcfs", required=True)
 parser.add_argument("-t", "--types", dest="types", 
-                    help="comma delimited list of names of value to gather (default: AF, DP)", default="AF,DP")
+                    help="comma delimited list of names of value to gather (default: AF, DP)", default="AF,DP,PQ")
 parser.add_argument("--cond_type", dest="cond_type", 
                     help="type string for condition (minimal allele frequency), if empty string, no check (default: AF)", default="AF")
 parser.add_argument("--field", dest="field", help="get values from FORMAT of INFO field, only format implemented!", default="FORMAT")
