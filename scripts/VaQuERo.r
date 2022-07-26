@@ -495,9 +495,6 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
         allTimepoints_classic <- allTimepoints_classic
       }    
       
-
-
-      
       sdt %>% filter(sample_date %in% c(timepoint_classic, allTimepoints_classic) ) -> ssdt
 
       # find lineages for which at least minUniqMarker are found in current timepoint(s)
@@ -597,7 +594,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
         ssdt %>% filter(!grepl(";", Variants)) %>% filter(Variants %in% specifiedLineages) %>% mutate(fit1 = signif(fit1, 5))%>% dplyr::select("Variants", "fit1") %>% arrange(Variants) %>%  distinct()  %>% ungroup()  %>% mutate(T = sum(fit1)) %>% mutate(fit2 = ifelse(T>1, fit1/(T+0.00001), fit1)) -> ssdtFit
         
         ## add sample ID to output
-        ssdt %>% filter(sample_date_decimal %in% timePoints[T]) %>% dplyr::select(ID) %>% distinct() -> sample_ID
+        ssdt %>% filter(sample_date_decimal == timePoints[t]) %>% dplyr::select(ID) %>% distinct() -> sample_ID
         ssdtFit$ID = rep(unique(sample_ID$ID)[length(unique(sample_ID$ID))], n = length(ssdtFit$Variants))
         
         if(unique(ssdtFit$T)>1){
