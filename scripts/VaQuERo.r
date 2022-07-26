@@ -251,7 +251,7 @@ if(dim(moi.futile)[1] > 0){
 
 # check for same date, same location issue
 # introduce artifical decimal date
-metaDT %>% group_by(LocationID, sample_date) %>% mutate(n = rank(BSF_sample_name)-1)  %>% ungroup() %>% mutate(sample_date_decimal = decimalDate(sample_date, n)) %>% dplyr::select(-n) -> metaDT
+metaDT %>% group_by(LocationID, sample_date) %>% mutate(n = rank(BSF_sample_name)-1)  %>% ungroup() %>% rowwise() %>% mutate(sample_date_decimal = decimalDate(sample_date, n)) %>% dplyr::select(-n) -> metaDT
 
 # define which locations are used for the report
 metaDT %>% dplyr::select("LocationID") %>% distinct() -> locationsReportedOn
@@ -476,6 +476,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
       
       timepoint <- timePoints[t]
       timepoint_classic <- timePoints_classic[t]
+      timepoint_day <- decimalDate(timepoint_classic,0)
       T <- which(timePoints_classic == timepoint_classic)
       timepoint <- timePoints[T]    
       print(paste("PROGRESS:", roiname, "@", timepoint_classic, "(", signif(timepoint, digits = 10), ")"))
@@ -485,9 +486,9 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
       diffs <- (-lowerDiff:upperDiff)
       allTimepoints <- timePoints[min(T+diffs):max(T+diffs)]
       allTimepoints_classic <- timePoints_classic[min(T+diffs):max(T+diffs)]
-      if(any(abs(as.numeric(timepoint - allTimepoints)) <= (timeLagDay/(leapYear(floor(timepoint)))))){
-        allTimepoints_classic <- allTimepoints_classic[abs(as.numeric(timepoint - allTimepoints)) <= timeLagDay/(leapYear(floor(timepoint)))]
-        allTimepoints <- allTimepoints[abs(as.numeric(timepoint - allTimepoints)) <= timeLagDay/(leapYear(floor(timepoint)))]
+      if(any(abs(as.numeric(timepoint_day - allTimepoints)) <= (timeLagDay/(leapYear(floor(timepoint_day)))))){
+        allTimepoints_classic <- allTimepoints_classic[abs(as.numeric(timepoint_day - allTimepoints)) <= timeLagDay/(leapYear(floor(timepoint_day)))]
+        allTimepoints <- allTimepoints[abs(as.numeric(timepoint_day - allTimepoints)) <= timeLagDay/(leapYear(floor(timepoint_day)))]
         
       } else{
         allTimepoints <- timepoint
