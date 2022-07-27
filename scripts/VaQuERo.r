@@ -594,7 +594,12 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
         ssdt %>% filter(!grepl(";", Variants)) %>% filter(Variants %in% specifiedLineages) %>% mutate(fit1 = signif(fit1, 5))%>% dplyr::select("Variants", "fit1") %>% arrange(Variants) %>%  distinct()  %>% ungroup()  %>% mutate(T = sum(fit1)) %>% mutate(fit2 = ifelse(T>1, fit1/(T+0.00001), fit1)) -> ssdtFit
         
         ## add sample ID to output
-        ssdt %>% filter(sample_date_decimal == timePoints[t]) %>% dplyr::select(ID) %>% distinct() -> sample_ID
+        if (any(ssdt$sample_date_decimal == timePoints[t])){
+          ssdt %>% filter(sample_date_decimal == timePoints[t]) %>% dplyr::select(ID) %>% distinct() -> sample_ID
+        } else{
+          data.frame(ID = ".") -> sample_ID
+          print(paste("Warning:", "no sample ID for", roi, "@", timePoints[t]))
+        }
         ssdtFit$ID = rep(unique(sample_ID$ID)[length(unique(sample_ID$ID))], n = length(ssdtFit$Variants))
         
         if(unique(ssdtFit$T)>1){
