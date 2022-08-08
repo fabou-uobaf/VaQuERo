@@ -237,3 +237,5 @@ The following R packages must be pre-installed:
 - rnaturalearthdata
 - optparse
 - stringr
+
+For convenience a Rscupt for package installation is provided (Rscript R_package_dependency_install.r)
