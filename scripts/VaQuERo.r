@@ -93,8 +93,8 @@ if(opt$debug){
   opt$data="VaQuERo/data/mutationDataSub.tsv.gz"
   opt$data2="VaQuERo/data/mutationDataSub_sparse.tsv"
   opt$inputformat = "sparse"
-  opt$marker="VaQuERo/resources/mutations_list_grouped_2022-05-17_Austria.csv"
-  opt$smarker="VaQuERo/resources/mutations_special_2022-05-03.csv"
+  opt$marker="VaQuERo/resources/mutations_list_grouped_2022-09-12_Austria.csv"
+  opt$smarker="VaQuERo/resources/mutations_special_2022-09-13.csv"
   opt$pmarker="VaQuERo/resources/mutations_problematic_vss1_v3.csv"
   opt$zero=0.02
   opt$depth=250
@@ -105,7 +105,7 @@ if(opt$debug){
   opt$smoothingsamples=2
   opt$smoothingtime=2
   opt$voi="BA.4,BA.5,BA.1,BA.2,B.1.617.2,B.1.1.7"
-  opt$highlight="BA.4,BA.5,BA.1,BA.2,B.1.617.2,B.1.1.7"
+  opt$highlight="BA.4,BA.5,BA.1,BA.2"
   opt$recent <- 9999
   print("Warning: command line option overwritten")
 }
