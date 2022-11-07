@@ -661,7 +661,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
           spemut_draw2 %>% rowwise() %>% mutate(marker =  paste(sep = "|", NUC, paste(Gene, AA, sep = ":"), paste0("[", Variants, "]")) ) -> spemut_draw2
           colnames(spemut_draw2)[colnames(spemut_draw2) == "Variants"] <- "variant"
           q2 + geom_point(data = spemut_draw2, aes(x = as.Date(sample_date), y = value.freq, shape = marker, fill = marker), color = "black", size = 2, alpha = .45) -> q2
-          q2 + scale_shape_manual(values = 1:28) -> q2
+          q2 + scale_shape_manual(values = 1:33) -> q2
           q2 + guides(shape = guide_legend(title = "Spezial-Mutationen", ncol = 2, title.position = "top"), fill = guide_legend(title = "Spezial-Mutationen", ncol = 2, title.position = "top"), col = guide_legend(title = "Varianten", ncol = 1, title.position = "top")) -> q2
         
           filename <- paste0(outdir, '/figs/specialMutations', paste('/klaerwerk', roi, "all", sep="_"), ".pdf")
@@ -685,7 +685,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
           spemut_draw1 %>% rowwise() %>% mutate(marker = paste(sep = "|", NUC, paste(Gene, AA, sep = ":"), paste0("[", Variants, "]")) ) -> spemut_draw1
           colnames(spemut_draw1)[colnames(spemut_draw1) == "Variants"] <- "variant"
           q1 + geom_point(data = spemut_draw1, aes(x = as.Date(sample_date), y = value.freq, shape = marker, fill = marker), color = "black", size = 2, alpha = .45) -> q1
-          q1 + scale_shape_manual(values = 1:28) -> q1
+          q1 + scale_shape_manual(values = 1:33) -> q1
           q1 + guides(shape = guide_legend(title = "Spezial-Mutationen", ncol = 2, title.position = "top"), fill = guide_legend(title = "Spezial-Mutationen", ncol = 2, title.position = "top"), col = guide_legend(title = "Varianten", ncol = 1, title.position = "top")) -> q1
 
       
