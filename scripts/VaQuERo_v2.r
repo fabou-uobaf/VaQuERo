@@ -19,6 +19,8 @@ suppressPackageStartupMessages(library("stringr"))
 suppressPackageStartupMessages(library("lubridate"))
 suppressPackageStartupMessages(library("rjson"))
 suppressPackageStartupMessages(library("RColorBrewer"))
+suppressPackageStartupMessages(library("ggsankey"))
+
 
 timestamp()
 
@@ -94,8 +96,8 @@ opt = parse_args(opt_parser);
 ####  parameter setting for interactive debugging
 if(opt$debug){
   opt$dir = "sandbox1"
-  opt$metadata = "data/metaData_subset.csv"
-  opt$data2="data/sewage_samples_merge_samp_lofreq_dp_AF001.snpeff_afs.dp.pq.tab"
+  opt$metadata = "data/metaData_general.csv"
+  opt$data2="data/sewage_samples_merge_samp_lofreq_dp_AF001.snpeff_afs.dp.pq.tab.gz"
   opt$inputformat = "sparse"
   opt$marker="VaQuERo/resources/mutations_list_grouped_pango_2022-11-29_Austria.csv"
   opt$smarker="VaQuERo/resources/mutations_special_2022-09-13.csv"
@@ -190,6 +192,81 @@ getColor <- function(n, id, i){
   cols[i]
 }
 
+realias <- function(x){
+  seq <- strsplit(x, split="\\.")[[1]]
+  seq <- seq[-length(seq)]
+
+  if(length(seq) > 0){
+    for (i in rev(seq_along(seq))){
+      trunc <- paste(seq[1:i], collapse = ".")
+      if ( any(names(dealiases) == trunc) ){
+        alias <- dealiases[names(dealiases) == trunc]
+        realiased <- gsub(trunc, alias, x)
+                  #print(paste("realiased:", x, " <=> ", realiased))
+        break
+      }
+    }
+  } else{
+    realiased <- x
+  }
+  if(exists("realiased")){
+    return(realiased)
+  } else{
+    return(x)
+  }
+}
+
+# functions for sankey plot
+expandVar <- function(var, L){
+  l = length(unlist(strsplit(var, split = "\\.")))
+  while(l < L){
+    paste0(var, ".0") -> var
+    l = length(unlist(strsplit(var, split = "\\.")))
+  }
+  return(var)
+}
+getTree <- function(x){
+  x$variant_dealias -> vars
+  x$long_variant -> long_var
+  list() -> ll
+  for ( i in seq_along(vars)){
+    ancestor <- c()
+    if(grepl("^B", vars[i]) & "B" %notin% vars) {
+      ancestor <- c("B")
+    }
+    for ( j in seq_along(vars)){
+      if(grepl(vars[j], long_var[i], fixed = TRUE) & (vars[i] != vars[j])){
+        ancestor <- c(ancestor, vars[j])
+      }
+    }
+    ll[[long_var[i]]] <- ancestor
+  }
+  return(ll)
+}
+makeObs <- function(x, n, ll, p){
+  x %>% mutate(freq = floor(0.5+p*freq)) -> x
+  Llevels <- paste0("level", 0:n)
+  as.data.frame(matrix(ncol = length(Llevels))) -> res
+  colnames(res) <- Llevels
+
+  for (i in 1:dim(x)[1]){
+    y <- x[i,]
+    var <- y$long_variant
+    freq <- y$freq
+    ancestors <- sort(unlist(ll[names(ll) == var]))
+    Llevel = length(ancestors)+1
+    var1 <- gsub("(\\.0)*$", "", var)
+    var1 <- realias(var1)
+    ancestors <- unlist(lapply(as.list(ancestors), realias))
+    z <- c(as.character(ancestors), rep(var1, length(Llevels) - length(ancestors) ))
+    z <- as.data.frame(t(z))[rep(1, freq),]
+    colnames(z) <- Llevels
+    rbind(res, z) -> res
+  }
+  return(res)
+}
+
+
 
 
 ## print parameter to Log
@@ -206,6 +283,7 @@ summaryDataFile <- paste0(opt$dir, "/summary.csv")
 markermutationFile  <- opt$marker
 specialmutationFile <- opt$smarker
 problematicmutationFile <- opt$pmarker
+sankeyPrecision <- 1000
 
 mapCountry  <- opt$country
 mapMargines <- c(opt$bbsouth,opt$bbwest,opt$bbnorth,opt$bbeast)
@@ -239,6 +317,11 @@ if( ! dir.exists(paste0(outdir, "/figs/stackview"))){
 if( ! dir.exists(paste0(outdir, "/figs/maps"))){
   dir.create(paste0(outdir, "/figs/maps"), showWarnings = FALSE)
 }
+if( ! dir.exists(paste0(outdir, "/figs/sankey"))){
+  dir.create(paste0(outdir, "/figs/sankey"), showWarnings = FALSE)
+}
+
+
 
 ## read alias file
 aliases <- fromJSON(file ="https://raw.githubusercontent.com/cov-lineages/pangolin-data/main/pangolin_data/data/alias_key.json")
@@ -739,6 +822,38 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 
     print(paste("     PROGRESS: start plotting ", roiname))
 
+    if(dim(plantFittedData)[1] > 0){
+        plantFittedData %>% mutate(latest = max(sample_date, na.rm = TRUE)) %>% filter(sample_date == latest) %>% filter(value > 0) %>% summarize(variant = variant, freq = value) -> sankey.dt
+
+        plantFittedData %>% summarize(latest = max(sample_date, na.rm = TRUE)) -> sankey_date
+        sankey.dt %>% mutate(freq = freq/sum(freq)) -> sankey.dt
+        sankey.dt %>% group_by(variant = "B") %>% summarize(freq = 1-sum(freq)) -> sankey.dt0
+        rbind(sankey.dt, sankey.dt0) -> sankey.dt
+        sankey.dt %>% filter(freq > zeroo/10 | variant == "B") -> sankey.dt
+
+        sankey.dt$variant_dealias <- unlist(lapply(as.list(sankey.dt$variant), dealias))
+        sankey.dt %>% rowwise() %>% mutate(levels = length(unlist(strsplit(variant_dealias, split = "\\.")))) %>% group_by(1) %>% summarize( maxLev = max(levels)) -> maxLev
+        sankey.dt %>% rowwise() %>% mutate(long_variant = expandVar(variant_dealias, maxLev$maxLev)) -> sankey.dt
+        ancestor <- getTree(sankey.dt)
+        Nlevels <- max(unlist(lapply(ancestor, length)))
+        sankey.dt <- makeObs(sankey.dt, Nlevels, ancestor, sankeyPrecision)
+
+        sankey.dt %>% make_long(names(sankey.dt)) -> sankey.dtt
+
+        sankey.dtt %>% filter(!is.na(node)) -> sankey.dtt
+        max(as.numeric(gsub("level", "", sankey.dtt$next_x)), na.rm = TRUE) -> maxLev
+        sankey.dtt %>% group_by(x, node) %>% mutate(n = paste0("[", 100*n()/sankeyPrecision, "%]")) %>% rowwise() %>% mutate(level = as.numeric(gsub("level", "", x))) %>% mutate(label = ifelse(level == maxLev, paste(node, n), node)) -> sankey.dtt
+
+        sankey.dtt %>% rowwise() %>% mutate(node = ifelse(is.na(node), node, dealias(node))) %>% mutate(next_node = ifelse(is.na(next_node), next_node, dealias(next_node))) -> sankey.dtt
+
+        ggplot(sankey.dtt, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = label)) + geom_sankey(flow.alpha = .6, node.color = "gray30", type ='alluvial') + geom_sankey_label(size = 3, color = "white", fill = "gray40", position = position_nudge(x = 0.12, y = 0), na.rm = TRUE, type ='alluvial') + scale_fill_viridis_d() + theme_sankey(base_size = 18) + labs(x = NULL) + theme(legend.position = "none", plot.title = element_text(hjust = .5)) + ggtitle(roiname, subtitle = sankey_date) + theme(axis.text.x = element_blank(), plot.title = element_text(hjust = 0), plot.subtitle=element_text(hjust = 0)) -> pp
+
+        filename <- paste0(outdir, "/figs/sankey/",  paste('/klaerwerk', roi, sep="_"), ".pdf")
+        ggsave(filename = filename, plot = pp)
+        fwrite(as.list(c("sankey", "WWTP", roiname, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
+        rm(pp, filename, sankey.dt, sankey.dtt)
+    }
+
     if(length(unique(plantFittedData$sample_date)) >= tpLimitToPlot){
 
       if(dim(plantFittedData)[1] >= 1){
@@ -877,6 +992,54 @@ fwrite(globalFullSoiData, file = paste0(outdir, "/globalSpecialmutData.csv"), se
 
 ## print overview of all VoI and all plants
 print(paste("PROGRESS: start plotting overviews"))
+
+
+
+
+##
+
+    if(dim(globalFittedData)[1] > 0){
+        print(paste("     PROGRESS: plotting overview Sankey plot"))
+
+        globalFittedData %>% filter( (as.Date(format(Sys.time(), "%Y-%m-%d")) - recentEnought) < sample_date) %>% group_by(LocationID) %>% mutate(latest = max(sample_date, na.rm = TRUE)) %>% filter(sample_date == latest) %>% summarize(variant = variant, freq = value) -> sankey.dt
+        if(dim(sankey.dt)[1] > 0){
+
+            globalFittedData %>% summarize(earliest = min(sample_date, na.rm = TRUE), latest = max(sample_date, na.rm = TRUE)) -> sankey_date
+
+            left_join(x = sankey.dt, y = (metaDT %>% dplyr::select(LocationID, connected_people) %>% distinct())) %>% group_by(variant) %>% summarize(freq = weighted.mean(freq, w = connected_people, na.rm = TRUE)) %>% filter(freq > 0) -> sankey.dt
+
+            sankey.dt %>% mutate(freq = freq/sum(freq)) -> sankey.dt
+            sankey.dt %>% group_by(variant = "B") %>% summarize(freq = 1-sum(freq)) -> sankey.dt0
+
+            rbind(sankey.dt, sankey.dt0) -> sankey.dt
+            sankey.dt %>% filter(freq > zeroo/10 | variant == "B") -> sankey.dt
+
+            sankey.dt$variant_dealias <- unlist(lapply(as.list(sankey.dt$variant), dealias))
+            sankey.dt %>% rowwise() %>% mutate(levels = length(unlist(strsplit(variant_dealias, split = "\\.")))) %>% group_by(1) %>% summarize( maxLev = max(levels)) -> maxLev
+            sankey.dt %>% rowwise() %>% mutate(long_variant = expandVar(variant_dealias, maxLev$maxLev)) -> sankey.dt
+            ancestor <- getTree(sankey.dt)
+            Nlevels <- max(unlist(lapply(ancestor, length)))
+            sankey.dt <- makeObs(sankey.dt, Nlevels, ancestor, sankeyPrecision)
+
+            sankey.dt %>% make_long(names(sankey.dt)) -> sankey.dtt
+            sankey.dtt %>% filter(!is.na(node)) -> sankey.dtt
+            max(as.numeric(gsub("level", "", sankey.dtt$next_x)), na.rm = TRUE) -> maxLev
+            sankey.dtt %>% group_by(x, node) %>% mutate(n = paste0("[", 100*n()/sankeyPrecision, "%]")) %>% rowwise() %>% mutate(level = as.numeric(gsub("level", "", x))) %>% mutate(label = ifelse(level == maxLev, paste(node, n), node)) -> sankey.dtt
+
+            sankey.dtt %>% rowwise() %>% mutate(node = ifelse(is.na(node), node, dealias(node))) %>% mutate(next_node = ifelse(is.na(next_node), next_node, dealias(next_node))) -> sankey.dtt
+
+            ggplot(sankey.dtt, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = label)) + geom_sankey(flow.alpha = .6, node.color = "gray30", type ='alluvial') + geom_sankey_label(size = 3, color = "white", fill = "gray40", position = position_nudge(x = 0.12, y = 0), na.rm = TRUE, type ='alluvial') + scale_fill_viridis_d() + theme_sankey(base_size = 18) + labs(x = NULL) + theme(legend.position = "none", plot.title = element_text(hjust = .5)) + ggtitle("Gewichtetes Österreich Mittel", subtitle = paste( sankey_date$earliest , "bis", sankey_date$latest)) + theme(axis.text.x = element_blank(), plot.title = element_text(hjust = 0), plot.subtitle=element_text(hjust = 0)) -> pp
+
+            filename <- paste0(outdir, "/figs/sankey/",  "Austria", ".pdf")
+            ggsave(filename = filename, plot = pp)
+            fwrite(as.list(c("sankey", "Overview", "Austria", filename)), file = summaryDataFile, append = TRUE, sep = "\t")
+            rm(pp, filename, sankey.dt, sankey.dtt)
+        }
+    }
+
+##
+
+
 globalFittedData %>% group_by(LocationID) %>% mutate(n = length(unique(sample_date))) %>% filter(n > tpLimitToPlot*2) %>% filter(variant %in% VoI) %>% ungroup() %>% group_by(LocationID, LocationName, sample_date, variant) %>% summarize(value = mean(value), .groups = "drop") -> globalFittedData2
 if (dim(globalFittedData2)[1] >= tpLimitToPlot){
   print(paste("     PROGRESS: plotting overview VoI"))
