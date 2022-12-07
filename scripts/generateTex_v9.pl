@@ -245,7 +245,7 @@ if (defined($data{variantDetail}->{current}) && defined($data{stackOverview}->{c
 
       &printDetailPlot($wwplant_tidy, $path2);
     }
-    if ( defined($data{specialMutations}->{current}->{$wwplant}->{VoI}) ){
+    if ( 1!=1 && defined($data{specialMutations}->{current}->{$wwplant}->{VoI}) ){
       my $path3 = $data{specialMutations}->{current}->{$wwplant}->{VoI};
 
       &printSpecialMutPlot($wwplant_tidy, $path3);
