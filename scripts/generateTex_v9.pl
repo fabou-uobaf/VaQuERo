@@ -230,7 +230,6 @@ if (defined($data{variantDetail}->{current}) && defined($data{stackOverview}->{c
     # print graphical synapsis
     if ( defined($data{sankey}->{WWTP}->{$wwplant}) ){
 
-
       my $path = $data{sankey}->{WWTP}->{$wwplant};
       &printSankey($path, $wwplant_tidy);
     }
@@ -240,8 +239,8 @@ if (defined($data{variantDetail}->{current}) && defined($data{stackOverview}->{c
 
       &printStackPlot($wwplant_tidy, $path1);
     }
-    if ( defined($data{variantDetail}->{current}->{$wwplant}->{VoI}) ){
-      my $path2 = $data{variantDetail}->{current}->{$wwplant}->{VoI};
+    if ( defined($data{variantDetail}->{current}->{$wwplant}->{all}) ){
+      my $path2 = $data{variantDetail}->{current}->{$wwplant}->{all};
 
       &printDetailPlot($wwplant_tidy, $path2);
     }

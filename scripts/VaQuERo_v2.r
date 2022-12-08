@@ -108,8 +108,8 @@ if(opt$debug){
   opt$depth=250
   opt$minuniqmark=1
   opt$minuniqmarkfrac=0.5
-  opt$minqmark=4
-  opt$minmarkfrac=0.5
+  opt$minqmark=6
+  opt$minmarkfrac=0.6
   opt$smoothingsamples=2
   opt$smoothingtime=2
   opt$voi="B.1.1.7,BA.1,BA.2,BA.4,BA.5,B.1.617.2,XBB,BF.7,BM.1.1,BA.2.12.1,BN.1,BA.2.75.2"
@@ -397,7 +397,7 @@ moi %>% filter(!grepl(";", Variants)) %>% group_by(Variants) %>% summarise(n = n
 variants_total$Variants[variants_total$Variants %notin% variants_w_enough_uniq$Variants] -> variants_futile
 if(length(variants_futile) > 0){
   for (c in seq_along(variants_futile)){
-    message(paste("Warning(s):", variants_futile[c], "cannot be detected directly since less than", minUniqMarker, "unique markers defined."))
+    message(paste("Warning(s):", variants_futile[c], "can only be indirectly detected, by detecting descending variants, since less than", minUniqMarker, "unique markers defined."))
   }
 }
 
@@ -606,30 +606,65 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
     ## count how many sample from this plant were in the last BSF run
     metaDT %>% filter(BSF_sample_name %in% sdt$ID) %>% filter(BSF_run %in% last_BSF_run_id) %>% dplyr::select(BSF_run) %>% group_by(BSF_run) %>% summarize(n = n()) -> count_last_BSF_run_id
 
-    ## define variants for which at least minUniqMarker are found in any timepoint
-    ## at least minUniqMarkerRatio of all uniq markers are found in any timepoint
-    ## define marker for which at least minMarker are found in any timepoint
-    ## at least minMarkerRatio of all uniq markers are found in any timepoint
-    sdt %>% filter(!grepl(";",Variants)) %>% group_by(Variants, ID) %>% mutate(n=n()) %>% ungroup() %>% filter(value.freq>zeroo) %>% filter(value.depth > min.depth) %>% group_by(Variants, ID) %>% mutate(N=n()) %>% mutate(r=N/n) %>% filter(r > minUniqMarkerRatio) %>% filter(N >= minUniqMarker) %>% summarize(.groups = "drop_last") -> sdt2
-    sdt %>%  mutate(Variants = strsplit(as.character(Variants), ";")) %>% unnest(Variants) %>% group_by(Variants, ID) %>% mutate(n=n()) %>% ungroup() %>% filter(value.freq>zeroo) %>% filter(value.depth > min.depth) %>% group_by(Variants, ID) %>% mutate(N=n()) %>% mutate(r=N/n) %>% filter(r >= minMarkerRatio) %>% filter(N >= minMarker) %>% summarize(.groups = "drop_last") -> sdt3
-    uniqMarkerPerVariant <- unique(sdt2$Variants)
+
+    ## define variants for which at least minMarker and at least minMarkerRatio are found in any timepoint
+    ## define variants which could be detected by unique markers
+    ## define variants with at least minUniqMarkerRatio and minUniqMarker of all uniq markers are found in any timepoint
+    ## remove all variants not detected based on minMarker and all which could be, but were not detected, based on uniq markers
+    ## repeat above step until no change (or 10 times); by removing variants, marker can become unique for other variants
+    ## define variants for which at least minUniqMarker and minUniqMarkerRatio are found in the reduced marker definition in any timepoint
+    sdt %>%  mutate(Variants = strsplit(as.character(Variants), ";")) %>% unnest(Variants) %>% group_by(Variants, ID, sample_date_decimal) %>% mutate(n=n()) %>% ungroup() %>% filter(value.freq>zeroo) %>% filter(value.depth > min.depth) %>% group_by(Variants, ID, sample_date_decimal) %>% mutate(N=n()) %>% mutate(r=N/n) %>% filter(r >= minMarkerRatio) %>% filter(N >= minMarker) %>% summarize(.groups = "drop_last") -> sdt3
     markerPerVariant <- unique(sdt3$Variants)
 
-    ## accept all uniqMarkerPerVariant (with more than minUniqMarker and minUniqMarkerRatio)
+    if(TRUE){
+        sdt %>% filter(!grepl(";",Variants)) %>% group_by(Variants, ID, sample_date_decimal) %>% mutate(n=n()) %>% ungroup() %>% filter(value.freq>zeroo) %>% filter(value.depth > min.depth) %>% group_by(Variants, ID, sample_date_decimal) %>% mutate(N=n()) %>% mutate(r=N/n) %>% filter(r > minUniqMarkerRatio) %>% filter(N >= minUniqMarker) %>% summarize(.groups = "drop_last") %>% ungroup() %>% dplyr::select(Variants) %>% distinct() -> uniqMarkerPerVariant_detected
+        sdt %>% filter(!grepl(";",Variants)) %>% filter(value.depth > min.depth) %>% ungroup() %>% dplyr::select(Variants) %>% distinct()  -> uniqMarkerPerVariant_could_be_detected
+        uniqMarkerPerVariant_not_detected <- uniqMarkerPerVariant_could_be_detected$Variants[uniqMarkerPerVariant_could_be_detected$Variants %notin% uniqMarkerPerVariant_detected$Variants]
+        sdt %>%  mutate(Variants = strsplit(as.character(Variants), ";")) %>% unnest(Variants) %>% filter(Variants %in% markerPerVariant) %>% filter(Variants %notin% uniqMarkerPerVariant_not_detected) %>% group_by(ID, sample_date, sample_date_decimal, value.freq, value.depth, LocationID, LocationName, NUC) %>% summarize(Variants = paste(Variants, sep = ";", collapse = ";"), .groups = "drop_last") %>% ungroup() %>% dplyr::select("Variants", "ID", "sample_date", "sample_date_decimal", "value.freq", "value.depth", "LocationID", "LocationName", "NUC")-> sdt_reduced
+        sdt_reduced %>% filter(!grepl(";",Variants)) %>% group_by(Variants, ID, sample_date_decimal) %>% mutate(n=n()) %>% ungroup() %>% filter(value.freq>zeroo) %>% filter(value.depth > min.depth) %>% group_by(Variants, ID, sample_date_decimal) %>% mutate(N=n()) %>% mutate(r=N/n) %>% filter(r > minUniqMarkerRatio) %>% filter(N >= minUniqMarker) %>% summarize(.groups = "drop_last") -> sdt2
+        uniqMarkerPerVariant <- unique(sdt2$Variants)
+    }
+    # repeat above bloc until no more change
+    c=1
+    list() -> uniqMarkerPerVariant.iterative
+    uniqMarkerPerVariant.iterative[[c]] <- uniqMarkerPerVariant
+    list() -> uniqMarkerPerVariant_could_be_detected.iterative
+    uniqMarkerPerVariant_could_be_detected.iterative[[c]] <- uniqMarkerPerVariant_could_be_detected$Variants
+    while(c < 10){
+        c <- c + 1
+        sdt_reduced %>% filter(!grepl(";",Variants)) %>% group_by(Variants, ID, sample_date_decimal) %>% mutate(n=n()) %>% ungroup() %>% filter(value.freq>zeroo) %>% filter(value.depth > min.depth) %>% group_by(Variants, ID, sample_date_decimal) %>% mutate(N=n()) %>% mutate(r=N/n) %>% filter(r > minUniqMarkerRatio) %>% filter(N >= minUniqMarker) %>% summarize(.groups = "drop_last") %>% ungroup() %>% dplyr::select(Variants) %>% distinct() -> uniqMarkerPerVariant_detected
+        sdt_reduced %>% filter(!grepl(";",Variants)) %>% filter(value.depth > min.depth) %>% ungroup() %>% dplyr::select(Variants) %>% distinct()  -> uniqMarkerPerVariant_could_be_detected
+        uniqMarkerPerVariant_not_detected <- uniqMarkerPerVariant_could_be_detected$Variants[uniqMarkerPerVariant_could_be_detected$Variants %notin% uniqMarkerPerVariant_detected$Variants]
+        sdt_reduced %>%  mutate(Variants = strsplit(as.character(Variants), ";")) %>% unnest(Variants) %>% filter(Variants %in% markerPerVariant) %>% filter(Variants %notin% uniqMarkerPerVariant_not_detected) %>% group_by(ID, sample_date, sample_date_decimal, value.freq, value.depth, LocationID, LocationName, NUC) %>% summarize(Variants = paste(Variants, sep = ";", collapse = ";"), .groups = "drop_last") %>% ungroup() %>% dplyr::select("Variants", "ID", "sample_date", "sample_date_decimal", "value.freq", "value.depth", "LocationID", "LocationName", "NUC")-> sdt_reduced
+        sdt_reduced %>% filter(!grepl(";",Variants)) %>% group_by(Variants, ID, sample_date_decimal) %>% mutate(n=n()) %>% ungroup() %>% filter(value.freq>zeroo) %>% filter(value.depth > min.depth) %>% group_by(Variants, ID, sample_date_decimal) %>% mutate(N=n()) %>% mutate(r=N/n) %>% filter(r > minUniqMarkerRatio) %>% filter(N >= minUniqMarker) %>% summarize(.groups = "drop_last") -> sdt2.2
+        uniqMarkerPerVariant.iterative[[c]] <- unique(sdt2.2$Variants)
+        uniqMarkerPerVariant_could_be_detected.iterative[[c]] <- uniqMarkerPerVariant_could_be_detected$Variants
+        if(all(uniqMarkerPerVariant_could_be_detected.iterative[[c]] %in% uniqMarkerPerVariant_could_be_detected.iterative[[c-1]])){
+            c = 100
+        }
+    }
+    uniqMarkerPerVariant <- uniqMarkerPerVariant.iterative[[length(uniqMarkerPerVariant.iterative)]]
+
+
     ## accept all markerPerVariant if ancestors to accepted by uniqMarkerPerVariant
     uniqMarkerPerVariant_dealiased <- unlist(lapply(as.list(uniqMarkerPerVariant), dealias))
     markerPerVariant_dealiased <- unlist(lapply(as.list(markerPerVariant), dealias))
 
-    specifiedLineagesTimecourse <- uniqMarkerPerVariant
-    if(length(markerPerVariant) > 0){
+    specifiedLineagesTimecourse <- names(table(c(uniqMarkerPerVariant, markerPerVariant))[table(c(uniqMarkerPerVariant, markerPerVariant)) > 1])
+
+    if(length(unique(c(markerPerVariant, uniqMarkerPerVariant))) > 1){
       for (ii in 1:length(markerPerVariant)){
-        if(any(grepl(markerPerVariant_dealiased[ii], uniqMarkerPerVariant_dealiased, fixed = TRUE))){
-          specifiedLineagesTimecourse <- c(specifiedLineagesTimecourse, markerPerVariant[ii])
-          }
+        if(markerPerVariant[ii] %in% specifiedLineagesTimecourse){
+          next
+        } else if (any(grepl(markerPerVariant_dealiased[ii], uniqMarkerPerVariant_dealiased, fixed = TRUE))){
+          specifiedLineagesTimecourse <- unique(c(specifiedLineagesTimecourse, markerPerVariant[ii]))
         }
+      }
+      specifiedLineagesTimecourse <- unique(specifiedLineagesTimecourse)
+      specifiedLineagesTimecourse[!is.na(specifiedLineagesTimecourse)] -> specifiedLineagesTimecourse
     }
-    specifiedLineagesTimecourse <- unique(specifiedLineagesTimecourse)
-    specifiedLineagesTimecourse[!(is.na(specifiedLineagesTimecourse))] -> specifiedLineagesTimecourse
+    rm(sdt2, sdt3, uniqMarkerPerVariant, markerPerVariant, sdt_reduced, uniqMarkerPerVariant.iterative, uniqMarkerPerVariant_could_be_detected.iterative)
+
 
     ### FROM HERE LOOP OVER TIME POINTS
     sdt %>% dplyr::select(sample_date_decimal, sample_date) %>% distinct() -> timePointsCombinations
@@ -638,188 +673,222 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 
 
     if (length(timePoints) >= timeStart){
-    for (t in timeStart:length(timePoints)){
+        for (t in timeStart:length(timePoints)){
 
-      timepoint <- timePoints[t]
-      timepoint_classic <- timePoints_classic[t]
-      timepoint_day <- decimalDate(timepoint_classic,0)
-      T <- which(timePoints_classic == timepoint_classic)
-      timepoint <- timePoints[T]
-      print(paste("PROGRESS:", roiname, "@", timepoint_classic, "(", signif(timepoint, digits = 10), ")"))
+          timepoint <- timePoints[t]
+          timepoint_classic <- timePoints_classic[t]
+          timepoint_day <- decimalDate(timepoint_classic,0)
+          T <- which(timePoints_classic == timepoint_classic)
+          timepoint <- timePoints[T]
+          print(paste("PROGRESS:", roiname, "@", timepoint_classic, "(", signif(timepoint, digits = 10), ")"))
 
-      lowerDiff <- ifelse(min(T) > timeLag, timeLag, min(T)-1)
-      upperDiff <- ifelse((max(T)+timeLag) <= length(timePoints), timeLag, length(timePoints)-max(T))
-      diffs <- (-lowerDiff:upperDiff)
-      allTimepoints <- timePoints[min(T+diffs):max(T+diffs)]
-      allTimepoints_classic <- timePoints_classic[min(T+diffs):max(T+diffs)]
-      if(any(abs(as.numeric(timepoint_day - allTimepoints)) <= (timeLagDay/(leapYear(floor(timepoint_day)))))){
-        allTimepoints_classic <- allTimepoints_classic[abs(as.numeric(timepoint_day - allTimepoints)) <= timeLagDay/(leapYear(floor(timepoint_day)))]
-        allTimepoints <- allTimepoints[abs(as.numeric(timepoint_day - allTimepoints)) <= timeLagDay/(leapYear(floor(timepoint_day)))]
+          lowerDiff <- ifelse(min(T) > timeLag, timeLag, min(T)-1)
+          upperDiff <- ifelse((max(T)+timeLag) <= length(timePoints), timeLag, length(timePoints)-max(T))
+          diffs <- (-lowerDiff:upperDiff)
+          allTimepoints <- timePoints[min(T+diffs):max(T+diffs)]
+          allTimepoints_classic <- timePoints_classic[min(T+diffs):max(T+diffs)]
+          if(any(abs(as.numeric(timepoint_day - allTimepoints)) <= (timeLagDay/(leapYear(floor(timepoint_day)))))){
+            allTimepoints_classic <- allTimepoints_classic[abs(as.numeric(timepoint_day - allTimepoints)) <= timeLagDay/(leapYear(floor(timepoint_day)))]
+            allTimepoints <- allTimepoints[abs(as.numeric(timepoint_day - allTimepoints)) <= timeLagDay/(leapYear(floor(timepoint_day)))]
 
-      } else{
-        allTimepoints <- timepoint
-        allTimepoints_classic <- allTimepoints_classic
-      }
-
-      sdt %>% filter(sample_date %in% c(timepoint_classic, allTimepoints_classic) ) -> ssdt
-
-      # find lineages for which at least minUniqMarker are found in current timepoint(s)
-      # and minUniqMarkerRatio of all uniq markers are found in current timepoint
-      ssdt %>% filter(sample_date_decimal %in% timepoint) %>% filter(!grepl(";",Variants)) %>% group_by(Variants, ID) %>% mutate(n=n()) %>% ungroup() %>% filter(value.freq>zeroo) %>% filter(value.depth > min.depth) %>% group_by(Variants, ID) %>% mutate(N=n()) %>% mutate(r=N/n) %>% filter(r > minUniqMarkerRatio) %>% filter(N >= minUniqMarker) %>% summarize(.groups = "drop_last") -> ssdt2
-      ssdt %>% filter(sample_date_decimal == timepoint) %>%  mutate(Variants = strsplit(as.character(Variants), ";")) %>% unnest(Variants) %>% group_by(Variants, sample_date, sample_date_decimal) %>% mutate(n=n()) %>% ungroup() %>% filter(value.freq>zeroo) %>% filter(value.depth > min.depth) %>% group_by(Variants, sample_date, sample_date_decimal) %>% mutate(N=n()) %>% mutate(r=N/n) %>% filter(r >= minMarkerRatio) %>% filter(N >= minMarker) %>% summarize(.groups = "drop_last") -> ssdt3
-
-      uniqMarkerPerVariant <- unique(ssdt2$Variants)
-      markerPerVariant <- unique(ssdt3$Variants)
-      ## accept all uniqMarkerPerVariant (with more than minUniqMarker and minUniqMarkerRatio)
-      ## accept all markerPerVariant if ancestors to accepted by uniqMarkerPerVariant
-      uniqMarkerPerVariant_dealiased <- unlist(lapply(as.list(uniqMarkerPerVariant), dealias))
-      markerPerVariant_dealiased <- unlist(lapply(as.list(markerPerVariant), dealias))
-
-      specifiedLineages <- uniqMarkerPerVariant
-
-      if(length(unique(markerPerVariant, uniqMarkerPerVariant)) > 1){
-        for (ii in 1:length(markerPerVariant)){
-          if(any(grepl(markerPerVariant_dealiased[ii], uniqMarkerPerVariant_dealiased, fixed = TRUE))){
-            specifiedLineages <- c(specifiedLineages, markerPerVariant[ii])
-          }
-        }
-        specifiedLineages <- unique(specifiedLineages)
-        specifiedLineages[!is.na(specifiedLineages)] -> specifiedLineages
-      }
-      rm(ssdt2, ssdt3, uniqMarkerPerVariant, markerPerVariant)
-
-      print(paste("LOG:", timepoint_classic, roiname, paste("(",length(allTimepoints[allTimepoints %in% timepoint]), "same day;", "+", length(allTimepoints[allTimepoints %notin% timepoint]), "neighboring TP;", length(specifiedLineages), "detected lineages)")))
-
-
-      if( length(specifiedLineages) > 0){
-        print(paste("LOG:", "TRY REGRESSION WITH", length(specifiedLineages), "LINEAGES"))
-        # join model matrix columns to measured variables
-        smmat <- as.data.frame(mmat)[,which(colnames(mmat) %in% c("NUC", specifiedLineages))]
-        if (length(specifiedLineages) > 1){
-          smmat$groupflag <- apply( as.data.frame(mmat)[,which(colnames(mmat) %in% c(specifiedLineages))], 1 , paste , collapse = "" )
-        } else{
-          smmat$groupflag <-  as.data.frame(mmat)[,which(colnames(mmat) %in% c(specifiedLineages))]
-        }
-        left_join(x = ssdt, y = smmat, by = c("NUC")) -> ssdt
-        ssdt %>% ungroup() %>% mutate(groupflag = paste(groupflag, ifelse(grepl(";", Variants), "M", "U"), sample_date_decimal)) -> ssdt
-
-        ## remove mutations which are not marker of any of the specifiedLineages
-        ## remove mutations which are marker of all of the specifiedLineages
-        if( sum(colnames(ssdt) %in% specifiedLineages) > 1){
-          ssdt[( rowSums(as.data.frame(ssdt)[,colnames(ssdt) %in% specifiedLineages ]) > 0 & rowSums(as.data.frame(ssdt)[,colnames(ssdt) %in% specifiedLineages ]) < length(specifiedLineages)),] -> ssdt
-          ssdt[( rowSums(as.data.frame(ssdt)[,colnames(ssdt) %in% unique(specifiedLineages, highlightedVariants) ]) > 0 & rowSums(as.data.frame(ssdt)[,colnames(ssdt) %in% unique(specifiedLineages, highlightedVariants) ]) < length(unique(specifiedLineages, highlightedVariants))),] -> detour4log
-        } else{
-          ssdt[as.data.frame(ssdt)[,colnames(ssdt) %in% specifiedLineages ] > 0,] -> ssdt
-          ssdt[as.data.frame(ssdt)[,colnames(ssdt) %in% unique(specifiedLineages, highlightedVariants) ] > 0,] -> detour4log
-        }
-
-        ## remove zeros and low depth
-        ssdt %>% filter(value.freq > zeroo)  %>% filter(value.depth > min.depth) -> ssdt
-
-        ## transform to avoid 1
-        ssdt %>% mutate(value.freq = (value.freq * (value.depth-1) + 0.5)/value.depth) -> ssdt
-
-
-        # remove "OTHERS"
-        ssdt %>% filter(!grepl("other", Variants)) -> ssdt
-
-        ## remove outlier per group flag
-        dim(ssdt)[1] -> mutationsBeforeOutlierRemoval
-        ssdt %>% group_by(groupflag) %>% mutate(iqr = IQR(value.freq)) %>% mutate(upperbond = quantile(value.freq, 0.75) + 1.5 * iqr, lowerbond = quantile(value.freq, 0.25) - 1.5 * iqr) %>% filter(value.freq <= upperbond & value.freq >= lowerbond) %>% ungroup() %>% dplyr::select(-"groupflag", -"iqr", -"upperbond", -"lowerbond") -> ssdt
-        dim(ssdt)[1] -> mutationsAfterOutlierRemoval
-        if(mutationsAfterOutlierRemoval < mutationsBeforeOutlierRemoval){
-          print(paste("LOG: ", mutationsBeforeOutlierRemoval-mutationsAfterOutlierRemoval, "mutations ignored since classified as outlier", "(", mutationsAfterOutlierRemoval, " remaining from", mutationsBeforeOutlierRemoval, ")"))
-        }
-
-        ## generate regression formula
-        if ( length(specifiedLineages) > 1 ){
-          formula <- as.formula(paste("value.freq", paste(specifiedLineages, collapse='+'), sep = " ~" ))
-        } else{
-          ssdt %>% filter(!grepl(";", Variants)) -> ssdt
-          if ( length(unique(ssdt$Variants)) > 1 ){
-            formula <- as.formula(paste("value.freq", "Variants", sep = " ~" ))
           } else{
-            formula <- as.formula(paste("value.freq", "1", sep = " ~" ))
+            allTimepoints <- timepoint
+            allTimepoints_classic <- allTimepoints_classic
+          }
+
+          sdt %>% filter(sample_date %in% c(timepoint_classic, allTimepoints_classic) ) -> ssdt
+
+          ## define variants for which at least minMarker and at least minMarkerRatio are found
+          ## define variants which could be detected by unique markers
+          ## define variants with at least minUniqMarkerRatio and minUniqMarker of all uniq markers are found
+          ## remove all variants not detected based on minMarker and all which could be, but were not detected, based on uniq markers
+          ## repeat above step until no change (or 10 times); by removing variants, marker can become unique for other variants
+          ## define variants for which at least minUniqMarker and minUniqMarkerRatio are found in the reduced marker definition
+          ssdt %>% filter(sample_date_decimal %in% timepoint) %>%  mutate(Variants = strsplit(as.character(Variants), ";")) %>% unnest(Variants) %>% group_by(Variants, ID, sample_date_decimal) %>% mutate(n=n()) %>% ungroup() %>% filter(value.freq>zeroo) %>% filter(value.depth > min.depth) %>% group_by(Variants, ID, sample_date_decimal) %>% mutate(N=n()) %>% mutate(r=N/n) %>% filter(r >= minMarkerRatio) %>% filter(N >= minMarker) %>% summarize(.groups = "drop_last") -> ssdt3
+          markerPerVariant <- unique(ssdt3$Variants)
+
+          if(TRUE){
+              ssdt %>% filter(sample_date_decimal %in% timepoint) %>% filter(!grepl(";",Variants)) %>% group_by(Variants, ID, sample_date_decimal) %>% mutate(n=n()) %>% ungroup() %>% filter(value.freq>zeroo) %>% filter(value.depth > min.depth) %>% group_by(Variants, ID, sample_date_decimal) %>% mutate(N=n()) %>% mutate(r=N/n) %>% filter(r > minUniqMarkerRatio) %>% filter(N >= minUniqMarker) %>% summarize(.groups = "drop_last") %>% ungroup() %>% dplyr::select(Variants) %>% distinct() -> uniqMarkerPerVariant_detected
+              ssdt %>% filter(sample_date_decimal %in% timepoint) %>% filter(!grepl(";",Variants)) %>% filter(value.depth > min.depth) %>% ungroup() %>% dplyr::select(Variants) %>% distinct()  -> uniqMarkerPerVariant_could_be_detected
+              uniqMarkerPerVariant_not_detected <- uniqMarkerPerVariant_could_be_detected$Variants[uniqMarkerPerVariant_could_be_detected$Variants %notin% uniqMarkerPerVariant_detected$Variants]
+              ssdt %>% filter(sample_date_decimal %in% timepoint) %>%  mutate(Variants = strsplit(as.character(Variants), ";")) %>% unnest(Variants) %>% filter(Variants %in% markerPerVariant) %>% filter(Variants %notin% uniqMarkerPerVariant_not_detected) %>% group_by(ID, sample_date, sample_date_decimal, value.freq, value.depth, LocationID, LocationName, NUC) %>% summarize(Variants = paste(Variants, sep = ";", collapse = ";"), .groups = "drop_last") %>% ungroup() %>% dplyr::select("Variants", "ID", "sample_date", "sample_date_decimal", "value.freq", "value.depth", "LocationID", "LocationName", "NUC")-> ssdt_reduced
+              ssdt_reduced %>% filter(sample_date_decimal %in% timepoint) %>% filter(!grepl(";",Variants)) %>% group_by(Variants, ID, sample_date_decimal) %>% mutate(n=n()) %>% ungroup() %>% filter(value.freq>zeroo) %>% filter(value.depth > min.depth) %>% group_by(Variants, ID, sample_date_decimal) %>% mutate(N=n()) %>% mutate(r=N/n) %>% filter(r > minUniqMarkerRatio) %>% filter(N >= minUniqMarker) %>% summarize(.groups = "drop_last") -> ssdt2
+              uniqMarkerPerVariant <- unique(ssdt2$Variants)
+          }
+          # repeat above bloc until no more change
+          c=1
+          list() -> uniqMarkerPerVariant.iterative
+          uniqMarkerPerVariant.iterative[[c]] <- uniqMarkerPerVariant
+          list() -> uniqMarkerPerVariant_could_be_detected.iterative
+          uniqMarkerPerVariant_could_be_detected.iterative[[c]] <- uniqMarkerPerVariant_could_be_detected$Variants
+          while(c < 10){
+              c <- c + 1
+              ssdt_reduced %>% filter(sample_date_decimal %in% timepoint) %>% filter(!grepl(";",Variants)) %>% group_by(Variants, ID, sample_date_decimal) %>% mutate(n=n()) %>% ungroup() %>% filter(value.freq>zeroo) %>% filter(value.depth > min.depth) %>% group_by(Variants, ID, sample_date_decimal) %>% mutate(N=n()) %>% mutate(r=N/n) %>% filter(r > minUniqMarkerRatio) %>% filter(N >= minUniqMarker) %>% summarize(.groups = "drop_last") %>% ungroup() %>% dplyr::select(Variants) %>% distinct() -> uniqMarkerPerVariant_detected
+              ssdt_reduced %>% filter(sample_date_decimal %in% timepoint) %>% filter(!grepl(";",Variants)) %>% filter(value.depth > min.depth) %>% ungroup() %>% dplyr::select(Variants) %>% distinct()  -> uniqMarkerPerVariant_could_be_detected
+              uniqMarkerPerVariant_not_detected <- uniqMarkerPerVariant_could_be_detected$Variants[uniqMarkerPerVariant_could_be_detected$Variants %notin% uniqMarkerPerVariant_detected$Variants]
+              ssdt_reduced %>% filter(sample_date_decimal %in% timepoint) %>%  mutate(Variants = strsplit(as.character(Variants), ";")) %>% unnest(Variants) %>% filter(Variants %in% markerPerVariant) %>% filter(Variants %notin% uniqMarkerPerVariant_not_detected) %>% group_by(ID, sample_date, sample_date_decimal, value.freq, value.depth, LocationID, LocationName, NUC) %>% summarize(Variants = paste(Variants, sep = ";", collapse = ";"), .groups = "drop_last") %>% ungroup() %>% dplyr::select("Variants", "ID", "sample_date", "sample_date_decimal", "value.freq", "value.depth", "LocationID", "LocationName", "NUC")-> ssdt_reduced
+              ssdt_reduced %>% filter(sample_date_decimal %in% timepoint) %>% filter(!grepl(";",Variants)) %>% group_by(Variants, ID, sample_date_decimal) %>% mutate(n=n()) %>% ungroup() %>% filter(value.freq>zeroo) %>% filter(value.depth > min.depth) %>% group_by(Variants, ID, sample_date_decimal) %>% mutate(N=n()) %>% mutate(r=N/n) %>% filter(r > minUniqMarkerRatio) %>% filter(N >= minUniqMarker) %>% summarize(.groups = "drop_last") -> ssdt2.2
+              uniqMarkerPerVariant.iterative[[c]] <- unique(ssdt2.2$Variants)
+              uniqMarkerPerVariant_could_be_detected.iterative[[c]] <- uniqMarkerPerVariant_could_be_detected$Variants
+              if(all(uniqMarkerPerVariant_could_be_detected.iterative[[c]] %in% uniqMarkerPerVariant_could_be_detected.iterative[[c-1]])){
+                  c = 100
+              }
+          }
+          uniqMarkerPerVariant <- uniqMarkerPerVariant.iterative[[length(uniqMarkerPerVariant.iterative)]]
+
+
+          ## accept all markerPerVariant if ancestors to accepted by uniqMarkerPerVariant
+          uniqMarkerPerVariant_dealiased <- unlist(lapply(as.list(uniqMarkerPerVariant), dealias))
+          markerPerVariant_dealiased <- unlist(lapply(as.list(markerPerVariant), dealias))
+
+          specifiedLineages <- names(table(c(uniqMarkerPerVariant, markerPerVariant))[table(c(uniqMarkerPerVariant, markerPerVariant)) > 1])
+
+          if(length(unique(c(markerPerVariant, uniqMarkerPerVariant))) > 1){
+            for (ii in 1:length(markerPerVariant)){
+              if(markerPerVariant[ii] %in% specifiedLineages){
+                next
+              } else if (any(grepl(markerPerVariant_dealiased[ii], uniqMarkerPerVariant_dealiased, fixed = TRUE))){
+                specifiedLineages <- unique(c(specifiedLineages, markerPerVariant[ii]))
+              }
+            }
+            specifiedLineages <- unique(specifiedLineages)
+            specifiedLineages[!is.na(specifiedLineages)] -> specifiedLineages
+          }
+          rm(ssdt2, ssdt3, uniqMarkerPerVariant, markerPerVariant, ssdt_reduced, uniqMarkerPerVariant.iterative, uniqMarkerPerVariant_could_be_detected.iterative)
+
+          print(paste("LOG:", timepoint_classic, roiname, paste("(",length(allTimepoints[allTimepoints %in% timepoint]), "same day;", "+", length(allTimepoints[allTimepoints %notin% timepoint]), "neighboring TP;", length(specifiedLineages), "detected lineages)")))
+          print(paste0("LOG: detected lineages (", length(specifiedLineages), "): ", paste(specifiedLineages, sep = ", ", collapse = ", ")))
+
+
+          if( length(specifiedLineages) > 0){
+            print(paste("LOG:", "TRY REGRESSION WITH", length(specifiedLineages), "LINEAGES"))
+            # join model matrix columns to measured variables
+            smmat <- as.data.frame(mmat)[,which(colnames(mmat) %in% c("NUC", specifiedLineages))]
+            if (length(specifiedLineages) > 1){
+              smmat$groupflag <- apply( as.data.frame(mmat)[,which(colnames(mmat) %in% c(specifiedLineages))], 1 , paste , collapse = "" )
+            } else{
+              smmat$groupflag <-  as.data.frame(mmat)[,which(colnames(mmat) %in% c(specifiedLineages))]
+            }
+            left_join(x = ssdt, y = smmat, by = c("NUC")) -> ssdt
+            ssdt %>% ungroup() %>% mutate(groupflag = paste(groupflag, ifelse(grepl(";", Variants), "M", "U"), sample_date_decimal)) -> ssdt
+
+            ## remove mutations which are not marker of any of the specifiedLineages
+            ## remove mutations which are marker of all of the specifiedLineages
+            if( sum(colnames(ssdt) %in% specifiedLineages) > 1){
+              ssdt[( rowSums(as.data.frame(ssdt)[,colnames(ssdt) %in% specifiedLineages ]) > 0 & rowSums(as.data.frame(ssdt)[,colnames(ssdt) %in% specifiedLineages ]) < length(specifiedLineages)),] -> ssdt
+              ssdt[( rowSums(as.data.frame(ssdt)[,colnames(ssdt) %in% unique(specifiedLineages, highlightedVariants) ]) > 0 & rowSums(as.data.frame(ssdt)[,colnames(ssdt) %in% unique(specifiedLineages, highlightedVariants) ]) < length(unique(specifiedLineages, highlightedVariants))),] -> detour4log
+            } else{
+              ssdt[as.data.frame(ssdt)[,colnames(ssdt) %in% specifiedLineages ] > 0,] -> ssdt
+              ssdt[as.data.frame(ssdt)[,colnames(ssdt) %in% unique(specifiedLineages, highlightedVariants) ] > 0,] -> detour4log
+            }
+
+            ## remove zeros and low depth
+            ssdt %>% filter(value.freq > zeroo)  %>% filter(value.depth > min.depth) -> ssdt
+
+            ## transform to avoid 1
+            ssdt %>% mutate(value.freq = (value.freq * (value.depth-1) + 0.5)/value.depth) -> ssdt
+
+
+            # remove "OTHERS"
+            ssdt %>% filter(!grepl("other", Variants)) -> ssdt
+
+            ## remove outlier per group flag
+            dim(ssdt)[1] -> mutationsBeforeOutlierRemoval
+            ssdt %>% group_by(groupflag) %>% mutate(iqr = IQR(value.freq)) %>% mutate(upperbond = quantile(value.freq, 0.75) + 1.5 * iqr, lowerbond = quantile(value.freq, 0.25) - 1.5 * iqr) %>% filter(value.freq <= upperbond & value.freq >= lowerbond) %>% ungroup() %>% dplyr::select(-"groupflag", -"iqr", -"upperbond", -"lowerbond") -> ssdt
+            dim(ssdt)[1] -> mutationsAfterOutlierRemoval
+            if(mutationsAfterOutlierRemoval < mutationsBeforeOutlierRemoval){
+              print(paste("LOG: ", mutationsBeforeOutlierRemoval-mutationsAfterOutlierRemoval, "mutations ignored since classified as outlier", "(", mutationsAfterOutlierRemoval, " remaining from", mutationsBeforeOutlierRemoval, ")"))
+            }
+
+            ## generate regression formula
+            if ( length(specifiedLineages) > 1 ){
+              formula <- as.formula(paste("value.freq", paste(specifiedLineages, collapse='+'), sep = " ~" ))
+            } else{
+              ssdt %>% filter(!grepl(";", Variants)) -> ssdt
+              if ( length(unique(ssdt$Variants)) > 1 ){
+                formula <- as.formula(paste("value.freq", "Variants", sep = " ~" ))
+              } else{
+                formula <- as.formula(paste("value.freq", "1", sep = " ~" ))
+              }
+            }
+
+            ## check if the current timepoint is still represented in the data
+            ssdt %>% filter(sample_date_decimal %in% timepoint) -> ssdt2
+            if(dim(ssdt2)[1] == 0){
+              print(paste("LOG: since no mutations found in timepoint of interest (", timepoint, ") regression will be skipped"))
+              next;
+            }
+
+            ## add weight (1/(dayDiff+1)*log10(sequencingdepth)
+            ssdt %>% rowwise() %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(weight = log10(value.depth)*timeweight) -> ssdt
+            detour4log %>% rowwise() %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(weight = log10(value.depth)*timeweight) %>% filter(!grepl(";.+;", Variants)) -> detour4log
+
+            print(data.frame(date = detour4log$sample_date, decimal = detour4log$sample_date_decimal, Tweight = round(detour4log$timeweight, digits = 2), depth = detour4log$value.depth, weight = round(detour4log$weight, digits = 2), value = round(detour4log$value.freq, digits = 2), variants = detour4log$Variants, mutation = detour4log$NUC))
+            rm(detour4log)
+
+            ## make regression
+            method = "SIMPLEX"
+            fit1 <- tryCatch(gamlss(formula, data = ssdt, family = SIMPLEX, trace = FALSE, weights = weight),error=function(e) e, warning=function(w) w)
+            if(any(grepl("warning|error", class(fit1)))){
+              method = "BE"
+              fit1 <- tryCatch(gamlss(formula, data = ssdt, family = BE, trace = FALSE, weights = weight),error=function(e) e, warning=function(w) w)
+              print(paste("LOG: fall back to BE"))
+              if(any(grepl("warning|error", class(fit1)))){
+                print(paste("LOG: BE did not converge either at", timePoints[t], " .. skipped"))
+                next; ## remove if unconverged BE results should be used
+              }
+            }
+            ssdt$fit1 <- predict(fit1, type="response", what="mu")
+
+            ssdt %>% dplyr::select(value.freq, all_of(specifiedLineages), fit1) -> ssdt_toOp
+            startValues <- starterV(ssdt_toOp)
+
+            O = 1
+            matrix(rep(0, length(specifiedLineages)*O), O) -> optimizedN
+            for (o in 1:O){
+              optim(par=startValues, fn=objfnct, data=ssdt_toOp, method = "L-BFGS-B", lower = 0, upper = 1) -> optimized
+              optimizedN[o,] <- optimized$par
+            }
+            optimized$par <- apply(optimizedN, 2, median)
+
+
+
+            ## normalize fitted value if sum is > 1
+            ssdt %>% filter(!grepl(";", Variants)) %>% filter(Variants %in% specifiedLineages) %>% mutate(fit1 = signif(fit1, 5))%>% dplyr::select("Variants", "fit1") %>% arrange(Variants) %>%  distinct()  %>% ungroup()  %>% mutate(T = sum(fit1)) %>% mutate(fit2 = ifelse(T>1, fit1/(T+0.00001), fit1)) -> ssdtFit
+            data.table(Variants = specifiedLineages, fit1 = signif(optimized$par, 5))  %>% arrange(Variants) %>%  distinct()  %>% ungroup()  %>% mutate(T = sum(fit1)) %>% mutate(fit2 = ifelse(T>1, fit1/(T+0.00001), fit1)) -> ssdtFit
+
+            ## add sample ID to output
+            if (any(ssdt$sample_date_decimal == timePoints[t])){
+              ssdt %>% filter(sample_date_decimal == timePoints[t]) %>% dplyr::select(ID) %>% distinct() -> sample_ID
+            } else{
+              data.frame(ID = ".") -> sample_ID
+              print(paste("Warning:", "no sample ID for", roi, "@", timePoints[t]))
+            }
+            ssdtFit$ID = rep(unique(sample_ID$ID)[length(unique(sample_ID$ID))], n = length(ssdtFit$Variants))
+
+            if(unique(ssdtFit$T)>1){
+              print(paste("LOG: fitted value corrected for >1: T =", unique(ssdtFit$T), "; method used =", method))
+            }
+
+            ssdt %>% ungroup() %>% filter(Variants %in% specifiedLineagesTimecourse) %>% mutate(T = unique(ssdtFit$T)) %>% mutate(fit2 = ifelse(T > 1, fit1/T, fit1)) %>% filter(sample_date_decimal == timePoints[t]) -> ssdt2
+            plantFullData <- rbind(plantFullData, data.table(variant = ssdt2$Variants, LocationID =  rep(roi, length(ssdt2$fit1)), LocationName  =  rep(roiname, length(ssdt2$fit1)), sample_date = as.character(ssdt2$sample_date), value = ssdt2$fit2, marker = ssdt2$NUC, singlevalue = ssdt2$value.freq ))
+
+            ## save norm.fitted values into global DF; set all untested variants to 0
+            for (j in specifiedLineagesTimecourse){
+              ssdtFit %>% filter(Variants == j) -> extractedFt
+              if (dim(extractedFt)[1] > 0){
+                plantFittedData <- rbind(plantFittedData, data.table(variant = rep(j, length(extractedFt$fit2)), LocationID =  rep(roi, length(extractedFt$fit2)), LocationName  =  rep(roiname, length(extractedFt$fit2)), sample_id = extractedFt$ID, sample_date =  rep(as.character(unique(ssdt2$sample_date)), length(extractedFt$fit2)), value = extractedFt$fit2 ))
+              } else{
+                plantFittedData <- rbind(plantFittedData, data.table(variant = j, LocationID = roi, LocationName  = roiname, sample_id = extractedFt$ID, sample_date = as.character(unique(ssdt2$sample_date)), value = 0 ))
+              }
+            }
+            rm(formula, fit1, ssdt, ssdt2)
+          } else {
+            print(paste("LOG:", "NOTHIN FOR REGRESSION AT", timePoints[t], "since number of lineages detected ==", length(specifiedLineages), "; ... ignore TIMEPOINT"))
+
+
           }
         }
-
-        ## check if the current timepoint is still represented in the data
-        ssdt %>% filter(sample_date_decimal %in% timepoint) -> ssdt2
-        if(dim(ssdt2)[1] == 0){
-          print(paste("LOG: since no mutations found in timepoint of interest (", timepoint, ") regression will be skipped"))
-          next;
-        }
-
-        ## add weight (1/(dayDiff+1)*log10(sequencingdepth)
-        ssdt %>% rowwise() %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(weight = log10(value.depth)*timeweight) -> ssdt
-        detour4log %>% rowwise() %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(weight = log10(value.depth)*timeweight) %>% filter(!grepl(";.+;", Variants)) -> detour4log
-
-        print(data.frame(date = detour4log$sample_date, decimal = detour4log$sample_date_decimal, Tweight = round(detour4log$timeweight, digits = 2), depth = detour4log$value.depth, weight = round(detour4log$weight, digits = 2), value = round(detour4log$value.freq, digits = 2), variants = detour4log$Variants, mutation = detour4log$NUC))
-        rm(detour4log)
-
-        ## make regression
-        method = "SIMPLEX"
-        fit1 <- tryCatch(gamlss(formula, data = ssdt, family = SIMPLEX, trace = FALSE, weights = weight),error=function(e) e, warning=function(w) w)
-        if(any(grepl("warning|error", class(fit1)))){
-          method = "BE"
-          fit1 <- tryCatch(gamlss(formula, data = ssdt, family = BE, trace = FALSE, weights = weight),error=function(e) e, warning=function(w) w)
-          print(paste("LOG: fall back to BE"))
-          if(any(grepl("warning|error", class(fit1)))){
-            print(paste("LOG: BE did not converge either at", timePoints[t], " .. skipped"))
-            next; ## remove if unconverged BE results should be used
-          }
-        }
-        ssdt$fit1 <- predict(fit1, type="response", what="mu")
-
-        ssdt %>% dplyr::select(value.freq, all_of(specifiedLineages), fit1) -> ssdt_toOp
-        startValues <- starterV(ssdt_toOp)
-
-        O = 1
-        matrix(rep(0, length(specifiedLineages)*O), O) -> optimizedN
-        for (o in 1:O){
-          optim(par=startValues, fn=objfnct, data=ssdt_toOp, method = "L-BFGS-B", lower = 0, upper = 1) -> optimized
-          optimizedN[o,] <- optimized$par
-        }
-        optimized$par <- apply(optimizedN, 2, median)
-
-
-
-        ## normalize fitted value if sum is > 1
-        ssdt %>% filter(!grepl(";", Variants)) %>% filter(Variants %in% specifiedLineages) %>% mutate(fit1 = signif(fit1, 5))%>% dplyr::select("Variants", "fit1") %>% arrange(Variants) %>%  distinct()  %>% ungroup()  %>% mutate(T = sum(fit1)) %>% mutate(fit2 = ifelse(T>1, fit1/(T+0.00001), fit1)) -> ssdtFit
-        data.table(Variants = specifiedLineages, fit1 = signif(optimized$par, 5))  %>% arrange(Variants) %>%  distinct()  %>% ungroup()  %>% mutate(T = sum(fit1)) %>% mutate(fit2 = ifelse(T>1, fit1/(T+0.00001), fit1)) -> ssdtFit
-
-        ## add sample ID to output
-        if (any(ssdt$sample_date_decimal == timePoints[t])){
-          ssdt %>% filter(sample_date_decimal == timePoints[t]) %>% dplyr::select(ID) %>% distinct() -> sample_ID
-        } else{
-          data.frame(ID = ".") -> sample_ID
-          print(paste("Warning:", "no sample ID for", roi, "@", timePoints[t]))
-        }
-        ssdtFit$ID = rep(unique(sample_ID$ID)[length(unique(sample_ID$ID))], n = length(ssdtFit$Variants))
-
-        if(unique(ssdtFit$T)>1){
-          print(paste("LOG: fitted value corrected for >1: T =", unique(ssdtFit$T), "; method used =", method))
-        }
-
-        ssdt %>% ungroup() %>% filter(Variants %in% specifiedLineagesTimecourse) %>% mutate(T = unique(ssdtFit$T)) %>% mutate(fit2 = ifelse(T > 1, fit1/T, fit1)) %>% filter(sample_date_decimal == timePoints[t]) -> ssdt2
-        plantFullData <- rbind(plantFullData, data.table(variant = ssdt2$Variants, LocationID =  rep(roi, length(ssdt2$fit1)), LocationName  =  rep(roiname, length(ssdt2$fit1)), sample_date = as.character(ssdt2$sample_date), value = ssdt2$fit2, marker = ssdt2$NUC, singlevalue = ssdt2$value.freq ))
-
-        ## save norm.fitted values into global DF; set all untested variants to 0
-        for (j in specifiedLineagesTimecourse){
-          ssdtFit %>% filter(Variants == j) -> extractedFt
-          if (dim(extractedFt)[1] > 0){
-            plantFittedData <- rbind(plantFittedData, data.table(variant = rep(j, length(extractedFt$fit2)), LocationID =  rep(roi, length(extractedFt$fit2)), LocationName  =  rep(roiname, length(extractedFt$fit2)), sample_id = extractedFt$ID, sample_date =  rep(as.character(unique(ssdt2$sample_date)), length(extractedFt$fit2)), value = extractedFt$fit2 ))
-          } else{
-            plantFittedData <- rbind(plantFittedData, data.table(variant = j, LocationID = roi, LocationName  = roiname, sample_id = extractedFt$ID, sample_date = as.character(unique(ssdt2$sample_date)), value = 0 ))
-          }
-        }
-        rm(formula, fit1, ssdt, ssdt2)
-      } else {
-        print(paste("LOG:", "NOTHIN FOR REGRESSION AT", timePoints[t], "since number of lineages detected ==", length(specifiedLineages), "; ... ignore TIMEPOINT"))
-
-
-      }
-    }
     }
 
     print(paste("     PROGRESS: start plotting ", roiname))
@@ -834,6 +903,14 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
         sankey.dt %>% filter(freq > zeroo/10 | variant == "B") -> sankey.dt
 
         sankey.dt$variant_dealias <- unlist(lapply(as.list(sankey.dt$variant), dealias))
+        for ( baseForColor in baseForColorsVariants ){
+          if(any(grepl(baseForColor, sankey.dt$variant_dealias, fixed = TRUE))){
+              if(baseForColor %notin% sankey.dt$variant_dealias){
+                  rbind(sankey.dt, data.frame(variant = realias(baseForColor), freq = 0, variant_dealias = baseForColor)) -> sankey.dt
+              }
+          }
+        }
+
         sankey.dt %>% rowwise() %>% mutate(levels = length(unlist(strsplit(variant_dealias, split = "\\.")))) %>% group_by(1) %>% summarize( maxLev = max(levels)) -> maxLev
         sankey.dt %>% rowwise() %>% mutate(long_variant = expandVar(variant_dealias, maxLev$maxLev)) -> sankey.dt
         ancestor <- getTree(sankey.dt)
@@ -848,7 +925,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 
         sankey.dtt %>% rowwise() %>% mutate(node = ifelse(is.na(node), node, dealias(node))) %>% mutate(next_node = ifelse(is.na(next_node), next_node, dealias(next_node))) -> sankey.dtt
 
-        ggplot(sankey.dtt, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = label)) + geom_sankey(flow.alpha = .6, node.color = "gray30", type ='alluvial') + geom_sankey_label(size = 3, color = "white", fill = "gray40", position = position_nudge(x = 0.05, y = 0), na.rm = TRUE, type ='alluvial', hjust = 0) + theme_sankey(base_size = 16) + labs(x = NULL) + ggtitle(roiname, subtitle = sankey_date) + theme(legend.position = "none", axis.text.x = element_blank(), plot.title = element_text(hjust = 0), plot.subtitle=element_text(hjust = 0)) + scale_fill_manual(values = col2var, breaks = var2col) -> pp
+        ggplot(sankey.dtt, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = label)) + geom_sankey(flow.alpha = .6, node.color = "gray30", type ='alluvial') + geom_sankey_label(size = 3, color = "white", fill = "gray40", position = position_nudge(x = 0.05, y = 0), na.rm = TRUE, type ='alluvial', hjust = 0) + theme_sankey(base_size = 16) + labs(x = NULL) + ggtitle(roiname, subtitle = sankey_date) + theme(legend.position = "none", axis.text.x = element_blank(), plot.title = element_text(hjust = 0), plot.subtitle=element_text(hjust = 0)) + scale_fill_viridis_d(alpha = 1, begin = 0.025, end = .975, direction = 1, option = "D") -> pp
 
         filename <- paste0(outdir, "/figs/sankey/",  paste('/klaerwerk', roi, sep="_"), ".pdf")
         ggsave(filename = filename, plot = pp, width = 8, height = 4.5)
@@ -1008,7 +1085,7 @@ if(dim(globalFittedData)[1] > 0){
     unique(sankey_all.dt$variant) -> var2col
     unlist(lapply(as.list(var2col), dealias)) -> dealiasvar2col
     sort(dealiasvar2col) -> var2col
-    viridis_pal(alpha = 1, begin = 0.05, end = .95, direction = 1, option = "D")(length(var2col)) -> col2var
+    viridis_pal(alpha = 1, begin = 0.025, end = .975, direction = 1, option = "D")(length(var2col)) -> col2var
 
     if(dim(sankey_all.dt)[1] > 0){
 
@@ -1023,6 +1100,14 @@ if(dim(globalFittedData)[1] > 0){
         sankey.dt %>% filter(freq > zeroo/10 | variant == "B") -> sankey.dt
 
         sankey.dt$variant_dealias <- unlist(lapply(as.list(sankey.dt$variant), dealias))
+        for ( baseForColor in baseForColorsVariants ){
+          if(any(grepl(baseForColor, sankey.dt$variant_dealias, fixed = TRUE))){
+              if(baseForColor %notin% sankey.dt$variant_dealias){
+                  rbind(sankey.dt, data.frame(variant = realias(baseForColor), freq = 0, variant_dealias = baseForColor)) -> sankey.dt
+              }
+          }
+        }
+
         sankey.dt %>% rowwise() %>% mutate(levels = length(unlist(strsplit(variant_dealias, split = "\\.")))) %>% group_by(1) %>% summarize( maxLev = max(levels)) -> maxLev
         sankey.dt %>% rowwise() %>% mutate(long_variant = expandVar(variant_dealias, maxLev$maxLev)) -> sankey.dt
         ancestor <- getTree(sankey.dt)
@@ -1062,6 +1147,14 @@ if(dim(globalFittedData)[1] > 0){
           sankey.dt %>% filter(freq > zeroo/10 | variant == "B") -> sankey.dt
 
           sankey.dt$variant_dealias <- unlist(lapply(as.list(sankey.dt$variant), dealias))
+          for ( baseForColor in baseForColorsVariants ){
+            if(any(grepl(baseForColor, sankey.dt$variant_dealias, fixed = TRUE))){
+                if(baseForColor %notin% sankey.dt$variant_dealias){
+                    rbind(sankey.dt, data.frame(variant = realias(baseForColor), freq = 0, variant_dealias = baseForColor)) -> sankey.dt
+                }
+            }
+          }
+
           sankey.dt %>% rowwise() %>% mutate(levels = length(unlist(strsplit(variant_dealias, split = "\\.")))) %>% group_by(1) %>% summarize( maxLev = max(levels)) -> maxLev
           sankey.dt %>% rowwise() %>% mutate(long_variant = expandVar(variant_dealias, maxLev$maxLev)) -> sankey.dt
           ancestor <- getTree(sankey.dt)
@@ -1151,7 +1244,7 @@ for (voi in VoI){
       s <- s + facet_wrap(~variant, nrow = 2)
       s <- s + theme(axis.text = element_blank(), legend.direction = "vertical", legend.box = "horizontal", legend.position = "bottom")
       s <- s + guides(size = guide_legend(title = "Population", nrow = 2), col = guide_colourbar(title = paste0("Anteil ", voi), direction = "horizontal", title.position = "top"))
-      s <- s + scale_color_viridis_c(limits = c(0,1), direction = 1, begin = .05, end = .95, option = "C")
+      s <- s + scale_color_viridis_c(direction = 1, begin = .05, end = .95, option = "C")
       s <- s + scale_size(range = c(2, 6), labels = scales::comma, breaks = c(50000, 100000, 500000, 1000000))
 
       filename <- paste0(outdir, '/figs/maps/', voi, ".pdf")
