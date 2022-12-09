@@ -397,7 +397,7 @@ moi %>% filter(!grepl(";", Variants)) %>% group_by(Variants) %>% summarise(n = n
 variants_total$Variants[variants_total$Variants %notin% variants_w_enough_uniq$Variants] -> variants_futile
 if(length(variants_futile) > 0){
   for (c in seq_along(variants_futile)){
-    message(paste("Warning(s):", variants_futile[c], "can only be indirectly detected, by detecting descending variants, since less than", minUniqMarker, "unique markers defined."))
+    print(paste("Warning(s):", variants_futile[c], "has less than", minUniqMarker, "unique markers defined."))
   }
 }
 
@@ -630,7 +630,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
     uniqMarkerPerVariant.iterative[[c]] <- uniqMarkerPerVariant
     list() -> uniqMarkerPerVariant_could_be_detected.iterative
     uniqMarkerPerVariant_could_be_detected.iterative[[c]] <- uniqMarkerPerVariant_could_be_detected$Variants
-    while(c < 10){
+    while(c < 20){
         c <- c + 1
         sdt_reduced %>% filter(!grepl(";",Variants)) %>% group_by(Variants, ID, sample_date_decimal) %>% mutate(n=n()) %>% ungroup() %>% filter(value.freq>zeroo) %>% filter(value.depth > min.depth) %>% group_by(Variants, ID, sample_date_decimal) %>% mutate(N=n()) %>% mutate(r=N/n) %>% filter(r > minUniqMarkerRatio) %>% filter(N >= minUniqMarker) %>% summarize(.groups = "drop_last") %>% ungroup() %>% dplyr::select(Variants) %>% distinct() -> uniqMarkerPerVariant_detected
         sdt_reduced %>% filter(!grepl(";",Variants)) %>% filter(value.depth > min.depth) %>% ungroup() %>% dplyr::select(Variants) %>% distinct()  -> uniqMarkerPerVariant_could_be_detected
@@ -721,7 +721,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
           uniqMarkerPerVariant.iterative[[c]] <- uniqMarkerPerVariant
           list() -> uniqMarkerPerVariant_could_be_detected.iterative
           uniqMarkerPerVariant_could_be_detected.iterative[[c]] <- uniqMarkerPerVariant_could_be_detected$Variants
-          while(c < 10){
+          while(c < 20){
               c <- c + 1
               ssdt_reduced %>% filter(sample_date_decimal %in% timepoint) %>% filter(!grepl(";",Variants)) %>% group_by(Variants, ID, sample_date_decimal) %>% mutate(n=n()) %>% ungroup() %>% filter(value.freq>zeroo) %>% filter(value.depth > min.depth) %>% group_by(Variants, ID, sample_date_decimal) %>% mutate(N=n()) %>% mutate(r=N/n) %>% filter(r > minUniqMarkerRatio) %>% filter(N >= minUniqMarker) %>% summarize(.groups = "drop_last") %>% ungroup() %>% dplyr::select(Variants) %>% distinct() -> uniqMarkerPerVariant_detected
               ssdt_reduced %>% filter(sample_date_decimal %in% timepoint) %>% filter(!grepl(";",Variants)) %>% filter(value.depth > min.depth) %>% ungroup() %>% dplyr::select(Variants) %>% distinct()  -> uniqMarkerPerVariant_could_be_detected
@@ -997,7 +997,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
           colnames(spemut_draw2)[colnames(spemut_draw2) == "Variants"] <- "variant"
           q2 + geom_point(data = spemut_draw2, aes(x = as.Date(sample_date), y = value.freq, shape = marker, fill = marker), color = "black", size = 2, alpha = .45) -> q2
           q2 + scale_shape_manual(values = c(0:25, 33:50)) -> q2
-          q2 + guides(shape = guide_legend(title = "Spezial-Mutationen", ncol = 2, title.position = "top"), fill = guide_legend(title = "Spezial-Mutationen", ncol = 2, title.position = "top"), col = guide_legend(title = "Varianten", ncol = 1, title.position = "top")) -> q2
+          q2 + guides(shape = guide_legend(title = "Spezial-Mutationen", ncol = 2, title.position = "top"), fill = guide_legend(title = "Spezial-Mutationen", ncol = 2, title.position = "top"), col = guide_legend(title = "Varianten", ncol = 3, title.position = "top")) -> q2
 
           filename <- paste0(outdir, '/figs/specialMutations', paste('/klaerwerk', roi, "all", sep="_"), ".pdf")
           #ggsave(filename = filename, plot = q2, width = plotWidth, height = plotHeight)
@@ -1021,7 +1021,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
           colnames(spemut_draw1)[colnames(spemut_draw1) == "Variants"] <- "variant"
           q1 + geom_point(data = spemut_draw1, aes(x = as.Date(sample_date), y = value.freq, shape = marker, fill = marker), color = "black", size = 2, alpha = .45) -> q1
           q1 + scale_shape_manual(values = c(0:25, 33:50)) -> q1
-          q1 + guides(shape = guide_legend(title = "Spezial-Mutationen", ncol = 2, title.position = "top"), fill = guide_legend(title = "Spezial-Mutationen", ncol = 2, title.position = "top"), col = guide_legend(title = "Varianten", ncol = 1, title.position = "top")) -> q1
+          q1 + guides(shape = guide_legend(title = "Spezial-Mutationen", ncol = 2, title.position = "top"), fill = guide_legend(title = "Spezial-Mutationen", ncol = 2, title.position = "top"), col = guide_legend(title = "Varianten", ncol = 3, title.position = "top")) -> q1
 
 
           filename <- paste0(outdir, '/figs/specialMutations', paste('/klaerwerk', roi, "VoI", sep="_"), ".pdf")

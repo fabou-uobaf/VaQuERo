@@ -180,10 +180,8 @@ close I;
 
 # print subsections for maps
 if (defined($data{statusmapplot})){
-
-    my $path = $data{statusmapplot}->{status};
-    &printStatusMap($path);
-
+  my $path = $data{statusmapplot}->{status};
+  &printStatusMap($path);
 }
 else{
   print STDERR "Warning: no overview map\n";
@@ -201,14 +199,14 @@ else{
 }
 
 if(-f "$fig_fh"){
-&printFig($fig_fh, $fig);
+  &printFig($fig_fh, $fig);
 }
 else{
   print STDERR "Wanring: no plot found by name $fig_fh\n";
 }
 
 if(-f "$tab_fh"){
-&printTab($tab_fh, $tab);
+  &printTab($tab_fh, $tab);
 }
 else{
   print STDERR "Wanring: no csv found by name $tab_fh\n";
@@ -230,6 +228,7 @@ if (defined($data{variantDetail}->{current}) && defined($data{stackOverview}->{c
     # print graphical synapsis
     if ( defined($data{sankey}->{WWTP}->{$wwplant}) ){
 
+
       my $path = $data{sankey}->{WWTP}->{$wwplant};
       &printSankey($path, $wwplant_tidy);
     }
@@ -244,7 +243,7 @@ if (defined($data{variantDetail}->{current}) && defined($data{stackOverview}->{c
 
       &printDetailPlot($wwplant_tidy, $path2);
     }
-    if ( 1!=1 && defined($data{specialMutations}->{current}->{$wwplant}->{VoI}) ){
+    if ( defined($data{specialMutations}->{current}->{$wwplant}->{VoI}) ){
       my $path3 = $data{specialMutations}->{current}->{$wwplant}->{VoI};
 
       &printSpecialMutPlot($wwplant_tidy, $path3);
@@ -254,38 +253,35 @@ if (defined($data{variantDetail}->{current}) && defined($data{stackOverview}->{c
 
 
 if(0){
-print '\subsection{Ergebnisse per Kläranlage ohne Daten aus aktuellem Run}'."\n";
-if (defined($data{variantDetail}->{old}) && defined($data{stackOverview}->{old})){
-  foreach my $wwplant ( sort keys %{$data{variantDetail}->{old}} ){
-    my $wwplant_tidy = $wwplant;
-    $wwplant_tidy =~ s/_/ /g;
-    print '\newpage'."\n";
-    print '\subsubsection{'."$wwplant_tidy".'}'."\n";
+  print '\subsection{Ergebnisse per Kläranlage ohne Daten aus aktuellem Run}'."\n";
+  if (defined($data{variantDetail}->{old}) && defined($data{stackOverview}->{old})){
+    foreach my $wwplant ( sort keys %{$data{variantDetail}->{old}} ){
+      my $wwplant_tidy = $wwplant;
+      $wwplant_tidy =~ s/_/ /g;
+      print '\newpage'."\n";
+      print '\subsubsection{'."$wwplant_tidy".'}'."\n";
 
-    if( defined($data{stackOverview}->{old}->{$wwplant}->{all}) ){
-      my $path1 = $data{stackOverview}->{old}->{$wwplant}->{all};
+      if( defined($data{stackOverview}->{old}->{$wwplant}->{all}) ){
+        my $path1 = $data{stackOverview}->{old}->{$wwplant}->{all};
 
-      &printStackPlot($wwplant_tidy, $path1);
-    }
-    if ( defined($data{variantDetail}->{old}->{$wwplant}->{VoI}) ){
-      my $path2 = $data{variantDetail}->{old}->{$wwplant}->{VoI};
+        &printStackPlot($wwplant_tidy, $path1);
+      }
+      if ( defined($data{variantDetail}->{old}->{$wwplant}->{VoI}) ){
+        my $path2 = $data{variantDetail}->{old}->{$wwplant}->{VoI};
 
-      &printDetailPlot($wwplant_tidy, $path2);
-    }
-    if ( defined($data{specialMutations}->{old}->{$wwplant}->{VoI}) ){
-      my $path3 = $data{specialMutations}->{old}->{$wwplant}->{VoI};
+        &printDetailPlot($wwplant_tidy, $path2);
+      }
+      if ( defined($data{specialMutations}->{old}->{$wwplant}->{VoI}) ){
+        my $path3 = $data{specialMutations}->{old}->{$wwplant}->{VoI};
 
-      &printSpecialMutPlot($wwplant_tidy, $path3);
+        &printSpecialMutPlot($wwplant_tidy, $path3);
+      }
     }
   }
-}
 }
 
 # print results of last 30 days as table
 &printResults();
-
-# print Daten und Methodik und Haftungsausschuss
-&printDMH();
 
 # print Variant Group Appendix
 &groupsAppendix();
@@ -295,6 +291,9 @@ if (defined($data{variantDetail}->{old}) && defined($data{stackOverview}->{old})
 
 # print Special Mutations Appendix
 &smutationsAppendix();
+
+# print Daten und Methodik und Haftungsausschuss
+&printDMH();
 
 # print footer
 &printFooter();
@@ -347,7 +346,7 @@ my $txt='
 
 \begin{figure}[htb!]
   \begin{center}
-    \includegraphics[width=0.99\textwidth]{'."$fh".'}
+    \includegraphics[width=1\textwidth]{'."$fh".'}
     \caption{'."$lbl".'}
   \end{center}
 \end{figure}
@@ -384,6 +383,7 @@ while(<D>){
   my $median =sprintf("%.3f", $F[3]);
   my $max =sprintf("%.3f", $F[4]);
   my $n = $F[7];
+  next if ($n <= 2);
   my $link = join("", '\\href{https://cov-spectrum.org/explore/Austria/AllSamples/Past2M/variants?nextcladeCoverageFrom=0.5&nextcladeCoverageTo=1&nucMutations=', $F[0],'&}{', $F[0], '}');
   $txt .= "
 $label & $median & $max & $n & $link \\\\
@@ -563,9 +563,17 @@ sub groupsAppendix{
 
 my $txt = '
 \newpage
-\section{Appendix: Subvarianten}
+\section{Appendix: Varianten}
+\label{appendix:Varianten}
 
-Im vorliegenden Abwasser-Varianten Bericht werden Virus Varianten nach der gängigen Klassifizierung von \href{https://cov-lineages.org/lineage_list.html}{Pangolin} unterschieden. Diese Klassifizierung ist sehr volatil. Manche beschriebene Sub-Varianten unterscheiden sich in so wenigen Mutationen dass eine Unterscheidung mit der hier angewandten Methodik nicht möglich ist. Daher werden gewisse Sub-Varianten nicht weiter differenziert sondern aggregiert ausgegeben. Folgende Tabelle listet alle aggregierten Varianten und deren im Bericht verwendete Bezeichnung.
+Im vorliegenden Abwasser-Varianten Bericht werden Virus Varianten nach der gängigen
+Klassifizierung von \href{https://cov-lineages.org/lineage_list.html}{Pangolin}
+unterschieden. Diese Klassifizierung ist sehr volatil. Manche beschriebene
+Sub-Varianten unterscheiden sich in so wenigen Mutationen dass eine Unterscheidung
+mit der hier angewandten Methodik nicht möglich ist. Daher werden gewisse Sub-Varianten
+nicht weiter differenziert sondern aggregiert ausgegeben. Folgende Tabelle listet
+alle aggregierten Varianten, falls vorhanden deren Alias und deren im Bericht
+verwendete Bezeichnung.
 
 \begin{footnotesize}
 \begin{longtable}{p{.2\textwidth} | p{.2\textwidth}}
@@ -772,17 +780,16 @@ my $txt1 = '
     Kontakt: & \href{mailto:andreas.bergthaler@meduniwien.ac.at}{andreas.bergthaler@meduniwien.ac.at} \\\\
              & \href{mailto:FAmman@cemm.at}{FAmman@cemm.at} \\\\
     Berichtszeitraum: & bis zum '."$date".' \\\\ % Date the experiment was performed
-    Auswahlkriterium Varianten: & Alle \emph{Variants of concern} und {of} \\\\
-                                & \emph{interest}, \emph{under monitoring} \\\\
-                                & und historisch relevante aus der Gruppe der \\\\
-                                & heruntergestuften (\emph{De-escalated}) Varianten (z.B. Alpha). \\\\
-                                & Definition folgt der Angabe von \href{https://www.ecdc.europa.eu/en/covid-19/variants-concern}{ECDC} \\\\
-                                & Zusätzlich alle Varianten die zumindest bei einem \\\\
-                                & klinischen Fällen, in den letzten sechs\\\\
-                                & Monaten, in Österreich identifiziert wurde.\\\\
+    Auswahlkriterium Varianten: & Alle \emph{Variants of concern}, \emph{of} \\\\
+                                & \emph{interest}, und \emph{under monitoring} \\\\
+                                & Definition folgt der Angabe von \href{https://www.ecdc.europa.eu/en/covid-19/variants-concern}{ECDC} (Stand 9.Dez, 2022)\\\\
                                 & \\\\
-                                & Siehe Varianten Liste im Appendix für \\\\
-                                & eine detailierte Auflistung der Varianten.\\\\
+                                & Zusätzlich alle Varianten die laut \href{https://gisaid.org/}{GISaid} in den letzten\\\\
+                                & drei Monaten bei zumindest zehn klinischen Fällen \\\\
+                                & in Österreich identifiziert wurde.\\\\
+                                & \\\\
+                                & Siehe Varianten Liste im Appendix~\ref{appendix:Varianten} auf Seite~\pageref{appendix:Varianten} für \\\\
+                                & eine detailierte Auflistung der berücksichtigten Varianten.\\\\
   \end{tabular}
 \end{center}
 \newpage
@@ -848,18 +855,21 @@ my $txt = '
 \newpage
 \section{Daten und Methodik}
 
-Die Probennahme und die Probenaufbereitung erfolgt bzw. erfolgte durch folgende Kollaborationspartner:
+Die Probenaufbereitung erfolgt bzw. erfolgte durch folgende Kollaborationspartner:
 \begin{itemize}
-  \item Heribert Insam, Institut für Mikrobiologie, Universität Innsbruck
-  \item Norbert Kreuzinger, Instituts für Wassergüte und Ressourcenmanagement, Technischen Universität Wien
   \item Herbert Oberacher, Institute für Gerichtliche Medizin, Medizinische Universität Innsbruck
+  \item Norbert Kreuzinger, Instituts für Wassergüte und Ressourcenmanagement, Technischen Universität Wien
+  \item Heribert Insam, Institut für Mikrobiologie, Universität Innsbruck
 \end{itemize}
 
 Das Projekt wird bzw. wurde finanziell durch Beiträge von folgenden Partner ermöglicht:
 \begin{itemize}
-  \item Agentur für Gesundheit und Ernährungssicherheit
-  \item Bundesministerium für Bildung, Wissenschaft und Forschung
   \item Bundesministerium für Soziales, Gesundheit, Pflege und Konsumentenschutz
+  \item Bundesministerium für Bildung, Wissenschaft und Forschung
+  \item Agentur für Gesundheit und Ernährungssicherheit
+  \item Land Salzburg
+  \item Land Vorarlberg
+  \item Land Kärnten
 \end{itemize}
 
 Ganzgenome Sequenzierung des SARS-CoV-2 Genomes mittels Amplicon-Seq wird am \href{www.biomedical-sequencing.org}{BSF} (Biomedical Sequencing Facility) durchgeführt.
