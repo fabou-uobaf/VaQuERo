@@ -107,9 +107,9 @@ if(opt$debug){
   opt$zero=0.02
   opt$depth=250
   opt$minuniqmark=1
-  opt$minuniqmarkfrac=0.5
-  opt$minqmark=6
-  opt$minmarkfrac=0.6
+  opt$minuniqmarkfrac=0.4
+  opt$minqmark=4
+  opt$minmarkfrac=0.4
   opt$smoothingsamples=2
   opt$smoothingtime=2
   opt$voi="BA.2,BA.5,XBB,BF.7,CH.1.1,BQ.1.1"
@@ -1141,7 +1141,7 @@ if(dim(globalFittedData)[1] > 0){
 
           globalFittedData %>% filter( (as.Date(format(Sys.time(), "%Y-%m-%d")) - recentEnought) < sample_date) %>% filter(LocationID %in% unique(sankey_state.dt$LocationID)) %>% group_by(LocationID) %>% mutate(latest = max(sample_date, na.rm = TRUE)) %>% filter(sample_date == latest) %>% ungroup() %>% summarize(earliest = min(sample_date, na.rm = TRUE), latest = max(sample_date, na.rm = TRUE)) -> sankey_date
 
-          left_join(x = sankey_state.dt, y = (metaDT %>% dplyr::select(LocationID, connected_people) %>% distinct())) %>% group_by(variant) %>% summarize(freq = weighted.mean(freq, w = connected_people, na.rm = TRUE)) %>% filter(freq > 0) -> sankey.dt
+          left_join(x = sankey_state.dt, y = (metaDT %>% dplyr::select(LocationID, connected_people) %>% distinct() %>% rowwise() %>% mutate(connected_people = ifelse(connected_people < 1, 1, connected_people)))) %>% group_by(variant) %>% summarize(freq = weighted.mean(freq, w = connected_people, na.rm = TRUE)) %>% filter(freq > 0) -> sankey.dt
 
           sankey.dt %>% mutate(freq = freq/sum(freq)) -> sankey.dt
           sankey.dt %>% group_by(variant = "B") %>% summarize(freq = 1-sum(freq)) -> sankey.dt0
@@ -1179,14 +1179,13 @@ if(dim(globalFittedData)[1] > 0){
           fwrite(as.list(c("sankey", "Overview", stateoi, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
           rm(pp, filename, sankey_state.dt, sankey.dt, sankey.dtt)
       }
-      plot_grid(plotlist = sankey_state_plot_list, ncol = 3) -> ppp
-      filename <- paste0(outdir, "/figs/sankey/Overview_byState.pdf")
-      ggsave(filename = filename, plot = ppp, width = 18, height = 18)
-      fwrite(as.list(c("sankey", "Overview", "allStates", filename)), file = summaryDataFile, append = TRUE, sep = "\t")
-      rm(ppp, filename, sankey_state.dt, sankey.dt, sankey.dtt)
-
-
     }
+
+    plot_grid(plotlist = sankey_state_plot_list, ncol = 3) -> ppp
+    filename <- paste0(outdir, "/figs/sankey/Overview_byState.pdf")
+    ggsave(filename = filename, plot = ppp, width = 18, height = 18)
+    fwrite(as.list(c("sankey", "Overview", "allStates", filename)), file = summaryDataFile, append = TRUE, sep = "\t")
+    rm(ppp, filename, sankey_state.dt, sankey.dt, sankey.dtt)
 }
 
 ##

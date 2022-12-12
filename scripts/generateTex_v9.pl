@@ -770,7 +770,7 @@ my $txt1 = '
 
 \title{Österreichischer Abwasser SARS-CoV-2 Varianten Bericht} % Title
 
-\author{Fabian \textsc{Amman} \and Lukas \textsc{Endler} \and Anna \textsc{Schedl} \and Petr \textsc{Triska} \and Matthew \textsc{Thornton} \and Andreas \textsc{Bergthaler}} % Author name
+\author{Fabian \textsc{Amman} \and Lukas \textsc{Endler} \and Anna \textsc{Schedl} \and Matthew \textsc{Thornton} \and Andreas \textsc{Bergthaler}} % Author name
 
 \date{\today} % Date for the report
 
