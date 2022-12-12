@@ -56,6 +56,7 @@ while(<T>){
   chomp;
   my @F = split"\t", $_;
   next if ($F[0] eq "variant");
+  next unless ($F[4]);
   if($F[4]){
     my $cmpdate_decimal = iso8601_date($F[4]);
     unless(($refdate_decimal-$cmpdate_decimal) < 31){
