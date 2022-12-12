@@ -101,8 +101,8 @@ if(opt$debug){
   opt$metadata = "data/metaData_subset.csv"
   opt$data2="data/sewage_samples_merge_samp_lofreq_dp_AF001.snpeff_afs.dp.pq.tab.gz"
   opt$inputformat = "sparse"
-  opt$marker="VaQuERo/resources/mutations_list_grouped_pango_2022-11-29_Austria.csv"
-  opt$smarker="VaQuERo/resources/mutations_special_2022-09-13.csv"
+  opt$marker="VaQuERo/resources/mutations_list_grouped_pango_2022-12-11_Europe.csv"
+  opt$smarker="VaQuERo/resources/mutations_special_2022-12-09.csv"
   opt$pmarker="VaQuERo/resources/mutations_problematic_vss1_v3.csv"
   opt$zero=0.02
   opt$depth=250
@@ -112,9 +112,9 @@ if(opt$debug){
   opt$minmarkfrac=0.6
   opt$smoothingsamples=2
   opt$smoothingtime=2
-  opt$voi="B.1.1.7,BA.1,BA.2,BA.4,BA.5,B.1.617.2,XBB,BF.7,BM.1.1,BA.2.12.1,BN.1,BA.2.75.2"
-  opt$highlight="XBB,BF.7,BM.1.1,BA.2.12.1,BN.1,BA.2.75.2,BQ.1.1"
-  opt$colorBase="B.1.617.2,BA.1,BA.2,BA.4,BA.5,BQ.1.1"
+  opt$voi="BA.2,BA.5,XBB,BF.7,CH.1.1,BQ.1.1"
+  opt$highlight="XBB,CH.1.1,BQ.1.1"
+  opt$colorBase="B.1.617.2,BA.1,BA.2,BA.4,BA.5"
   opt$recent <- 9999
   print("Warning: command line option overwritten")
 }
@@ -963,16 +963,18 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
         ColorBaseData %>% group_by(base) %>%  mutate(n = n()) %>% arrange(base, variant_dealiased) %>% dplyr::mutate(id = cur_group_id()) %>% mutate(id = ifelse(id > 6, 6, id)) -> ColorBaseData
         ColorBaseData %>% group_by(id) %>% mutate(i = row_number()) %>% rowwise() %>% mutate(col = getColor(n, id, i)) -> ColorBaseData
 
-        ggplot(data = plottng_data, aes(x = as.Date(sample_date), y = value, fill = variant)) -> q3
+        ggplot(data = plottng_data, aes(x = as.Date(sample_date), y = value, fill = variant, color = variant)) -> q3
         q3 <- q3 + geom_area(position = "stack", alpha = 0.6)
         q3 <- q3 + geom_vline(xintercept = as.Date(latestSample$latest), linetype = "dotdash", color = "grey", size =  0.5)
         q3 <- q3 + facet_wrap(~LocationName, ncol = 4)
         #q3 <- q3 + scale_fill_viridis_d(alpha = 0.6, begin = .05, end = .95, option = "H", direction = +1, name="")
-        q3 <- q3  + scale_fill_manual(values = ColorBaseData$col, breaks = ColorBaseData$variant, name = "")
-        q3 <- q3 + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1))
+        q3 <- q3 + scale_fill_manual(values = ColorBaseData$col, breaks = ColorBaseData$variant, name = "")
+        q3 <- q3 + scale_color_manual(values = ColorBaseData$col, breaks = ColorBaseData$variant, name = "")
+	q3 <- q3 + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1))
         q3 <- q3 + theme_bw() + theme(legend.position="bottom", strip.text.x = element_text(size = 10), panel.grid.minor = element_blank(), panel.spacing.y = unit(0, "lines"),  strip.background = element_rect(fill="grey97"), axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
         q3 <- q3 + scale_x_date(date_breaks = "2 month", date_labels =  "%b %y", limits = c(as.Date(NA), as.Date(latestSample$latest)))
         q3 <- q3 + ylab(paste0("Variantenanteil [1/1]") ) + xlab("")
+        q3 <- q3 + guides(fill = guide_legend(title = "", ncol = 7), color = guide_legend(title = "", ncol = 7))
         filename <- paste0(outdir, '/figs/stackview', paste('/klaerwerk', roi, "all", sep="_"), ".pdf")
         ggsave(filename = filename, plot = q3, width = plotWidth, height = plotHeight)
         fwrite(as.list(c("stackOverview", c( ifelse(dim(count_last_BSF_run_id)[1] > 0, "current", "old"), roiname, "all", filename))), file = summaryDataFile, append = TRUE, sep = "\t")
@@ -1047,10 +1049,10 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
       if(dim(plantFullData)[1] >= 1){
           print(paste("     PROGRESS: plotting variant Details", roiname))
         ## print faceted line plot of fitted values plus point plot of measured AF for all lineages
-        plantFullData %>% ggplot() +  geom_line(data = plantFittedData, alpha = 0.6, size = 2, aes(x = as.Date(sample_date), y = value, col = variant)) + geom_jitter(aes(x = as.Date(sample_date), y = singlevalue), alpha = 0.33, size = 1.5, width = 0.33, height = 0) + geom_vline(xintercept = as.Date(latestSample$latest), linetype = "dotdash", color = "grey", size =  0.5) + facet_wrap(~variant) + scale_color_manual(values = colorAssignment$fill, breaks = colorAssignment$category, name = "") + scale_y_continuous(labels=scales::percent, trans = "log10") + theme_bw() + theme(legend.position="bottom", strip.background = element_rect(fill="grey97"), axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) + scale_x_date(date_breaks = "3 month", date_labels =  "%b", limits = c(as.Date(NA), as.Date(latestSample$latest))) + ylab(paste0("Variantenanteil [1/1]") ) + xlab("") -> p2
+        plantFullData %>% ggplot() +  geom_line(data = plantFittedData, alpha = 0.6, size = 2, aes(x = as.Date(sample_date), y = value, col = variant)) + geom_jitter(aes(x = as.Date(sample_date), y = singlevalue), alpha = 0.33, size = 1.5, width = 0.33, height = 0) + geom_vline(xintercept = as.Date(latestSample$latest), linetype = "dotdash", color = "grey", size =  0.5) + facet_wrap(~variant) + scale_color_manual(values = colorAssignment$fill, breaks = colorAssignment$category, name = "") + scale_y_continuous(labels=scales::percent, trans = "log10") + theme_bw() + theme(legend.position="bottom", strip.background = element_rect(fill="grey97"), axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) + scale_x_date(date_breaks = "3 month", date_labels =  "%b", limits = c(as.Date(NA), as.Date(latestSample$latest))) + ylab(paste0("Variantenanteil [1/1]") ) + xlab("") + guides(color = guide_legend(title = "", ncol = 7)) -> p2
 
         filename <- paste0(outdir, '/figs/detail', paste('/klaerwerk', roi, "all", sep="_"), ".pdf")
-        ggsave(filename = filename, plot = p2, width = plotWidth, height = plotHeight*1.5)
+        ggsave(filename = filename, plot = p2, width = plotWidth, height = plotHeight*1.6)
         fwrite(as.list(c("variantDetail", c(ifelse(dim(count_last_BSF_run_id)[1] > 0, "current", "old"), roiname, "all", filename))), file = summaryDataFile, append = TRUE, sep = "\t")
         rm(p2, filename)
       }
@@ -1083,6 +1085,7 @@ if(dim(globalFittedData)[1] > 0){
     ## make complete plot
     globalFittedData %>% filter( (as.Date(format(Sys.time(), "%Y-%m-%d")) - recentEnought) < sample_date) %>% group_by(LocationID) %>% mutate(latest = max(sample_date, na.rm = TRUE)) %>% filter(sample_date == latest) %>% summarize(variant = variant, freq = value) -> sankey_all.dt
     unique(sankey_all.dt$variant) -> var2col
+    if("B" %notin% var2col){c("B", var2col) -> var2col}
     unlist(lapply(as.list(var2col), dealias)) -> dealiasvar2col
     sort(dealiasvar2col) -> var2col
     viridis_pal(alpha = 1, begin = 0.025, end = .975, direction = 1, option = "D")(length(var2col)) -> col2var

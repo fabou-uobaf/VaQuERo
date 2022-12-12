@@ -40,6 +40,7 @@ GetOptions(
   "tat:s"      => \$tab
 );
 
+print STDERR "LOG: in_fh  == $in_fh \n";
 
 my %data = ();
 my %mutation = ();
@@ -147,7 +148,7 @@ while(<G>){
 close G;
 
 
-open I, "< $in_fh" or die "Error: can t open $in_fh: $!\n";
+open I, "< $in_fh" or die "Error: can t open plot2path file $in_fh: $!\n";
 while(<I>){
   chomp;
   my @F = split"\t", $_;
