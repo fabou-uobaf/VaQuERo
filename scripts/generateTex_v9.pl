@@ -311,7 +311,7 @@ my $txt='
 
 \begin{figure}[htb!]
   \begin{center}
-    \includegraphics[width=0.99\textwidth]{'."$fh".'}
+    \includegraphics[width=0.8\textwidth]{'."$fh".'}
     \caption{Graphische Darstellung der Varianten Quantifizierung für die neusten Proben jeder Kläranlage '."$lbl".' für den Berichtszeitraum. Dargestellte Werte entsprechende Mittelwerten, gewichtet nach Bevölkerungsgröße. Quantifizierung verdeutlicht hierarchische Organisation der Varianten.}
   \end{center}
 \end{figure}
@@ -781,14 +781,17 @@ my $txt1 = '
   \begin{tabular}{l l }
     Kontakt: & \href{mailto:andreas.bergthaler@meduniwien.ac.at}{andreas.bergthaler@meduniwien.ac.at} \\\\
              & \href{mailto:FAmman@cemm.at}{FAmman@cemm.at} \\\\
-    Berichtszeitraum: & bis zum '."$date".' \\\\ % Date the experiment was performed
-    Auswahlkriterium Varianten: & Alle \emph{Variants of concern}, \emph{of} \\\\
-                                & \emph{interest}, und \emph{under monitoring} \\\\
+    Berichtsdatum: & '."$date".' \\\\ % Date the experiment was performed
+    Auswahlkriterium Varianten: & Berücksichtigte Varianten aus drei Quellen \\\\
+                                & \\\\
+                                & Alle \emph{Variants~of~concern}, \emph{of~interest}, und \emph{under~monitoring}. \\\\
                                 & Definition folgt der Angabe von \href{https://www.ecdc.europa.eu/en/covid-19/variants-concern}{ECDC} (Stand 9.Dez, 2022)\\\\
                                 & \\\\
-                                & Zusätzlich alle Varianten die laut \href{https://gisaid.org/}{GISaid} in den letzten\\\\
-                                & drei Monaten bei zumindest zehn klinischen Fällen \\\\
-                                & in Österreich identifiziert wurde.\\\\
+                                & Alle Varianten die laut \href{https://gisaid.org/}{GISaid} in zumindest einem europäischen\\\\
+                                & Land in einem Monat $>$25\% relative Häufigkeit zeigten. \\\\
+                                & \\\\
+                                & Alle Varianten die aktuell laut \href{https://cov-spectrum.org/collections/24}{CoV-spectrum Collection 24}\\\\
+                                & ein Wachstumsvorteil $>$50\% (lower CI) zeigen. \\\\
                                 & \\\\
                                 & Siehe Varianten Liste im Appendix~\ref{appendix:Varianten} auf Seite~\pageref{appendix:Varianten} für \\\\
                                 & eine detailierte Auflistung der berücksichtigten Varianten.\\\\
