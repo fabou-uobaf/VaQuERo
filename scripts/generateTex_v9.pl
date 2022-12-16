@@ -41,6 +41,8 @@ GetOptions(
 );
 
 print STDERR "LOG: in_fh  == $in_fh \n";
+print STDERR "LOG: date   == $date \n";
+
 
 my %data = ();
 my %mutation = ();
@@ -788,7 +790,7 @@ my $txt1 = '
                                 & Definition folgt der Angabe von \href{https://www.ecdc.europa.eu/en/covid-19/variants-concern}{ECDC} (Stand 9.Dez, 2022)\\\\
                                 & \\\\
                                 & Alle Varianten die laut \href{https://gisaid.org/}{GISaid} in zumindest einem europäischen\\\\
-                                & Land in einem Monat $>$25\% relative Häufigkeit zeigten. \\\\
+                                & Land in einem Monat $>$33\% relative Häufigkeit zeigten. \\\\
                                 & \\\\
                                 & Alle Varianten die aktuell laut \href{https://cov-spectrum.org/collections/24}{CoV-spectrum Collection 24}\\\\
                                 & ein Wachstumsvorteil $>$50\% (lower CI) zeigen. \\\\

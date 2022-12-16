@@ -100,8 +100,9 @@ if(opt$debug){
   opt$dir = "sandbox1"
   opt$metadata = "data/metaData_subset.csv"
   opt$data2="data/sewage_samples_merge_samp_lofreq_dp_AF001.snpeff_afs.dp.pq.tab.gz"
+  opt$data="data/mutationData_DB_NationMonitoringSites.tsv.gz"
   opt$inputformat = "sparse"
-  opt$marker="VaQuERo/resources/mutations_list_grouped_pango_2022-12-11_Europe.csv"
+  opt$marker="VaQuERo/resources/mutations_list_grouped_pango_2022-12-15_Europe.csv"
   opt$smarker="VaQuERo/resources/mutations_special_2022-12-09.csv"
   opt$pmarker="VaQuERo/resources/mutations_problematic_vss1_v3.csv"
   opt$zero=0.02
@@ -790,7 +791,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 
 
             # remove "OTHERS"
-            ssdt %>% filter(!grepl("other", Variants)) -> ssdt
+            ssdt %>% mutate(Variants = gsub("other;*", "", Variants)) -> ssdt
 
             ## remove outlier per group flag
             dim(ssdt)[1] -> mutationsBeforeOutlierRemoval
@@ -804,12 +805,8 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
             if ( length(specifiedLineages) > 1 ){
               formula <- as.formula(paste("value.freq", paste(specifiedLineages, collapse='+'), sep = " ~" ))
             } else{
-              ssdt %>% filter(!grepl(";", Variants)) -> ssdt
-              if ( length(unique(ssdt$Variants)) > 1 ){
-                formula <- as.formula(paste("value.freq", "Variants", sep = " ~" ))
-              } else{
-                formula <- as.formula(paste("value.freq", "1", sep = " ~" ))
-              }
+              ssdt %>% filter(grepl(specifiedLineages, Variants)) -> ssdt
+              formula <- as.formula(paste("value.freq", "1", sep = " ~" ))
             }
 
             ## check if the current timepoint is still represented in the data
@@ -822,9 +819,11 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
             ## add weight (1/(dayDiff+1)*log10(sequencingdepth)
             ssdt %>% rowwise() %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(weight = log10(value.depth)*timeweight) -> ssdt
             detour4log %>% rowwise() %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(weight = log10(value.depth)*timeweight) %>% filter(!grepl(";.+;", Variants)) -> detour4log
+            detour4log %>% rowwise() %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(weight = log10(value.depth)*timeweight) %>% dplyr::select(sample_date, NUC, value.freq, weight, all_of(specifiedLineages)) -> detour4log_printer
+            print(detour4log_printer)
 
-            print(data.frame(date = detour4log$sample_date, decimal = detour4log$sample_date_decimal, Tweight = round(detour4log$timeweight, digits = 2), depth = detour4log$value.depth, weight = round(detour4log$weight, digits = 2), value = round(detour4log$value.freq, digits = 2), variants = detour4log$Variants, mutation = detour4log$NUC))
-            rm(detour4log)
+            #print(data.frame(date = detour4log$sample_date, decimal = detour4log$sample_date_decimal, Tweight = round(detour4log$timeweight, digits = 2), depth = detour4log$value.depth, weight = round(detour4log$weight, digits = 2), value = round(detour4log$value.freq, digits = 2), variants = detour4log$Variants, mutation = detour4log$NUC))
+            rm(detour4log, detour4log_printer)
 
             ## make regression
             method = "SIMPLEX"
@@ -970,7 +969,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
         #q3 <- q3 + scale_fill_viridis_d(alpha = 0.6, begin = .05, end = .95, option = "H", direction = +1, name="")
         q3 <- q3 + scale_fill_manual(values = ColorBaseData$col, breaks = ColorBaseData$variant, name = "")
         q3 <- q3 + scale_color_manual(values = ColorBaseData$col, breaks = ColorBaseData$variant, name = "")
-	q3 <- q3 + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1))
+	      q3 <- q3 + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1))
         q3 <- q3 + theme_bw() + theme(legend.position="bottom", strip.text.x = element_text(size = 10), panel.grid.minor = element_blank(), panel.spacing.y = unit(0, "lines"),  strip.background = element_rect(fill="grey97"), axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
         q3 <- q3 + scale_x_date(date_breaks = "2 month", date_labels =  "%b %y", limits = c(as.Date(NA), as.Date(latestSample$latest)))
         q3 <- q3 + ylab(paste0("Variantenanteil [1/1]") ) + xlab("")
