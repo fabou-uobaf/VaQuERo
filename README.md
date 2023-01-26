@@ -3,7 +3,7 @@ SARS-CoV-2 (Va)riant (Qu)antification in s(E)wage, designed for (Ro)bustness
 
 ## Synopsis
 
-Rscript scripts/VaQuERo.r > vaquero.log
+Rscript scripts/VaQuERo_v2.r > vaquero.log
 
 ## Description
 Takes allele frequencies in table formate and associated meta data and quantifies different virus variants as defined in provided marker mutation file. The workflow first calls 'detected' variants and subsequently quantifies the abundance of the detected variants based on the observed non-zero frequencies using a SIMPLEX regression.
@@ -11,7 +11,7 @@ Takes allele frequencies in table formate and associated meta data and quantifie
 ## Usage 
 
 
-scripts/VaQuERo.r [options]
+scripts/VaQuERo_v2.r [options]
 
 ## Options
 	--dir=CHARACTER
