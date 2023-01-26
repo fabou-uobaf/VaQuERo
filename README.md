@@ -101,6 +101,8 @@ scripts/VaQuERo_v2.r [options]
 
 	--highlight=CHARACTER
 		List of variants which should be plotted at the bottom axis. List separated by semicolon [default: B.1.1.7;B.1.617.2]
+	--colorBase=CHARACTER
+		List of base variants. All offsprings of these variants will be assigned with similar colors in the respective plots [default: BA.1;BA.2;BA.5]
 
 	-h, --help
 		Show help message and exit.
