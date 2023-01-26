@@ -1,5 +1,9 @@
-# VaQuERo
+# VaQuERo v2
 SARS-CoV-2 (Va)riant (Qu)antification in s(E)wage, designed for (Ro)bustness
+
+## Version History
+
+The newer version of VaQuERo, denoted VaQuERo_v2.r allows to deconvolute also hierarchically nested variants. This allows to have a more fine grained lineages resolution despite the increasing diversity of simultaneously circulating lineages. We encourage all users to switch to the newest version of the tool and the marker mutation. The old version is kept for backward compability but no more actively maintained.  
 
 ## Synopsis
 
