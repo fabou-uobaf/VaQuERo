@@ -23,7 +23,6 @@ suppressPackageStartupMessages(library("ggsankey"))
 suppressPackageStartupMessages(library("cowplot"))
 suppressPackageStartupMessages(library("viridis"))
 
-
 timestamp()
 
 # get Options
@@ -64,7 +63,7 @@ option_list = list(
               help="Minimal allele frequency to be considered [default %default]", metavar="double"),
   make_option(c("--depth"), type="integer", default=75,
               help="Minimal depth at mutation locus to be considered [default %default]", metavar="character"),
-  make_option(c("--recent"), type="integer", default=99,
+  make_option(c("--recent"), type="integer", default=999,
               help="How old (in days) most recent sample might be to be still considered in overview maps [default %default]", metavar="character"),
   make_option(c("--plottp"), type="integer", default=3,
               help="Produce timecourse plots only if more than this timepoints are available [default %default]", metavar="character"),
@@ -92,6 +91,7 @@ option_list = list(
 );
 opt_parser = OptionParser(option_list=option_list);
 opt = parse_args(opt_parser);
+
 
 
 #####################################################
@@ -382,7 +382,7 @@ minMarkerRatio <- opt$minmarkfrac # minmal fraction of sensitive markers that va
 timeLag <- opt$smoothingsamples # number of previous timepoints use for smoothing
 timeStart <- 1 # set to 1 if all time points should be considered; 2 if first should not be considered
 timeLagDay <- opt$smoothingtime # previous timepoints for smoothing are ignored if more days before
-VoI                 <- unlist(str_split(opt$voi, pattern=c(";",",")))
+VoI                 <- grep(";|,", unlist(str_split(opt$voi, pattern=c(";",","))), value = TRUE, invert = TRUE)
 highlightedVariants <- unlist(str_split(opt$highlight, pattern=c(";",","))[[2]])
 baseForColorsVariants <- unlist(str_split(opt$colorBase, pattern=c(";",","))[[2]])
 baseForColorsVariants <- unlist(lapply(as.list(baseForColorsVariants), dealias))
@@ -1256,59 +1256,61 @@ if(dim(globalFittedData)[1] > 0){
     }
 
     ## make plot per state
-    left_join(x = sankey_all.dt, y = metaDT, by = "LocationID") %>% dplyr::select(LocationID, variant, freq, state) %>% distinct() -> sankey_allState.dt
-    sankey_state_plot_list <- list()
-    for (stateoi in unique(sankey_allState.dt$state)){
-      sankey_allState.dt %>% filter(state == stateoi) -> sankey_state.dt
-      if(dim(sankey_state.dt)[1] > 0){
+    if(any(colnames(metaDT) == "state")){
+      left_join(x = sankey_all.dt, y = metaDT, by = "LocationID") %>% dplyr::select(LocationID, variant, freq, state) %>% distinct() -> sankey_allState.dt
+      sankey_state_plot_list <- list()
+      for (stateoi in unique(sankey_allState.dt$state)){
+        sankey_allState.dt %>% filter(state == stateoi) -> sankey_state.dt
+        if(dim(sankey_state.dt)[1] > 0){
 
-          globalFittedData %>% filter( (as.Date(format(Sys.time(), "%Y-%m-%d")) - recentEnought) < sample_date) %>% filter(LocationID %in% unique(sankey_state.dt$LocationID)) %>% group_by(LocationID) %>% mutate(latest = max(sample_date, na.rm = TRUE)) %>% filter(sample_date == latest) %>% ungroup() %>% summarize(earliest = min(sample_date, na.rm = TRUE), latest = max(sample_date, na.rm = TRUE)) -> sankey_date
+            globalFittedData %>% filter( (as.Date(format(Sys.time(), "%Y-%m-%d")) - recentEnought) < sample_date) %>% filter(LocationID %in% unique(sankey_state.dt$LocationID)) %>% group_by(LocationID) %>% mutate(latest = max(sample_date, na.rm = TRUE)) %>% filter(sample_date == latest) %>% ungroup() %>% summarize(earliest = min(sample_date, na.rm = TRUE), latest = max(sample_date, na.rm = TRUE)) -> sankey_date
 
-          left_join(x = sankey_state.dt, y = (metaDT %>% dplyr::select(LocationID, connected_people) %>% distinct() %>% rowwise() %>% mutate(connected_people = ifelse(connected_people < 1, 1, connected_people)))) %>% group_by(variant) %>% summarize(freq = weighted.mean(freq, w = connected_people, na.rm = TRUE)) %>% filter(freq > 0) -> sankey.dt
+            left_join(x = sankey_state.dt, y = (metaDT %>% dplyr::select(LocationID, connected_people) %>% distinct() %>% rowwise() %>% mutate(connected_people = ifelse(connected_people < 1, 1, connected_people)))) %>% group_by(variant) %>% summarize(freq = weighted.mean(freq, w = connected_people, na.rm = TRUE)) %>% filter(freq > 0) -> sankey.dt
 
-          sankey.dt %>% mutate(freq = freq/sum(freq)) -> sankey.dt
-          sankey.dt %>% group_by(variant = "B") %>% summarize(freq = 1-sum(freq)) -> sankey.dt0
+            sankey.dt %>% mutate(freq = freq/sum(freq)) -> sankey.dt
+            sankey.dt %>% group_by(variant = "B") %>% summarize(freq = 1-sum(freq)) -> sankey.dt0
 
-          rbind(sankey.dt, sankey.dt0) -> sankey.dt
-          sankey.dt %>% filter(freq > zeroo/10 | variant == "B") -> sankey.dt
+            rbind(sankey.dt, sankey.dt0) -> sankey.dt
+            sankey.dt %>% filter(freq > zeroo/10 | variant == "B") -> sankey.dt
 
-          sankey.dt$variant_dealias <- unlist(lapply(as.list(sankey.dt$variant), dealias))
-          for ( baseForColor in baseForColorsVariants ){
-            if(any(grepl(baseForColor, sankey.dt$variant_dealias, fixed = TRUE))){
-                if(baseForColor %notin% sankey.dt$variant_dealias){
-                    rbind(sankey.dt, data.frame(variant = realias(baseForColor), freq = 0, variant_dealias = baseForColor)) -> sankey.dt
-                }
+            sankey.dt$variant_dealias <- unlist(lapply(as.list(sankey.dt$variant), dealias))
+            for ( baseForColor in baseForColorsVariants ){
+              if(any(grepl(baseForColor, sankey.dt$variant_dealias, fixed = TRUE))){
+                  if(baseForColor %notin% sankey.dt$variant_dealias){
+                      rbind(sankey.dt, data.frame(variant = realias(baseForColor), freq = 0, variant_dealias = baseForColor)) -> sankey.dt
+                  }
+              }
             }
-          }
 
-          sankey.dt %>% rowwise() %>% mutate(levels = length(unlist(strsplit(variant_dealias, split = "\\.")))) %>% group_by(1) %>% summarize( maxLev = max(levels)) -> maxLev
-          sankey.dt %>% rowwise() %>% mutate(long_variant = expandVar(variant_dealias, maxLev$maxLev)) -> sankey.dt
-          ancestor <- getTree(sankey.dt)
-          Nlevels <- max(unlist(lapply(ancestor, length)))
-          sankey.dt <- makeObs(sankey.dt, Nlevels, ancestor, sankeyPrecision)
+            sankey.dt %>% rowwise() %>% mutate(levels = length(unlist(strsplit(variant_dealias, split = "\\.")))) %>% group_by(1) %>% summarize( maxLev = max(levels)) -> maxLev
+            sankey.dt %>% rowwise() %>% mutate(long_variant = expandVar(variant_dealias, maxLev$maxLev)) -> sankey.dt
+            ancestor <- getTree(sankey.dt)
+            Nlevels <- max(unlist(lapply(ancestor, length)))
+            sankey.dt <- makeObs(sankey.dt, Nlevels, ancestor, sankeyPrecision)
 
-          sankey.dt %>% make_long(names(sankey.dt)) -> sankey.dtt
-          sankey.dtt %>% filter(!is.na(node)) -> sankey.dtt
-          max(as.numeric(gsub("level", "", sankey.dtt$next_x)), na.rm = TRUE) -> maxLev
-          sankey.dtt %>% group_by(x, node) %>% mutate(n = paste0("[", 100*n()/sankeyPrecision, "%]")) %>% rowwise() %>% mutate(level = as.numeric(gsub("level", "", x))) %>% mutate(label = ifelse(level == maxLev, paste(node, n), node)) -> sankey.dtt
+            sankey.dt %>% make_long(names(sankey.dt)) -> sankey.dtt
+            sankey.dtt %>% filter(!is.na(node)) -> sankey.dtt
+            max(as.numeric(gsub("level", "", sankey.dtt$next_x)), na.rm = TRUE) -> maxLev
+            sankey.dtt %>% group_by(x, node) %>% mutate(n = paste0("[", 100*n()/sankeyPrecision, "%]")) %>% rowwise() %>% mutate(level = as.numeric(gsub("level", "", x))) %>% mutate(label = ifelse(level == maxLev, paste(node, n), node)) -> sankey.dtt
 
-          sankey.dtt %>% rowwise() %>% mutate(node = ifelse(is.na(node), node, dealias(node))) %>% mutate(next_node = ifelse(is.na(next_node), next_node, dealias(next_node))) -> sankey.dtt
+            sankey.dtt %>% rowwise() %>% mutate(node = ifelse(is.na(node), node, dealias(node))) %>% mutate(next_node = ifelse(is.na(next_node), next_node, dealias(next_node))) -> sankey.dtt
 
-          ggplot(sankey.dtt, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = label)) + geom_sankey(flow.alpha = .6, node.color = "gray30", type ='alluvial') + geom_sankey_label(size = 3, color = "white", fill = "gray40", position = position_nudge(x = 0.05, y = 0), na.rm = TRUE, type ='alluvial', hjust = 0) + theme_sankey(base_size = 16) + labs(x = NULL) + ggtitle(paste0("Gewichtetes Mittel: ", stateoi), subtitle = paste( sankey_date$earliest , "bis", sankey_date$latest)) + theme(legend.position = "none", axis.text.x = element_blank(), plot.title = element_text(hjust = 0), plot.subtitle=element_text(hjust = 0)) + scale_fill_manual(values = col2var, breaks = var2col) -> pp
-          sankey_state_plot_list[[length(sankey_state_plot_list)+1]] <- pp
+            ggplot(sankey.dtt, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = label)) + geom_sankey(flow.alpha = .6, node.color = "gray30", type ='alluvial') + geom_sankey_label(size = 3, color = "white", fill = "gray40", position = position_nudge(x = 0.05, y = 0), na.rm = TRUE, type ='alluvial', hjust = 0) + theme_sankey(base_size = 16) + labs(x = NULL) + ggtitle(paste0("Gewichtetes Mittel: ", stateoi), subtitle = paste( sankey_date$earliest , "bis", sankey_date$latest)) + theme(legend.position = "none", axis.text.x = element_blank(), plot.title = element_text(hjust = 0), plot.subtitle=element_text(hjust = 0)) + scale_fill_manual(values = col2var, breaks = var2col) -> pp
+            sankey_state_plot_list[[length(sankey_state_plot_list)+1]] <- pp
 
-          filename <- paste0(outdir, "/figs/sankey/Overview_",  gsub(" ", "_", stateoi), ".pdf")
-          ggsave(filename = filename, plot = pp)
-          fwrite(as.list(c("sankey", "Overview", stateoi, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
-          rm(pp, filename, sankey_state.dt, sankey.dt, sankey.dtt)
+            filename <- paste0(outdir, "/figs/sankey/Overview_",  gsub(" ", "_", stateoi), ".pdf")
+            ggsave(filename = filename, plot = pp)
+            fwrite(as.list(c("sankey", "Overview", stateoi, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
+            rm(pp, filename, sankey_state.dt, sankey.dt, sankey.dtt)
+        }
       }
-    }
 
-    plot_grid(plotlist = sankey_state_plot_list, ncol = 3) -> ppp
-    filename <- paste0(outdir, "/figs/sankey/Overview_byState.pdf")
-    ggsave(filename = filename, plot = ppp, width = 18, height = 18)
-    fwrite(as.list(c("sankey", "Overview", "allStates", filename)), file = summaryDataFile, append = TRUE, sep = "\t")
-    rm(ppp, filename, sankey_state.dt, sankey.dt, sankey.dtt)
+      plot_grid(plotlist = sankey_state_plot_list, ncol = 3) -> ppp
+      filename <- paste0(outdir, "/figs/sankey/Overview_byState.pdf")
+      ggsave(filename = filename, plot = ppp, width = 18, height = 18)
+      fwrite(as.list(c("sankey", "Overview", "allStates", filename)), file = summaryDataFile, append = TRUE, sep = "\t")
+      rm(ppp, filename, sankey_state.dt, sankey.dt, sankey.dtt)
+    }
 }
 
 ##
@@ -1356,36 +1358,39 @@ for (voi in VoI){
   print(paste("     PROGRESS: considering", voi))
 
   globalFittedData %>% filter(variant == voi) %>% filter(! is.na(sample_id) ) -> mapdata
-  metaDT$sample_date <- as.Date(metaDT$sample_date)
-  left_join(x = mapdata, y = metaDT, by = c("sample_id" = "BSF_sample_name", "LocationName", "LocationID", "sample_date")) -> mapdata
+  if(all(dim(mapdata) > 0)){
+    metaDT$sample_date <- as.Date(metaDT$sample_date)
+    mapdata$sample_date <- as.Date(mapdata$sample_date)
+    left_join(x = mapdata, y = metaDT, by = c("sample_id" = "BSF_sample_name", "LocationName", "LocationID", "sample_date")) -> mapdata
 
-  if (dim(mapdata)[1] > 0){
-    mapdata %>% group_by(LocationID) %>% mutate(latest = max(as.Date(sample_date))) %>% filter(latest == sample_date) %>% filter(BSF_run == last_BSF_run_id) %>% filter( (as.Date(format(Sys.time(), "%Y-%m-%d")) - recentEnought) < sample_date) -> mapdata
-    mapdata %>% filter(value > 0) -> mapdata
+    if (dim(mapdata)[1] > 0){
+      mapdata %>% group_by(LocationID) %>% mutate(latest = max(as.Date(sample_date))) %>% filter(latest == sample_date) %>% filter(BSF_run == last_BSF_run_id) %>% filter( (as.Date(format(Sys.time(), "%Y-%m-%d")) - recentEnought) < sample_date) -> mapdata
+      mapdata %>% filter(value > 0) -> mapdata
 
-    if (length(mapdata$value) > 0 ){
-      print(paste("     PROGRESS: plotting map for", voi))
-      print(data.frame(location=mapdata$LocationName, dates = mapdata$sample_date, values = mapdata$value))
+      if (length(mapdata$value) > 0 ){
+        print(paste("     PROGRESS: plotting map for", voi))
+        print(data.frame(location=mapdata$LocationName, dates = mapdata$sample_date, values = mapdata$value))
 
-      s <- ggplot()
-      s <- s + geom_sf(data = World, fill = "grey95")
-      s <- s + geom_sf(data = Country, fill = "antiquewhite")
-      s <- s + theme_minimal()
-      s <- s + coord_sf(ylim = mapMargines[c(1,3)], xlim = mapMargines[c(2,4)], expand = FALSE)
-      s <- s + annotation_scale(location = "bl")
-      s <- s + annotation_north_arrow(location = "tl", which_north = "true", pad_x = unit(0.75, "in"), pad_y = unit(0.5, "in"), style = north_arrow_fancy_orienteering)
-      s <- s + geom_point(data=subset(mapdata, status == "pass"), aes(y=dcpLatitude, x=dcpLongitude, size = as.numeric(connected_people)), alpha = 1, shape = 3)
-      s <- s + geom_point(data=mapdata, aes(y=dcpLatitude, x=dcpLongitude, size = as.numeric(connected_people), col = as.numeric(value)), alpha = 0.8)
-      s <- s + facet_wrap(~variant, nrow = 2)
-      s <- s + theme(axis.text = element_blank(), legend.direction = "vertical", legend.box = "horizontal", legend.position = "bottom")
-      s <- s + guides(size = guide_legend(title = "Population", nrow = 2), col = guide_colourbar(title = paste0("Anteil ", voi), direction = "horizontal", title.position = "top"))
-      s <- s + scale_color_viridis_c(direction = 1, begin = .05, end = .95, option = "C")
-      s <- s + scale_size(range = c(2, 6), labels = scales::comma, breaks = c(50000, 100000, 500000, 1000000))
+        s <- ggplot()
+        s <- s + geom_sf(data = World, fill = "grey95")
+        s <- s + geom_sf(data = Country, fill = "antiquewhite")
+        s <- s + theme_minimal()
+        s <- s + coord_sf(ylim = mapMargines[c(1,3)], xlim = mapMargines[c(2,4)], expand = FALSE)
+        s <- s + annotation_scale(location = "bl")
+        s <- s + annotation_north_arrow(location = "tl", which_north = "true", pad_x = unit(0.75, "in"), pad_y = unit(0.5, "in"), style = north_arrow_fancy_orienteering)
+        s <- s + geom_point(data=subset(mapdata, status == "pass"), aes(y=dcpLatitude, x=dcpLongitude, size = as.numeric(connected_people)), alpha = 1, shape = 3)
+        s <- s + geom_point(data=mapdata, aes(y=dcpLatitude, x=dcpLongitude, size = as.numeric(connected_people), col = as.numeric(value)), alpha = 0.8)
+        s <- s + facet_wrap(~variant, nrow = 2)
+        s <- s + theme(axis.text = element_blank(), legend.direction = "vertical", legend.box = "horizontal", legend.position = "bottom")
+        s <- s + guides(size = guide_legend(title = "Population", nrow = 2), col = guide_colourbar(title = paste0("Anteil ", voi), direction = "horizontal", title.position = "top"))
+        s <- s + scale_color_viridis_c(direction = 1, begin = .05, end = .95, option = "C")
+        s <- s + scale_size(range = c(2, 6), labels = scales::comma, breaks = c(50000, 100000, 500000, 1000000))
 
-      filename <- paste0(outdir, '/figs/maps/', voi, ".pdf")
-      ggsave(filename = filename, plot = s)
-      fwrite(as.list(c("mapplot", voi, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
-      rm(s, filename, mapdata)
+        filename <- paste0(outdir, '/figs/maps/', voi, ".pdf")
+        ggsave(filename = filename, plot = s)
+        fwrite(as.list(c("mapplot", voi, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
+        rm(s, filename, mapdata)
+      }
     }
   }
 }
