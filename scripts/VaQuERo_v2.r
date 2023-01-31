@@ -97,27 +97,26 @@ opt = parse_args(opt_parser);
 #####################################################
 ####  parameter setting for interactive debugging
 if(opt$debug){
-  opt$dir = "sandbox1"
-  opt$metadata = "data/metaData_subset.csv"
-  opt$data2="data/sewage_samples_merge_samp_lofreq_dp_AF001.snpeff_afs.dp.pq.tab.gz"
-  opt$data="data/mutationData_DB_NationMonitoringSites.tsv.gz"
-  opt$inputformat = "tidy"
-  opt$marker="VaQuERo/resources/mutations_list_grouped_pango_2022-12-21_Europe.csv"
-  opt$smarker="VaQuERo/resources/mutations_special_2022-12-21.csv"
-  opt$pmarker="VaQuERo/resources/mutations_problematic_vss1_v3.csv"
-  opt$zero=0.02
-  opt$depth=250
-  opt$minuniqmark=1
-  opt$minuniqmarkfrac=0.4
-  opt$minqmark=4
-  opt$minmarkfrac=0.4
-  opt$smoothingsamples=2
-  opt$smoothingtime=2
-  opt$voi="BA.2,BA.5,XBB,BF.7,CH.1.1,BQ.1.1x"
-  opt$highlight="XBB,CH.1.1,BQ.1.1x"
-  opt$colorBase="B.1.617.2,BA.1,BA.2,BA.4,BA.5"
-  opt$recent <- 30
-  print("Warning: command line option overwritten")
+    opt$dir = "sandbox1"
+    opt$metadata = "data/metaData_general.csv"
+    opt$data="data/mutationData_DB_NationMonitoringSites.tsv.gz"
+    opt$inputformat = "tidy"
+    opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2023-01-02_Europe.csv"
+    opt$smarker="VaQuERo/resources/mutations_special_2022-12-21.csv"
+    opt$pmarker="VaQuERo/resources/mutations_problematic_vss1_v3.csv"
+    opt$zero=0.02
+    opt$depth=250
+    opt$minuniqmark=1
+    opt$minuniqmarkfrac=0.4
+    opt$minqmark=4
+    opt$minmarkfrac=0.4
+    opt$smoothingsamples=2
+    opt$smoothingtime=2
+    opt$voi="XBB.1.5,CH.1.1,BQ.1.1"
+    opt$highlight="XBB.1.5,CH.1.1,BQ.1.1"
+    opt$colorBase="B.1.617.2,BA.1,BA.2,BA.4,BA.5"
+    opt$recent <- 99999
+    print("Warning: command line option overwritten")
 }
 #####################################################
 
@@ -874,7 +873,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
               ssdt %>% dplyr::select(value.freq, all_of(specifiedLineages), fit1) -> ssdt_toOp
               startValues <- starterV(ssdt_toOp)
 
-              O = 5
+              O = 3
               matrix(rep(0, length(specifiedLineages)*O), O) -> optimizedN
               for (o in 1:O){
                 optim(par=startValues, fn=objfnct, data=ssdt_toOp, method = "L-BFGS-B", lower = 0, upper = 1) -> optimized
@@ -1135,6 +1134,10 @@ if (dim(globalFittedData)[1] >= tpLimitToPlot){
     }
     rbind(data.table(variant = varr, base = foundbase), ColorBaseData) -> ColorBaseData
   }
+
+  ## adjust if mean sum per week is >1
+  stacker.dtt %>% group_by(kw) %>% mutate(T = sum(agg_value)) %>% rowwise() %>% mutate(agg_value = ifelse(T > 1, agg_value/T, agg_value)) %>% dplyr::select(-"T") -> stacker.dtt
+
   ColorBaseData$variant_dealiased <- unlist(lapply(as.list(as.character(ColorBaseData$variant)), dealias))
   ColorBaseData[order(ColorBaseData$variant_dealiased, decreasing = TRUE),] -> ColorBaseData
 
