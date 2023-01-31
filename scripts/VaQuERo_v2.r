@@ -874,7 +874,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
               ssdt %>% dplyr::select(value.freq, all_of(specifiedLineages), fit1) -> ssdt_toOp
               startValues <- starterV(ssdt_toOp)
 
-              O = 1
+              O = 5
               matrix(rep(0, length(specifiedLineages)*O), O) -> optimizedN
               for (o in 1:O){
                 optim(par=startValues, fn=objfnct, data=ssdt_toOp, method = "L-BFGS-B", lower = 0, upper = 1) -> optimized

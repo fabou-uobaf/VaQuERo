@@ -71,7 +71,7 @@
   } else{
     samples_with_seqdata_with_wwplants_db %>% mutate(include_in_report = TRUE) %>% filter(!is.na(sample_date)) -> samples_with_seqdata_with_wwplants_db
 
-    samples_with_seqdata_with_wwplants_db  %>% filter(RNA_ID_int %in% reportsamples ) -> samples_with_seqdata_with_wwplants_db
+    samples_with_seqdata_with_wwplants_db  %>% filter(RNA_ID_int %in% reportsamples | BSF_sample_name %in% reportsamples ) -> samples_with_seqdata_with_wwplants_db
 
   }
 
@@ -94,7 +94,7 @@
   ## set status to pass if regex fit with pass (e.g. passed_qc; in former pango version)
   ## remove all none-passed samples
   samples_with_seqdata_with_wwplants_db %>% mutate(status = ifelse(grepl("^pass", status), "pass", status)) -> samples_with_seqdata_with_wwplants_db
-  samples_with_seqdata_with_wwplants_db %>% filter(status == "pass") -> samples_with_seqdata_with_wwplants_db
+  #samples_with_seqdata_with_wwplants_db %>% filter(status == "pass") -> samples_with_seqdata_with_wwplants_db
 
   ## select columns of interest
   coi <- c("BSF_run", "BSF_sample_name", "BSF_start_date", "LocationID", "LocationName", "N_in_Consensus", "RNA_ID_int", "additional_information", "adress_town", "state", "connected_people", "dcpLatitude", "dcpLongitude", "include_in_report", "report_category", "sample_date", "status")
