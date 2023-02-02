@@ -74,17 +74,17 @@ opt = parse_args(opt_parser);
 ####  parameter setting for interactive debugging
 if(opt$debug){
   opt$dir = "sandbox1"
-  opt$metadata = "data_planes/metaData_targeted.csv"
-  opt$data="data_planes/mutationData_DB_TargetedMonitoringSites_phased.tsv.gz"
+  opt$metadata = "data_wwtp/metaData_targeted.csv"
+  opt$data="data_wwtp/mutationData_DB_TargetedMonitoringSites_phased.tsv.gz"
   opt$inputformat = "tidy"
-  opt$marker="resources/mutations_list_grouped_pango_codonPhased_2023-01-02_Europe.csv"
-  opt$mutstats  = "resources/mutations_stats_pango_codonPhased_2023-01-02.csv"
-  opt$group2var = "resources/groupMembers_pango_codonPhased_2023-01-02_Europe.csv"
+  opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2023-01-02_Europe.csv"
+  opt$mutstats  = "VaQuERo/resources/mutations_stats_pango_codonPhased_2023-01-02.csv.gz"
+  opt$group2var = "VaQuERo/resources/groupMembers_pango_codonPhased_2023-01-02_Europe.csv"
   opt$pmarker="VaQuERo/resources/mutations_problematic_vss1_v3.csv"
-  opt$detectmode = "cons"
+  opt$detectmode = "umm"
   opt$ninconsens = 0.1
   opt$zero=0.02
-  opt$depth=250
+  opt$depth=5
   opt$minuniqmark=1
   opt$minuniqmarkfrac=0.4
   opt$minqmark=4
@@ -333,6 +333,10 @@ if( ! dir.exists(paste0(outdir, "/figs/excessmutation"))){
 if( ! dir.exists(paste0(outdir, "/figs/scatter"))){
   dir.create(paste0(outdir, "/figs/scatter"), showWarnings = FALSE)
 }
+if( ! dir.exists(paste0(outdir, "/figs/overview"))){
+  dir.create(paste0(outdir, "/figs/overview"), showWarnings = FALSE)
+}
+
 
 
 
@@ -551,6 +555,12 @@ RNA_ID_int_currentRun %>% ungroup() %>% summarize(earliest = min(as.Date(sample_
 print(paste("LOG: current run ID:", unique(RNA_ID_int_currentRun$BSF_run)))
 print(paste("LOG: earliest sample in current run:", earliestSample$earliest))
 print(paste("LOG: latest sample in current run:", latestSample$latest))
+
+### kill if no mutations are found
+if (length(unique(sewage_samps.dt$ID)) < 1){
+  print(paste("PROGRESS: start to loop over sample location"))
+  quit(save="no")
+}
 
 ### FROM HERE LOOP OVER EACH SAMPLE LOCATION
 print(paste("PROGRESS: start to loop over sample location"))
@@ -961,5 +971,68 @@ fwrite(globalFittedData , file = paste0(outdir, "/globalFittedData.csv"), sep = 
 fwrite(globalAFdata, file = paste0(outdir, "/globalAFdata.csv"), sep = "\t")
 fwrite(globalVarData, file = paste0(outdir, "/globalVarData.csv"), sep = "\t")
 
+
+## generate over view plots
+if(1){
+  ## filter mutations which are significant (p<0.1) and seen more >1 time
+  globalAFdata %>% mutate(excess = as.numeric(excess), N = length(unique(sampleID))) %>% filter(pvalue < 0.1) %>% group_by(nuc_mutation) %>% mutate(n = length(unique(sampleID))) %>% mutate(r = n/N) -> globalAFdata.plotting
+  globalAFdata.plotting %>% filter(n > 1) -> globalAFdata.plotting
+
+   ## cluster mutation with binary = Jacchard distance
+  globalAFdata.plotting %>% mutate(label = paste0(nuc_mutation, " [", aa_mutation, "]")) -> globalAFdata.plotting
+  reshape2::dcast(globalAFdata.plotting, label~sampleID, value.var = "excess", fill = 0) -> mat
+  rownames(mat) <- mat$label
+  mat[-1] -> mat
+  hclust(dist(mat, method = "binary")) -> distancing
+  cutree(distancing, h = .1) -> clustering
+  left_join(x = globalAFdata.plotting, y = data.table(label = names(clustering), cluster = clustering), by = "label") -> globalAFdata.plotting  
+
+  ## sort dt according clustering and date
+  globalAFdata.plotting$label <- factor(globalAFdata.plotting$label, levels = distancing$labels[distancing$order])
+  globalAFdata.plotting %>% rowwise() %>% mutate(sample_label = paste(sample_date, sampleID, sep = "\n")) -> globalAFdata.plotting   
+
+  ggplot(data = globalAFdata.plotting, aes(x = label, y = sample_label)) + geom_tile(aes(fill = excess)) + facet_grid(LocationName~cluster, scale="free", space = "free") + theme_bw() + theme(legend.position="bottom", axis.text.x = element_text(angle = 90, hjust = 1)) + scale_fill_fermenter(palette = 7, direction = 1, name = "excess\nallele freq.") + xlab("") + ylab("") -> pp
+
+  ## add detected variants per sample    
+  globalVarData %>% filter(deduced.freq > 0) -> globalVarData.plotting   
+  left_join(x = globalAFdata.plotting, y = globalVarData.plotting, by = c("sampleID", "LocationID", "LocationName", "sample_date"), multiple = "all") -> globalAFdata.plotting
+  globalAFdata.plotting %>% group_by(sampleID) %>% summarize(n = n()) -> samples
+
+  # test for each cluster - variant combination if they significantly co-occure (fisher exact test)
+  data.table(clusterIdx = character(), clusterMember = character(), variant = character(), coocurence = numeric(), oddsRatio = numeric(), pvalue = numeric()) -> collectEnrichment
+
+  for (c in unique(globalAFdata.plotting$cluster)){
+    globalAFdata.plotting %>% filter(cluster == c) -> globalAFdata.plotting_
+    clustmembers <- length(unique(globalAFdata.plotting_$label))
+
+    globalAFdata.plotting_ %>% group_by(sampleID) %>% summarize(n = length(unique(label))) %>% filter(n > clustmembers/2) -> clustdetected
+
+    for (v in unique(globalAFdata.plotting_$variant)){
+      globalAFdata.plotting %>% filter(variant == v) -> globalAFdata.plotting__
+      globalAFdata.plotting__ %>% group_by(sampleID) %>% filter(variant == v) %>% dplyr::select(sampleID) -> vardetected
+
+      clust_and_var <- sum(clustdetected$sampleID %in% vardetected$sampleID)
+      samples_no_var <- sum(samples$sampleID %notin% vardetected$sampleID)
+      samples_no_clust <- sum(samples$sampleID %notin% clustdetected$sampleID)
+      no_clust_no_var <- sum(samples$sampleID[samples$sampleID %notin% vardetected$sampleID] %in% samples$sampleID[samples$sampleID %notin% clustdetected$sampleID])
+      confusionmat <- matrix(c(no_clust_no_var,samples_no_clust,samples_no_var,clust_and_var), nrow = 2)
+      fisher.test(confusionmat) ->fishStats
+      rbind(collectEnrichment, data.table(clusterIdx = c, clusterMember = paste(unique(globalAFdata.plotting_$label), collapse = ';'), variant = v, coocurence = clust_and_var, oddsRatio = fishStats$estimate, pvalue = fishStats$p.value)) -> collectEnrichment
+
+    }
+  }
+  p.adjust(collectEnrichment$pvalue, method = "fdr") -> collectEnrichment$qvalue
+  ggplot(data = collectEnrichment, aes(x = variant, y = clusterMember)) + geom_point(aes(size = oddsRatio, fill = -1*log10(qvalue), color = -1*log10(qvalue)), shape = 21) + coord_fixed() + theme_bw() + theme(legend.position="bottom", axis.text.x = element_text(angle = 90, hjust = 1), legend.direction = "vertical", legend.box = "horizontal") + xlab("Variant") + ylab("Mutation Cluster") + scale_color_distiller(name = "pLog10(p-value)") + scale_fill_distiller(name = "pLog10(p-value)") -> pq
+
+
+  filename <- paste0(outdir, "/figs/overview/",  paste('/heatmap', "excessMutations", sep="_"), ".pdf")
+  ggsave(filename = filename, plot = pp, width = 8, height = 5.5)
+  fwrite(as.list(c("overview", "heatmap", "all", "any", "everywhere", filename)), file = summaryDataFile, append = TRUE, sep = "\t")
+
+
+  filename <- paste0(outdir, "/figs/overview/",  paste('/bubble', "clusterVariantCooccurence", sep="_"), ".pdf")
+  ggsave(filename = filename, plot = pq, width = 8, height = 5.5)
+  fwrite(as.list(c("overview", "bubble", "all", "any", "everywhere", filename)), file = summaryDataFile, append = TRUE, sep = "\t")
+}
 
 timestamp()
