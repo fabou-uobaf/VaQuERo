@@ -291,6 +291,27 @@ collapse2mother <- function(x, xset){
     !grepl(pattern, x)
 }
 
+# generate cov-spectrum query link for list of mutations
+covspectrumLink <- function(x){
+  x <- unlist(lapply(unique(x), dephaseNuc))
+  s <- paste(unique(x), collapse = ", ")
+  l <- length(x)
+  s <- paste0("[", ceiling(l/2), "-of: ", s, "]")
+  return(s)
+}
+dephaseNuc <- function(x){
+  y <- strsplit(x, split = "")[[1]]
+  p <- as.numeric(paste0(y[grep("\\d", y)], collapse = ""))
+  ref <- grep("\\D", y[1:(ceiling(length(y)/2))], value = TRUE)
+  alt <- grep("\\D", y[(ceiling(length(y)/2)):length(y)], value = TRUE)
+  r <- c()
+  for (c in seq_along(ref)){
+    paste(ref[c], p+c-1, alt[c], sep = "")
+    r <- append(r, paste(ref[c], p+c-1, alt[c], sep = ""))
+  }
+  return(r)
+}
+
 
 
 ## print parameter to Log
@@ -984,14 +1005,23 @@ if(1){
   rownames(mat) <- mat$label
   mat[-1] -> mat
   hclust(dist(mat, method = "binary")) -> distancing
-  cutree(distancing, h = .1) -> clustering
+  cutree(distancing, h = .5) -> clustering
   left_join(x = globalAFdata.plotting, y = data.table(label = names(clustering), cluster = clustering), by = "label") -> globalAFdata.plotting  
 
   ## sort dt according clustering and date
   globalAFdata.plotting$label <- factor(globalAFdata.plotting$label, levels = distancing$labels[distancing$order])
-  globalAFdata.plotting %>% rowwise() %>% mutate(sample_label = paste(sample_date, sampleID, sep = "\n")) -> globalAFdata.plotting   
-
+  globalAFdata.plotting %>% rowwise() %>% mutate(sample_label = paste(sampleID, sample_date, sep = " @ ")) -> globalAFdata.plotting   
+  globalAFdata.plotting$sample_label <- factor(globalAFdata.plotting$sample_label, levels=unique(globalAFdata.plotting$sample_label[order(globalAFdata.plotting$sample_date)]))
+  
   ggplot(data = globalAFdata.plotting, aes(x = label, y = sample_label)) + geom_tile(aes(fill = excess)) + facet_grid(LocationName~cluster, scale="free", space = "free") + theme_bw() + theme(legend.position="bottom", axis.text.x = element_text(angle = 90, hjust = 1)) + scale_fill_fermenter(palette = 7, direction = 1, name = "excess\nallele freq.") + xlab("") + ylab("") -> pp
+  plot.width  <- 2+length(unique(globalAFdata.plotting$label))/5+length(unique(globalAFdata.plotting$cluster))/20
+  plot.height <- 2+length(unique(globalAFdata.plotting$sample_label))/5+length(unique(globalAFdata.plotting$LocationID))/10
+
+
+  filename <- paste0(outdir, "/figs/overview/",  paste('/heatmap', "excessMutations", sep="_"), ".pdf")
+  ggsave(filename = filename, plot = pp, width = plot.width, height = plot.height)
+  fwrite(as.list(c("overview", "heatmap", "all", "any", "everywhere", filename)), file = summaryDataFile, append = TRUE, sep = "\t")
+
 
   ## add detected variants per sample    
   globalVarData %>% filter(deduced.freq > 0) -> globalVarData.plotting   
@@ -1022,17 +1052,21 @@ if(1){
     }
   }
   p.adjust(collectEnrichment$pvalue, method = "fdr") -> collectEnrichment$qvalue
-  ggplot(data = collectEnrichment, aes(x = variant, y = clusterMember)) + geom_point(aes(size = oddsRatio, fill = -1*log10(qvalue), color = -1*log10(qvalue)), shape = 21) + coord_fixed() + theme_bw() + theme(legend.position="bottom", axis.text.x = element_text(angle = 90, hjust = 1), legend.direction = "vertical", legend.box = "horizontal") + xlab("Variant") + ylab("Mutation Cluster") + scale_color_distiller(name = "pLog10(p-value)") + scale_fill_distiller(name = "pLog10(p-value)") -> pq
+  ggplot(data = collectEnrichment, aes(x = variant, y = clusterIdx)) + geom_point(aes(size = oddsRatio, fill = -1*log10(pvalue)), shape = 21, color = "grey80") + coord_fixed() + theme_bw() + theme(legend.position="left", axis.text.x = element_text(angle = 90, hjust = 1), legend.direction = "vertical", legend.box = "vertical") + xlab("Variant") + ylab("Mutation Cluster") + scale_fill_distiller(name = "pLog10(p-value)", direction = 1) -> pq
 
-
-  filename <- paste0(outdir, "/figs/overview/",  paste('/heatmap', "excessMutations", sep="_"), ".pdf")
-  ggsave(filename = filename, plot = pp, width = 8, height = 5.5)
-  fwrite(as.list(c("overview", "heatmap", "all", "any", "everywhere", filename)), file = summaryDataFile, append = TRUE, sep = "\t")
-
+  plot.width   <- 2 + length(unique(collectEnrichment$variant))/2
+  plot.height  <- 2 + length(unique(collectEnrichment$clusterIdx))/3
 
   filename <- paste0(outdir, "/figs/overview/",  paste('/bubble', "clusterVariantCooccurence", sep="_"), ".pdf")
   ggsave(filename = filename, plot = pq, width = 8, height = 5.5)
   fwrite(as.list(c("overview", "bubble", "all", "any", "everywhere", filename)), file = summaryDataFile, append = TRUE, sep = "\t")
+
+
+  collectEnrichment  %>% mutate(clusterMembers = strsplit(as.character(clusterMember), ";")) %>% unnest() %>% separate(col = clusterMembers, into = c("nuc", "aa"), sep = " ") %>% group_by(clusterIdx) %>% summarize(members = covspectrumLink(nuc)) -> collectEnrichment_covspectrumLink
+  left_join(x = collectEnrichment, y = collectEnrichment_covspectrumLink, by = "clusterIdx") -> collectEnrichment_covspectrumLink
+  filename <- paste0(outdir, "/figs/overview/",  paste('/table', "clusterVariantCooccurence", sep="_"), ".csv")
+  fwrite(collectEnrichment_covspectrumLink, file=filename, sep = "\t")
+
 }
 
 timestamp()
