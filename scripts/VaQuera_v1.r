@@ -65,7 +65,9 @@ option_list = list(
   make_option(c("--debug"), type="logical", default="FALSE",
               help="Toggle to use run with provided example data [default %default]", metavar="character"),
   make_option(c("--verbose"), type="logical", default="FALSE",
-              help="Toggle to report more output [default %default]", metavar="character")
+              help="Toggle to report more output [default %default]", metavar="character"),
+  make_option(c("--mutdat"), type="character", default="VaQuERo/resources/mutations_scores.csv",
+              help="Path to auxillary data file to characterise growing RBD mutations [default %default]", metavar="character")
 
 );
 opt_parser = OptionParser(option_list=option_list);
@@ -448,12 +450,15 @@ summarised_mutation_growth %>% filter(nr_growing > 2) %>% filter(median > 0.05 &
 summarised_mutation_growth_poi %>% filter(nr_growing > 0) %>% filter(median > 0.01 & n3_val > 0.01) -> selected_poi_mutations
 
 ## add mutation score to selected poi mutations
-selected_poi_mutations %>% rowwise() %>% mutate(aa = substr(label, regexpr("S:\\w+", label)[1]+3, regexpr("S:\\w+", label)[1]+attr(regexpr("S:\\w+", label), "match.length")-1)) -> selected_poi_mutations
-fread(file="auxData/mutations_scores.csv") -> mutations_Scores
-left_join(x = selected_poi_mutations, y = mutations_Scores, by = "aa") -> selected_poi_mutations
-selected_poi_mutations %>% ggplot(aes(x = mean_mut_escape, y = delta_bind)) + geom_point(aes(size = nr_growing, fill = median), alpha = 0.5, shape = 21) + geom_text_repel(aes(label = label), max.overlaps = 40, min.segment.length = 0) + theme_bw() + xlab("Mean Mutation Escape to BA.5 convalescents sera (Cao et al.)") + ylab("Delta ACE2 binding in BA.2 background (Bloom et al.)") + scale_size(range = c(4,8), name = "Number of \nWWTP w/\nsig. growth") + scale_fill_viridis_b(option = "E", name = "Median\ngrowth\nper week") + ggtitle("Characterization of growing RBD Mutations") -> p
-ggsave(filename = paste0(opt$dir, "/figs/RBD_Mutation_Characterisation.", opt$graph), plot = p, width = 9, height = 9)
-
+if (file.exists(opt$mutdat)){
+  selected_poi_mutations %>% rowwise() %>% mutate(aa = substr(label, regexpr("S:\\w+", label)[1]+3, regexpr("S:\\w+", label)[1]+attr(regexpr("S:\\w+", label), "match.length")-1)) -> selected_poi_mutations
+  fread(file=opt$mutdat) -> mutations_Scores
+  left_join(x = selected_poi_mutations, y = mutations_Scores, by = "aa") -> selected_poi_mutations
+  selected_poi_mutations %>% ggplot(aes(x = mean_mut_escape, y = delta_bind)) + geom_point(aes(size = nr_growing, fill = median), alpha = 0.5, shape = 21) + geom_text_repel(aes(label = label), max.overlaps = 40, min.segment.length = 0) + theme_bw() + xlab("Mean Mutation Escape to BA.5 convalescents sera (Cao et al.)") + ylab("Delta ACE2 binding in BA.2 background (Bloom et al.)") + scale_size(range = c(4,8), name = "Number of \nWWTP w/\nsig. growth") + scale_fill_viridis_b(option = "E", name = "Median\ngrowth\nper week") + ggtitle("Characterization of growing RBD Mutations") -> p
+  ggsave(filename = paste0(opt$dir, "/figs/RBD_Mutation_Characterisation.", opt$graph), plot = p, width = 9, height = 9)
+} else{
+  print("WANRING: no RBD_Mutation_Characterisation.pdf produced since aux file opt$mutdat does not exist")
+}
 
 # plot AF for each selected mutation across all WWTP
 if(opt$verbose == TRUE){
