@@ -1024,22 +1024,23 @@ if(1){
 
 
   ## add detected variants per sample    
+  globalAFdata.plotting -> globalAFdata.plotting.2
   globalVarData %>% filter(deduced.freq > 0) -> globalVarData.plotting   
-  left_join(x = globalAFdata.plotting, y = globalVarData.plotting, by = c("sampleID", "LocationID", "LocationName", "sample_date"), multiple = "all") -> globalAFdata.plotting
-  globalAFdata.plotting %>% group_by(sampleID) %>% summarize(n = n()) -> samples
+  left_join(x = globalAFdata.plotting.2, y = globalVarData.plotting, by = c("sampleID", "LocationID", "LocationName", "sample_date"), multiple = "all") -> globalAFdata.plotting.2
+  globalAFdata.plotting.2 %>% group_by(sampleID) %>% summarize(n = n()) -> samples
 
   # test for each cluster - variant combination if they significantly co-occure (fisher exact test)
   data.table(clusterIdx = character(), clusterMember = character(), variant = character(), coocurence = numeric(), oddsRatio = numeric(), pvalue = numeric()) -> collectEnrichment
 
-  for (c in unique(globalAFdata.plotting$cluster)){
-    globalAFdata.plotting %>% filter(cluster == c) -> globalAFdata.plotting_
-    clustmembers <- length(unique(globalAFdata.plotting_$label))
+  for (c in unique(globalAFdata.plotting.2$cluster)){
+    globalAFdata.plotting.2 %>% filter(cluster == c) -> globalAFdata.plotting.2_
+    clustmembers <- length(unique(globalAFdata.plotting.2_$label))
 
-    globalAFdata.plotting_ %>% group_by(sampleID) %>% summarize(n = length(unique(label))) %>% filter(n > clustmembers/2) -> clustdetected
+    globalAFdata.plotting.2_ %>% group_by(sampleID) %>% summarize(n = length(unique(label))) %>% filter(n > clustmembers/2) -> clustdetected
 
-    for (v in unique(globalAFdata.plotting_$variant)){
-      globalAFdata.plotting %>% filter(variant == v) -> globalAFdata.plotting__
-      globalAFdata.plotting__ %>% group_by(sampleID) %>% filter(variant == v) %>% dplyr::select(sampleID) -> vardetected
+    for (v in unique(globalAFdata.plotting.2_$variant)){
+      globalAFdata.plotting.2 %>% filter(variant == v) -> globalAFdata.plotting.2__
+      globalAFdata.plotting.2__ %>% group_by(sampleID) %>% filter(variant == v) %>% dplyr::select(sampleID) -> vardetected
 
       clust_and_var <- sum(clustdetected$sampleID %in% vardetected$sampleID)
       samples_no_var <- sum(samples$sampleID %notin% vardetected$sampleID)
@@ -1047,7 +1048,7 @@ if(1){
       no_clust_no_var <- sum(samples$sampleID[samples$sampleID %notin% vardetected$sampleID] %in% samples$sampleID[samples$sampleID %notin% clustdetected$sampleID])
       confusionmat <- matrix(c(no_clust_no_var,samples_no_clust,samples_no_var,clust_and_var), nrow = 2)
       fisher.test(confusionmat) ->fishStats
-      rbind(collectEnrichment, data.table(clusterIdx = c, clusterMember = paste(unique(globalAFdata.plotting_$label), collapse = ';'), variant = v, coocurence = clust_and_var, oddsRatio = fishStats$estimate, pvalue = fishStats$p.value)) -> collectEnrichment
+      rbind(collectEnrichment, data.table(clusterIdx = c, clusterMember = paste(unique(globalAFdata.plotting.2_$label), collapse = ';'), variant = v, coocurence = clust_and_var, oddsRatio = fishStats$estimate, pvalue = fishStats$p.value)) -> collectEnrichment
 
     }
   }
@@ -1066,6 +1067,45 @@ if(1){
   left_join(x = collectEnrichment, y = collectEnrichment_covspectrumLink, by = "clusterIdx") -> collectEnrichment_covspectrumLink
   filename <- paste0(outdir, "/figs/overview/",  paste('/table', "clusterVariantCooccurence", sep="_"), ".csv")
   fwrite(collectEnrichment_covspectrumLink, file=filename, sep = "\t")
+
+  ## add detected variants per sample    
+  globalAFdata.plotting -> globalAFdata.plotting.3
+  globalVarData %>% filter(deduced.freq > 0) -> globalVarData.plotting
+  left_join(x = globalAFdata.plotting.3, y = globalVarData.plotting, by = c("sampleID", "LocationID", "LocationName", "sample_date"), multiple = "all") -> globalAFdata.plotting.3
+  globalAFdata.plotting.3 %>% group_by(sampleID) %>% summarize(n = n()) -> samples
+
+  # test for each mutation - variant combination if they significantly co-occure (fisher exact test)
+  data.table(mutation = character(), variant = character(), coocurence = numeric(), oddsRatio = numeric(), pvalue = numeric()) -> collectEnrichment
+
+  for (c in unique(globalAFdata.plotting.3$nuc_mutation)){
+    globalAFdata.plotting.3 %>% filter(nuc_mutation == c) -> globalAFdata.plotting.3_
+
+    globalAFdata.plotting.3_ %>% group_by(sampleID) %>% summarize(n = length(unique(label))) %>% filter(n >= 1) -> mutdetected
+
+    for (v in unique(globalAFdata.plotting.3_$variant)){
+      globalAFdata.plotting.3 %>% filter(variant == v) -> globalAFdata.plotting.3__
+      globalAFdata.plotting.3__ %>% group_by(sampleID) %>% filter(variant == v) %>% dplyr::select(sampleID) -> vardetected
+
+      mut_and_var <- sum(mutdetected$sampleID %in% vardetected$sampleID)
+      samples_no_var <- sum(samples$sampleID %notin% vardetected$sampleID)
+      samples_no_mut <- sum(samples$sampleID %notin% mutdetected$sampleID)
+      no_mut_no_var <- sum(samples$sampleID[samples$sampleID %notin% vardetected$sampleID] %in% samples$sampleID[samples$sampleID %notin% mutdetected$sampleID])
+      confusionmat <- matrix(c(no_mut_no_var,samples_no_mut,samples_no_var,mut_and_var), nrow = 2)
+      fisher.test(confusionmat) ->fishStats
+      rbind(collectEnrichment, data.table(mutation = paste(unique(globalAFdata.plotting.3_$label), collapse = ';'), variant = v, coocurence = mut_and_var, oddsRatio = fishStats$estimate, pvalue = fishStats$p.value)) -> collectEnrichment
+
+    }
+  }
+  p.adjust(collectEnrichment$pvalue, method = "fdr") -> collectEnrichment$qvalue
+  ggplot(data = collectEnrichment, aes(x = variant, y = mutation)) + geom_point(aes(size = oddsRatio, fill = -1*log10(pvalue)), shape = 21, color = "grey80") + coord_fixed() + theme_bw() + theme(legend.position="left", axis.text.x = element_text(angle = 90, hjust = 1), legend.direction = "vertical", legend.box = "vertical") + xlab("Variant") + ylab("Mutation mutation") + scale_fill_distiller(name = "pLog10(p-value)", direction = 1) -> pq
+
+  plot.width   <- 2 + length(unique(collectEnrichment$variant))/2
+  plot.height  <- 2 + length(unique(collectEnrichment$mutation))/3
+
+  filename <- paste0(outdir, "/figs/overview/",  paste('/bubble', "mutationVariantCooccurence", sep="_"), ".pdf")
+  ggsave(filename = filename, plot = pq, width = plot.width, height = plot.height)
+  fwrite(as.list(c("overview", "bubble", "all", "any", "everywhere", filename)), file = summaryDataFile, append = TRUE, sep = "\t")
+
 
 }
 
