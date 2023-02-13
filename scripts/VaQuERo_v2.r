@@ -1136,7 +1136,7 @@ if (dim(globalFittedData)[1] >= tpLimitToPlot){
   }
 
   ## adjust if mean sum per week is >1
-  stacker.dtt %>% group_by(kw) %>% mutate(T = sum(agg_value)) %>% rowwise() %>% mutate(agg_value = ifelse(T > 1, agg_value/T, agg_value)) %>% dplyr::select(-"T") -> stacker.dtt
+  stacker.dtt %>% group_by(kw) %>% mutate(T = sum(agg_value)) %>% rowwise() %>% mutate(agg_value = ifelse(T > 1, agg_value/(T+0.00001), agg_value)) %>% dplyr::select(-"T") -> stacker.dtt
 
   ColorBaseData$variant_dealiased <- unlist(lapply(as.list(as.character(ColorBaseData$variant)), dealias))
   ColorBaseData[order(ColorBaseData$variant_dealiased, decreasing = TRUE),] -> ColorBaseData
