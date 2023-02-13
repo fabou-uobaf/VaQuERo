@@ -306,8 +306,8 @@ dephaseNuc <- function(x){
   alt <- grep("\\D", y[(ceiling(length(y)/2)):length(y)], value = TRUE)
   r <- c()
   for (c in seq_along(ref)){
-    paste(ref[c], p+c-1, alt[c], sep = "")
-    r <- append(r, paste(ref[c], p+c-1, alt[c], sep = ""))
+    paste(ref[c], p+c-1, ifelse(is.na(alt[c]), "-", alt[c]), sep = "")
+    r <- append(r, paste(ref[c], p+c-1, ifelse(is.na(alt[c]), "-", alt[c]), sep = ""))
   }
   return(r)
 }
@@ -1012,10 +1012,10 @@ if(1){
   globalAFdata.plotting$label <- factor(globalAFdata.plotting$label, levels = distancing$labels[distancing$order])
   globalAFdata.plotting %>% rowwise() %>% mutate(sample_label = paste(sampleID, sample_date, sep = " @ ")) -> globalAFdata.plotting   
   globalAFdata.plotting$sample_label <- factor(globalAFdata.plotting$sample_label, levels=unique(globalAFdata.plotting$sample_label[order(globalAFdata.plotting$sample_date)]))
-  
+
   ggplot(data = globalAFdata.plotting, aes(x = label, y = sample_label)) + geom_tile(aes(fill = excess)) + facet_grid(LocationName~cluster, scale="free", space = "free") + theme_bw() + theme(legend.position="bottom", axis.text.x = element_text(angle = 90, hjust = 1)) + scale_fill_fermenter(palette = 7, direction = 1, name = "excess\nallele freq.") + xlab("") + ylab("") -> pp
-  plot.width  <- 2+length(unique(globalAFdata.plotting$label))/5+length(unique(globalAFdata.plotting$cluster))/20
-  plot.height <- 2+length(unique(globalAFdata.plotting$sample_label))/5+length(unique(globalAFdata.plotting$LocationID))/10
+  plot.width  <- 4+length(unique(globalAFdata.plotting$label))/5+length(unique(globalAFdata.plotting$cluster))/20
+  plot.height <- 4+length(unique(globalAFdata.plotting$sample_label))/5+length(unique(globalAFdata.plotting$LocationID))/10
 
 
   filename <- paste0(outdir, "/figs/overview/",  paste('/heatmap', "excessMutations", sep="_"), ".pdf")
@@ -1058,7 +1058,7 @@ if(1){
   plot.height  <- 2 + length(unique(collectEnrichment$clusterIdx))/3
 
   filename <- paste0(outdir, "/figs/overview/",  paste('/bubble', "clusterVariantCooccurence", sep="_"), ".pdf")
-  ggsave(filename = filename, plot = pq, width = 8, height = 5.5)
+  ggsave(filename = filename, plot = pq, width = plot.width, height = plot.height)
   fwrite(as.list(c("overview", "bubble", "all", "any", "everywhere", filename)), file = summaryDataFile, append = TRUE, sep = "\t")
 
 
