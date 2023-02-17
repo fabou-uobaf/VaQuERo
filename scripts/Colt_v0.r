@@ -1053,7 +1053,8 @@ if(1){
     }
   }
   p.adjust(collectEnrichment$pvalue, method = "fdr") -> collectEnrichment$qvalue
-  ggplot(data = collectEnrichment, aes(x = variant, y = clusterIdx)) + geom_point(aes(size = oddsRatio, fill = -1*log10(pvalue)), shape = 21, color = "grey80") + coord_fixed() + theme_bw() + theme(legend.position="left", axis.text.x = element_text(angle = 90, hjust = 1), legend.direction = "vertical", legend.box = "vertical") + xlab("Variant") + ylab("Mutation Cluster") + scale_fill_distiller(name = "pLog10(p-value)", direction = 1) -> pq
+  collectEnrichment %>% mutate(shape = ifelse(oddsRatio>1,">1","<1")) -> collectEnrichment
+  ggplot(data = collectEnrichment, aes(x = variant, y = clusterIdx)) + geom_point(aes(size = oddsRatio, fill = round(-1*log10(pvalue), digits = 3), shape = shape), color = "grey80") + coord_fixed() + theme_bw() + theme(legend.position="left", axis.text.x = element_text(angle = 90, hjust = 1), legend.direction = "vertical", legend.box = "vertical") + xlab("Variant") + ylab("Mutation Cluster") + scale_fill_distiller(name = "pLog10(p-value)", direction = 1) + scale_shape_manual(breaks = c("<1", ">1"), values = c(25, 24), name = "direction") -> pq
 
   plot.width   <- 2 + length(unique(collectEnrichment$variant))/2
   plot.height  <- 2 + length(unique(collectEnrichment$clusterIdx))/3
@@ -1097,7 +1098,8 @@ if(1){
     }
   }
   p.adjust(collectEnrichment$pvalue, method = "fdr") -> collectEnrichment$qvalue
-  ggplot(data = collectEnrichment, aes(x = variant, y = mutation)) + geom_point(aes(size = oddsRatio, fill = -1*log10(pvalue)), shape = 21, color = "grey80") + coord_fixed() + theme_bw() + theme(legend.position="left", axis.text.x = element_text(angle = 90, hjust = 1), legend.direction = "vertical", legend.box = "vertical") + xlab("Variant") + ylab("Mutation mutation") + scale_fill_distiller(name = "pLog10(p-value)", direction = 1) -> pq
+  collectEnrichment %>% mutate(shape = ifelse(oddsRatio>1,">1","<1")) -> collectEnrichment
+  ggplot(data = collectEnrichment, aes(x = variant, y = mutation)) + geom_point(aes(size = oddsRatio, fill = round(-1*log10(pvalue), digits = 3), shape = shape), color = "grey80") + coord_fixed() + theme_bw() + theme(legend.position="left", axis.text.x = element_text(angle = 90, hjust = 1), legend.direction = "vertical", legend.box = "vertical") + xlab("Variant") + ylab("Mutation mutation") + scale_fill_distiller(name = "pLog10(p-value)", direction = 1) + scale_shape_manual(breaks = c("<1", ">1"), values = c(25, 24), name = "direction") -> pq
 
   plot.width   <- 2 + length(unique(collectEnrichment$variant))/2
   plot.height  <- 2 + length(unique(collectEnrichment$mutation))/3
