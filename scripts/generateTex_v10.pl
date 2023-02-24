@@ -803,13 +803,14 @@ my $txt1 = '
     Auswahlkriterium Varianten: & Berücksichtigte Varianten aus drei Quellen \\\\
                                 & \\\\
                                 & Alle \emph{Variants~of~concern}, \emph{of~interest}, und \emph{under~monitoring}. \\\\
-                                & Definition folgt der Angabe von \href{https://www.ecdc.europa.eu/en/covid-19/variants-concern}{ECDC} (Stand 9.Dez, 2022)\\\\
+                                & Definition folgt der Angabe von \href{https://www.ecdc.europa.eu/en/covid-19/variants-concern}{ECDC} (Stand 17 Feb., 2023)\\\\
                                 & \\\\
-                                & Alle Varianten die laut \href{https://gisaid.org/}{GISaid} in zumindest einem europäischen\\\\
-                                & Land in einem Monat $>$33\% relative Häufigkeit zeigten. \\\\
+                                & Alle Varianten die laut \href{https://gisaid.org/}{GISaid} in zumindest drei europäischen\\\\
+                                & Ländern in einem Monat $>$33\% relative Häufigkeit zeigten. \\\\
                                 & \\\\
                                 & Alle Varianten die aktuell laut \href{https://cov-spectrum.org/collections/24}{CoV-spectrum Collection 24}\\\\
-                                & ein Wachstumsvorteil $>$50\% (lower CI) zeigen. \\\\
+                                & ein Wachstumsvorteil $>$50\% (lower CI) zeigen. Detailgrad der \\\\ 
+				& Untervarianten nach individueller Einschätzung angepasst. \\\\
                                 & \\\\
                                 & Siehe Varianten Liste im Appendix~\ref{appendix:Varianten} auf Seite~\pageref{appendix:Varianten} für \\\\
                                 & eine detailierte Auflistung der berücksichtigten Varianten.\\\\
