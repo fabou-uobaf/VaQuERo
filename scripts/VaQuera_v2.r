@@ -97,12 +97,12 @@ opt = parse_args(opt_parser);
 ####  parameter setting for interactive debugging
 if(opt$debug){
   opt$dir = "sandbox1"
-  opt$metadata = "data_wwtp/metaData_targeted.csv"
-  opt$data="data_wwtp/mutationData_DB_TargetedMonitoringSites_phased.tsv.gz"
+  opt$metadata = "data_carinthia/metaData_targeted.csv"
+  opt$data="data_carinthia/mutationData_DB_TargetedMonitoringSites_phased.tsv.gz"
   opt$inputformat = "tidy"
-  opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2023-01-02_Europe.csv"
-  opt$mutstats  = "VaQuERo/resources/mutations_stats_pango_codonPhased_2023-01-02.csv.gz"
-  opt$group2var = "VaQuERo/resources/groupMembers_pango_codonPhased_2023-01-02_Europe.csv"
+  opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2023-02-17_Europe.csv"
+  opt$mutstats  = "VaQuERo/resources/mutations_stats_pango_codonPhased_2023-02-17.csv.gz"
+  opt$group2var = "VaQuERo/resources/groupMembers_pango_codonPhased_2023-02-17_Europe.csv"
   opt$pmarker="VaQuERo/resources/mutations_problematic_vss1_v3.csv"
   opt$detectmode = "umm"
   opt$ninconsens = 0.1
@@ -322,13 +322,21 @@ collapse2mother <- function(x, xset){
 }
 
 # generate cov-spectrum query link for list of mutations
-covspectrumLink <- function(x){
+covspectrumLinkAdvanced <- function(x){
   x <- unlist(lapply(unique(x), dephaseNuc))
   s <- paste(unique(x), collapse = ", ")
   l <- length(x)
   s <- paste0("[", ceiling(l/2), "-of: ", s, "]")
   return(s)
 }
+covspectrumLinkSimple <- function(x){
+  x <- unlist(lapply(unique(x), dephaseNuc))
+  s <- paste(unique(x), collapse = "%2C")
+  l <- length(x)
+  s <- paste0("\\href{https://cov-spectrum.org/explore/Europe/AllSamples/Past6M/variants?nucMutations=", s, "&}{", paste(x, collapse = " ", sep = " "),"}")
+  return(s)
+}
+
 dephaseNuc <- function(x){
   y <- strsplit(x, split = "")[[1]]
   p <- as.numeric(paste0(y[grep("\\d", y)], collapse = ""))
@@ -364,6 +372,11 @@ resetfunction <- function(data, window, step){
   return(result)
 }
 
+# function which takes a date and returns the date of wednesday of that week
+date2weekwednesdaydate <- function(d){
+  wwd = as.Date(d, tryFormats = c("%Y-%m-%d")) + 3 - as.numeric(strftime(as.Date(d, tryFormats = c("%Y-%m-%d")), format = "%u"))
+  return(wwd)
+}
 
 ## print parameter to Log
 
@@ -1193,8 +1206,9 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 
         colnames(dt) %in% c("sample_date", growing_mutations) -> mutation_to_keep_for_timecourse
         as.data.frame(dt)[,mutation_to_keep_for_timecourse] %>% data.table::melt(id.vars = "sample_date", variable.name = "nucc", value.name = "af") %>% left_join(y = nuc2label, by = c("nucc" = "NUC")) -> mutation_time_course
+        mutation_time_course %>% rowwise() %>% mutate(kw = date2weekwednesdaydate(sample_date)) -> mutation_time_course
         mutation_time_course$label <- factor(mutation_time_course$label, levels = outbreak.selection$label)
-        ggplot(data = mutation_time_course, aes(x = label, y = sample_date, fill = af, color = af)) + theme_bw() + geom_raster() + scale_fill_viridis(name = "Allele frequency", trans = "sqrt", option = "G", begin = 0.1, end = 0.9,  guide = guide_colorbar(direction = "horizontal", title.position = "top", label.position="bottom", label.hjust = 0.5, label.vjust = 0.5, label.theme = element_text(angle = 90)))  + scale_color_viridis(name = "Allele frequency", trans = "sqrt", option = "G", begin = 0.1, end = 0.9,  guide = guide_colorbar(direction = "horizontal", title.position = "top", label.position="bottom", label.hjust = 0.5, label.vjust = 0.5, label.theme = element_text(angle = 90))) + xlab("") + ylab("Date") + coord_flip() + theme(legend.position="top", legend.direction="horizontal") + theme(axis.ticks.y = element_blank(), axis.text.y = element_blank())  + ggtitle("Observed AF Timecourse") -> outbreakInfoPlot4
+        ggplot(data = mutation_time_course, aes(x = label, y = kw, fill = af, color = af)) + theme_bw() + geom_raster() + scale_fill_viridis(name = "Allele frequency", trans = "sqrt", option = "G", begin = 0.1, end = 0.9,  guide = guide_colorbar(direction = "horizontal", title.position = "top", label.position="bottom", label.hjust = 0.5, label.vjust = 0.5, label.theme = element_text(angle = 90)))  + scale_color_viridis(name = "Allele frequency", trans = "sqrt", option = "G", begin = 0.1, end = 0.9,  guide = guide_colorbar(direction = "horizontal", title.position = "top", label.position="bottom", label.hjust = 0.5, label.vjust = 0.5, label.theme = element_text(angle = 90))) + xlab("") + ylab("Date") + coord_flip() + theme(legend.position="top", legend.direction="horizontal") + theme(axis.ticks.y = element_blank(), axis.text.y = element_blank())  + ggtitle("Observed AF Timecourse") -> outbreakInfoPlot4
 
         outbreakInfoPlot1 + outbreakInfoPlot4 + outbreakInfoPlot2 + outbreakInfoPlot3 + plot_layout(ncol = 4, byrow = FALSE, width = c(8, 4, 2, 2)) -> outbreakInfoPlot
         filename <- paste0(outdir, "/figs/growing_excessmutations/excessmutation/",  paste('/excessmutationPlot', sampleID, timePoints_classic[t], roi, sep="_"), ".pdf")
@@ -1259,11 +1273,34 @@ globalExMutData %>% group_by(LocationID, nuc_mutation) %>% mutate(latest = max(s
 overviewPlot.dt %>% filter(NUC %in% labelsToUse) -> overviewPlot.dt
 dim(overviewPlot.dt)
 
-ggplot(data = overviewPlot.dt, aes(x = sample_date, y = LocationID)) + geom_raster(aes(fill = value.freq, color = value.freq), width = 7, height = 1) + facet_grid(label~., switch = "y") + theme_minimal() + theme(axis.text.y = element_blank(), axis.ticks.y = element_blank(), strip.text.y.left = element_text(angle = 0)) + scale_fill_viridis(name = "Allele\nfrequency", trans = "sqrt", option = "A", begin = 0.1, end = 0.9)  + scale_color_viridis(name = "Allele\nfrequency", trans = "sqrt", option = "A", begin = 0.1, end = 0.9) + xlab("Date") + ylab("Mutation") + theme(legend.position="right", legend.direction="vertical", panel.spacing.y=unit(0.1, "lines"), panel.grid.minor.y = element_blank(), panel.grid.major.y = element_blank(), panel.border = element_rect(color = "grey33", fill = NA), axis.ticks = element_line(color = "grey50")) + ggtitle("Growing, excess mutations") + scale_x_date(breaks = "4 weeks") -> overviewPlot
-filename <- paste0(outdir, "/figs/growing_excessmutations/overview/",  paste('/overview_kinetics_excessmutations_filtered', sep="_"), ".pdf")
-ggsave(filename = filename, plot = overviewPlot, width = 8, height = 4.5)
-fwrite(as.list(c("growing_excessmutations", "overview", "filtered", filename)), file = summaryDataFile, append = TRUE, sep = "\t")
+# adapt sample_date to wednesday of that week (kw)
+# use kw for plotting
+overviewPlot.dt %>% rowwise() %>% mutate(kw = date2weekwednesdaydate(sample_date)) -> overviewPlot.dt
 
+# take mean if more than two samples in one week
+overviewPlot.dt %>% group_by(ANN.GENE, ANN.AA, NUC, label, kw, LocationID) %>% summarize(value.freq = mean(value.freq)) -> overviewPlot.dt
+
+#ggplot(data = overviewPlot.dt, aes(x = kw, y = LocationID)) + geom_raster(aes(fill = value.freq, color = value.freq), width = 7, height = 1) + facet_grid(label~., switch = "y") + theme_minimal() + theme(axis.text.y = element_blank(), axis.ticks.y = element_blank(), strip.text.y.left = element_text(angle = 0)) + scale_fill_viridis(name = "Allele\nfrequency", trans = "sqrt", option = "A", begin = 0.1, end = 0.9)  + scale_color_viridis(name = "Allele\nfrequency", trans = "sqrt", option = "A", begin = 0.1, end = 0.9) + xlab("Date") + ylab("Mutation") + theme(legend.position="right", legend.direction="vertical", panel.spacing.y=unit(0.1, "lines"), panel.grid.minor.y = element_blank(), panel.grid.major.y = element_blank(), panel.border = element_rect(color = "grey33", fill = NA), axis.ticks = element_line(color = "grey50")) + ggtitle("Growing, excess mutations") + scale_x_date(breaks = "4 weeks") -> overviewPlot.ht
+#plot.height <- 1+length(unique(overviewPlot.dt$label))/2
+#filename <- paste0(outdir, "/figs/growing_excessmutations/overview/",  paste('/overview_kinetics_excessmutations_filtered_heatmap', sep="_"), ".pdf")
+#ggsave(filename = filename, plot = overviewPlot.ht, width = 8, height = plot.height)
+
+
+## sort each per location, per kw entry descending accorrding their af
+## disrupting the time course per wwtp info but generating a weighted histogram like plot
+overviewPlot.dt %>% group_by(label, kw) %>% arrange(desc(value.freq))  %>% mutate(plotlevel = letters[1:n()]) -> overviewPlot.dt
+ggplot(data = overviewPlot.dt, aes(x = kw, y = plotlevel)) + geom_raster(aes(fill = value.freq, color = value.freq), width = 7, height = 1) + facet_grid(label~., switch = "y") + theme_minimal() + theme(axis.text.y = element_blank(), axis.ticks.y = element_blank(), strip.text.y.left = element_text(angle = 0)) + scale_fill_viridis(name = "Allele\nfrequency", trans = "sqrt", option = "A", begin = 0.1, end = 0.9, direction = 1)  + scale_color_viridis(name = "Allele\nfrequency", trans = "sqrt", option = "A", begin = 0.1, end = 0.9, direction = 1) + xlab("") + ylab("") + theme(legend.position="right", legend.direction="vertical", panel.spacing.y=unit(0.1, "lines"), panel.grid.minor.y = element_blank(), panel.grid.major.y = element_blank(), panel.border = element_rect(color = "grey33", fill = NA), axis.ticks = element_line(color = "grey50"), axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) + ggtitle("Growing, excess mutations") + scale_x_date(breaks = "1 weeks")  -> overviewPlot
+
+plot.height <- 1.2+length(unique(overviewPlot.dt$label))/2
+filename <- paste0(outdir, "/figs/growing_excessmutations/overview/",  paste('/overview_kinetics_excessmutations_filtered', sep="_"), ".pdf")
+ggsave(filename = filename, plot = overviewPlot, width = 8, height = plot.height)
+fwrite(as.list(c("growing_excessmutations", "overview", "plot", "filtered", filename)), file = summaryDataFile, append = TRUE, sep = "\t")
+
+legendTxt <- paste0("Mutationen die in $>2$ Kläranlagen sig. überrepresentiert sind und ein wöchentliches Wachstum $>", opt$growthlimit, "$ zeigen.")
+filename <- paste0(outdir, "/figs/growing_excessmutations/overview/",  paste('/overview_kinetics_excessmutations_filtered', sep="_"), ".tex")
+overviewPlot.dt %>% group_by(ANN.GENE, ANN.AA, NUC, label, LocationID) %>% filter(kw == max(kw)) %>% group_by(label) %>% summarize(min_AF = signif(min(value.freq), digits = 2), median_AF = signif(median(value.freq), digits = 2), max_AF = signif(max(value.freq), digits = 2), Anzahl_Klaeranlagen = length(unique(plotlevel)), Mutation = covspectrumLinkSimple(NUC)) -> overviewTable.dt
+makeTexTab(filename, overviewTable.dt, legendTxt)
+fwrite(as.list(c("growing_excessmutations", "overview", "table", "filtered", filename)), file = summaryDataFile, append = TRUE, sep = "\t")
 
 
 timestamp()
