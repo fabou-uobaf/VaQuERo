@@ -72,7 +72,7 @@ option_list = list(
               help="Minimal absolute number of markers that variant is considered detected [default %default]", metavar="character"),
   make_option(c("--minmarkfrac"), type="double", default=0.4,
               help="Minimal fraction of markers that variant is considered detected [default %default]", metavar="character"),
-  make_option(c("--growthlimit"), type="double", default=0.005,
+  make_option(c("--growthlimit"), type="double", default=0.01,
               help="Mutations with smaller growth rate are ignored [default %default]", metavar="character"),
   make_option(c("--periodend"), type="character", default=as.character(Sys.Date()),
               help="End of analysis period as date in %Y-%M-%D format [default %default]", metavar="character"),
@@ -98,7 +98,11 @@ opt = parse_args(opt_parser);
 if(opt$debug){
   opt$dir = "sandbox1"
   opt$metadata = "data_carinthia/metaData_targeted.csv"
+  opt$metadata = "data/metaData_general.csv"
+
   opt$data="data_carinthia/mutationData_DB_TargetedMonitoringSites_phased.tsv.gz"
+  opt$data="data/mutationData_DB_NationMonitoringSites.tsv.gz"
+
   opt$inputformat = "tidy"
   opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2023-02-17_Europe.csv"
   opt$mutstats  = "VaQuERo/resources/mutations_stats_pango_codonPhased_2023-02-17.csv.gz"
@@ -1201,7 +1205,9 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
         #outbreak.selection %>% filter(!is.na(label)) -> outbreak.selection
 
         ggplot(data = outbreak.dt, aes(x = label, y = ID, fill = AF.freq)) + geom_tile(color = "white", alpha = 0.8) + scale_fill_viridis(name = "Allele frequency", trans = "sqrt", option = "B", begin = 0.1, end = 0.9, guide = guide_colorbar(direction = "horizontal", title.position = "top", label.position="bottom", label.hjust = 0.5, label.vjust = 0.5, label.theme = element_text(angle = 90))) + theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) + xlab("Excess Mutations") + ylab("Variants") + coord_flip() + theme(legend.position="top", legend.direction="horizontal") + ggtitle("Mutation association w/ defined variants") -> outbreakInfoPlot1
-        ggplot(data = outbreak.selection, aes(x = label, y = excess.freq, fill = -1*log10(qval))) + geom_col(width = 0.75, color = "grey33") + theme_bw()  + theme(axis.ticks.y = element_blank(), axis.text.y = element_blank()) + xlab("") + ylab("Excess AF") + scale_fill_fermenter(name = "pLog10(p-value)", palette = "Greens", direction = 1, na.value = "grey33",  guide = guide_colorbar(direction = "horizontal", title.position = "top", label.position="bottom", label.hjust = 0.5, label.vjust = 0.5, label.theme = element_text(angle = 0))) + coord_flip() + theme(legend.position="top", legend.direction="horizontal") + ggtitle("Excess AF") -> outbreakInfoPlot2
+
+        ggplot(data = outbreak.selection, aes(x = label, y = excess.freq, fill = -1*log10(qval))) + geom_col(width = 0.75, color = "grey33") + theme_bw()  + theme(axis.ticks.y = element_blank(), axis.text.y = element_blank()) + xlab("") + ylab("Excess AF") + scale_fill_distiller(name = "pLog10(p-value)", palette = "Greens", direction = 1, na.value = "grey33",  guide = guide_colorbar(direction = "horizontal", title.position = "top", label.position="bottom", label.hjust = 0.5, label.vjust = 0.5, label.theme = element_text(angle = 0))) + coord_flip() + theme(legend.position="top", legend.direction="horizontal") + ggtitle("Excess AF") -> outbreakInfoPlot2
+
         ggplot(data = outbreak.freqs, aes(x = label, y = value, fill = variable)) + geom_col(position = "dodge", width = .8, color = "grey33") + theme_bw()  +  xlab("") + ylab("AF") + scale_fill_manual(label = c("Expected", "Observed"), breaks = c("expected.freq", "observed.freq"), values = c("#9dc6d8", "#7dd0b6"), name = "Allele frequency",  guide = guide_legend(direction = "horizontal", title.position = "top", label.position="bottom", label.hjust = 0.5, label.vjust = 0.5, label.theme = element_text(angle = 0))) + coord_flip() + theme(legend.position="top", legend.direction="horizontal") + theme(axis.ticks.y = element_blank(), axis.text.y = element_blank())  + ggtitle("Observed AF")-> outbreakInfoPlot3
 
         colnames(dt) %in% c("sample_date", growing_mutations) -> mutation_to_keep_for_timecourse
@@ -1289,12 +1295,19 @@ overviewPlot.dt %>% group_by(ANN.GENE, ANN.AA, NUC, label, kw, LocationID) %>% s
 ## sort each per location, per kw entry descending accorrding their af
 ## disrupting the time course per wwtp info but generating a weighted histogram like plot
 overviewPlot.dt %>% group_by(label, kw) %>% arrange(desc(value.freq))  %>% mutate(plotlevel = letters[1:n()]) -> overviewPlot.dt
-ggplot(data = overviewPlot.dt, aes(x = kw, y = plotlevel)) + geom_raster(aes(fill = value.freq, color = value.freq), width = 7, height = 1) + facet_grid(label~., switch = "y") + theme_minimal() + theme(axis.text.y = element_blank(), axis.ticks.y = element_blank(), strip.text.y.left = element_text(angle = 0)) + scale_fill_viridis(name = "Allele\nfrequency", trans = "sqrt", option = "A", begin = 0.1, end = 0.9, direction = 1)  + scale_color_viridis(name = "Allele\nfrequency", trans = "sqrt", option = "A", begin = 0.1, end = 0.9, direction = 1) + xlab("") + ylab("") + theme(legend.position="right", legend.direction="vertical", panel.spacing.y=unit(0.1, "lines"), panel.grid.minor.y = element_blank(), panel.grid.major.y = element_blank(), panel.border = element_rect(color = "grey33", fill = NA), axis.ticks = element_line(color = "grey50"), axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) + ggtitle("Growing, excess mutations") + scale_x_date(breaks = "1 weeks")  -> overviewPlot
+ggplot(data = overviewPlot.dt, aes(x = kw, y = plotlevel)) + geom_raster(aes(fill = value.freq, color = value.freq), width = 7, height = 1) + facet_grid(label~., switch = "y") + theme_minimal() + theme(axis.text.y = element_blank(), axis.ticks.y = element_blank(), strip.text.y.left = element_text(angle = 0)) + scale_fill_viridis(name = "Allele\nfrequency", trans = "sqrt", option = "A", begin = 0.1, end = 0.9, direction = 1)  + scale_color_viridis(name = "Allele\nfrequency", trans = "sqrt", option = "A", begin = 0.1, end = 0.9, direction = 1) + xlab("") + ylab("") + theme(legend.position="right", legend.direction="vertical", panel.spacing.y=unit(0.1, "lines"), panel.grid.minor.y = element_blank(), panel.grid.major.y = element_blank(), panel.border = element_rect(color = "grey33", fill = NA), axis.ticks = element_line(color = "grey50"), axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) + ggtitle("Growing, excess mutations") + scale_x_date(breaks = "1 weeks") + scale_y_discrete(position = "right", labels = c(match(max(overviewPlot.dt$plotlevel), letters)), breaks=c(max(overviewPlot.dt$plotlevel))) -> overviewPlot
 
 plot.height <- 1.2+length(unique(overviewPlot.dt$label))/2
 filename <- paste0(outdir, "/figs/growing_excessmutations/overview/",  paste('/overview_kinetics_excessmutations_filtered', sep="_"), ".pdf")
 ggsave(filename = filename, plot = overviewPlot, width = 8, height = plot.height)
 fwrite(as.list(c("growing_excessmutations", "overview", "plot", "filtered", filename)), file = summaryDataFile, append = TRUE, sep = "\t")
+
+
+
+#functional_mutation_annotation <- fread("VaQuERo/resources/mutations_functional_annotation.csv")
+#functional_mutation_annotation %>% mutate(AA = paste(gene, aa_position, sep = ":")) -> functional_mutation_annotation
+#overviewPlot.dt %>% rowwise() %>% mutate(AA = paste(ANN.GENE, gsub("\\D", "", ANN.AA), sep=":")) %>% left_join(y = functional_mutation_annotation, by = "AA") -> overviewPlot.dt
+#overviewPlot.dt %>% group_by(ANN.GENE, ANN.AA, NUC, label, LocationID) %>% filter(kw == max(kw)) %>% group_by(label, significance, reference) %>% summarize(min_AF = signif(min(value.freq), digits = 2), median_AF = signif(median(value.freq), digits = 2), max_AF = signif(max(value.freq), digits = 2), Anzahl_Klaeranlagen = length(unique(plotlevel)), Mutation = covspectrumLinkSimple(NUC), effect = ifelse(is.na(significance), "no reported effect", paste0("\\href{", reference, "}{", significance, "}")) ) -> overviewPlot.dt
 
 legendTxt <- paste0("Mutationen die in $>2$ Kläranlagen sig. überrepresentiert sind und ein wöchentliches Wachstum $>", opt$growthlimit, "$ zeigen.")
 filename <- paste0(outdir, "/figs/growing_excessmutations/overview/",  paste('/overview_kinetics_excessmutations_filtered', sep="_"), ".tex")
