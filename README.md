@@ -12,6 +12,12 @@ Rscript scripts/VaQuERo_v2.r > vaquero.log
 ## Description
 Takes allele frequencies in table formate and associated meta data and quantifies different virus variants as defined in provided marker mutation file. The workflow first calls 'detected' variants and subsequently quantifies the abundance of the detected variants based on the observed non-zero frequencies using a SIMPLEX regression.
 
+## Testing
+
+For testing if all required packages are available, please run 
+
+``time Rscript VaQuERo/scripts/VaQuERo_v2.r --debug TRUE``
+
 ## Usage 
 
 
