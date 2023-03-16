@@ -97,11 +97,11 @@ opt = parse_args(opt_parser);
 #####################################################
 ####  parameter setting for interactive debugging
 if(opt$debug){
-    opt$dir = "sandbox1"
-    opt$metadata = "data/metaData_general.csv"
-    opt$data="data/mutationData_DB_NationMonitoringSites.tsv.gz"
+    opt$dir = "debug_output"
+    opt$metadata = "VaQuERo/resources/metaData_debug.csv"
+    opt$data="VaQuERo/resources/mutationData_debug.tsv.gz"
     opt$inputformat = "tidy"
-    opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2023-01-02_Europe.csv"
+    opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2023-02-17_Europe.csv"
     opt$smarker="VaQuERo/resources/mutations_special_2022-12-21.csv"
     opt$pmarker="VaQuERo/resources/mutations_problematic_vss1_v3.csv"
     opt$zero=0.02
@@ -112,9 +112,9 @@ if(opt$debug){
     opt$minmarkfrac=0.4
     opt$smoothingsamples=2
     opt$smoothingtime=2
-    opt$voi="XBB.1.5,CH.1.1,BQ.1.1"
-    opt$highlight="XBB.1.5,CH.1.1,BQ.1.1"
-    opt$colorBase="B.1.617.2,BA.1,BA.2,BA.4,BA.5"
+    opt$voi="XBB.1.5,XBB.1.9,BQ.1.1"
+    opt$highlight="XBB.1.5,XBB.1.9,BQ.1.1"
+    opt$colorBase="XBB,BA.1,BA.2,BA.4,BA.5"
     opt$recent <- 99999
     print("Warning: command line option overwritten")
 }
