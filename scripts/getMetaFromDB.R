@@ -60,7 +60,7 @@
   colnames(sewagePlants_db) <- gsub("_coronA", "", colnames(sewagePlants_db))
   colnames(samples_db) <- gsub("_coronA", "", colnames(samples_db))
 
-  left_join(x = samples_db, y = seqdata_db, by = "RNA_ID_int", suffix = c(".samples",".seqData")) -> samples_with_seqdata_db
+  left_join(x = samples_db, y = seqdata_db, by = "RNA_ID_int", suffix = c(".samples",".seqData"), multiple = "all") -> samples_with_seqdata_db
 
   left_join(x = samples_with_seqdata_db, y = sewagePlants_db, by = "LocationID", suffix = c(".db",".location")) -> samples_with_seqdata_with_wwplants_db
 
