@@ -790,6 +790,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
             }
             rm(ssdt2, ssdt3, uniqMarkerPerVariant, markerPerVariant, ssdt_reduced, uniqMarkerPerVariant.iterative, uniqMarkerPerVariant_could_be_detected.iterative)
 
+
             print(paste("LOG: (", t, ")", timepoint_classic, roiname, paste("(",length(allTimepoints[allTimepoints %in% timepoint]), "same day;", "+", length(allTimepoints[allTimepoints %notin% timepoint]), "neighboring TP;", length(specifiedLineages), "detected lineages)")))
             print(paste0("LOG: detected lineages (", length(specifiedLineages), "): ", paste(specifiedLineages, sep = ", ", collapse = ", ")))
 
@@ -851,7 +852,12 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
               ssdt %>% rowwise() %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(weight = log10(value.depth)*timeweight) -> ssdt
               detour4log %>% rowwise() %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(weight = log10(value.depth)*timeweight) %>% filter(!grepl(";.+;", Variants)) -> detour4log
               detour4log %>% rowwise() %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(weight = log10(value.depth)*timeweight) %>% dplyr::select(sample_date, NUC, value.freq, weight, all_of(specifiedLineages)) -> detour4log_printer
-              print(detour4log_printer)
+              #print(detour4log_printer)
+              rowSums(detour4log %>% dplyr::select(any_of(c(specifiedLineages)))) == 1 -> rowsToPrint
+              colSums(as.data.frame(detour4log)[rowsToPrint] %>% dplyr::select(any_of(c(specifiedLineages)))) > 0 -> colsToPrint
+              detour4log[rowsToPrint,]  %>% dplyr::select(any_of(c(specifiedLineages, "value.freq", "NUC"))) -> tableToPrint
+              print(as.data.frame(tableToPrint)[c(colSums(as.data.frame(tableToPrint)[,1:(dim(tableToPrint)[2]-2)]) > 0, TRUE, TRUE)])
+
 
               #print(data.frame(date = detour4log$sample_date, decimal = detour4log$sample_date_decimal, Tweight = round(detour4log$timeweight, digits = 2), depth = detour4log$value.depth, weight = round(detour4log$weight, digits = 2), value = round(detour4log$value.freq, digits = 2), variants = detour4log$Variants, mutation = detour4log$NUC))
               rm(detour4log, detour4log_printer)
