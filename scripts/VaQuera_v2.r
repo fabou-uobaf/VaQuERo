@@ -72,7 +72,7 @@ option_list = list(
               help="Minimal absolute number of markers that variant is considered detected [default %default]", metavar="character"),
   make_option(c("--minmarkfrac"), type="double", default=0.4,
               help="Minimal fraction of markers that variant is considered detected [default %default]", metavar="character"),
-  make_option(c("--growthlimit"), type="double", default=0.01,
+  make_option(c("--growthlimit"), type="double", default=0.05,
               help="Mutations with smaller growth rate are ignored [default %default]", metavar="character"),
   make_option(c("--periodend"), type="character", default=as.character(Sys.Date()),
               help="End of analysis period as date in %Y-%M-%D format [default %default]", metavar="character"),
@@ -97,16 +97,12 @@ opt = parse_args(opt_parser);
 ####  parameter setting for interactive debugging
 if(opt$debug){
   opt$dir = "sandbox1"
-  opt$metadata = "data_carinthia/metaData_targeted.csv"
   opt$metadata = "data/metaData_general.csv"
-
-  opt$data="data_carinthia/mutationData_DB_TargetedMonitoringSites_phased.tsv.gz"
   opt$data="data/mutationData_DB_NationMonitoringSites.tsv.gz"
-
   opt$inputformat = "tidy"
-  opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2023-02-17_Europe.csv"
-  opt$mutstats  = "VaQuERo/resources/mutations_stats_pango_codonPhased_2023-02-17.csv.gz"
-  opt$group2var = "VaQuERo/resources/groupMembers_pango_codonPhased_2023-02-17_Europe.csv"
+  opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2023-03-10_Europe.csv"
+  opt$mutstats  = "VaQuERo/resources/mutations_stats_pango_codonPhased_2023-03-10.csv.gz"
+  opt$group2var = "VaQuERo/resources/groupMembers_pango_codonPhased_2023-03-10_Europe.csv"
   opt$pmarker="VaQuERo/resources/mutations_problematic_vss1_v3.csv"
   opt$detectmode = "umm"
   opt$ninconsens = 0.1
@@ -1273,9 +1269,10 @@ fwrite(globalVarData, file = paste0(outdir, "/globalVarData.csv"), sep = "\t")
 sewage_samps.dt %>% filter(NUC %in% unique(globalExMutData$nuc_mutation)) -> overviewPlot.dt
 overviewPlot.dt %>%  left_join(y = nuc2label, by = c("NUC" = "NUC")) -> overviewPlot.dt
 
-# filter mutations which are growing and in excess in more than 2 locations for the latest time point
+# filter mutations which are growing and in excess in more than 10% of all locations (but at least 2) for the latest time point
+c_limit <- .1
 dim(overviewPlot.dt)
-globalExMutData %>% group_by(LocationID, nuc_mutation) %>% mutate(latest = max(sample_date)) %>% filter(sample_date == latest) %>% group_by(nuc_mutation) %>% mutate(n = n()) %>% filter(n > 2) %>% dplyr::select(nuc_mutation) %>% distinct() %>% pull() -> labelsToUse
+globalExMutData %>% group_by(LocationID, nuc_mutation) %>% mutate(latest = max(sample_date)) %>% filter(sample_date == latest) %>% ungroup() %>% mutate(t = length(unique(LocationID))) %>% group_by(nuc_mutation) %>% mutate(n = n()) %>% filter(n/t > c_limit & n > 1)  %>% dplyr::select(nuc_mutation) %>% distinct() %>% pull()  -> labelsToUse
 overviewPlot.dt %>% filter(NUC %in% labelsToUse) -> overviewPlot.dt
 dim(overviewPlot.dt)
 
@@ -1294,8 +1291,9 @@ overviewPlot.dt %>% group_by(ANN.GENE, ANN.AA, NUC, label, kw, LocationID) %>% s
 
 ## sort each per location, per kw entry descending accorrding their af
 ## disrupting the time course per wwtp info but generating a weighted histogram like plot
-overviewPlot.dt %>% group_by(label, kw) %>% arrange(desc(value.freq))  %>% mutate(plotlevel = letters[1:n()]) -> overviewPlot.dt
-ggplot(data = overviewPlot.dt, aes(x = kw, y = plotlevel)) + geom_raster(aes(fill = value.freq, color = value.freq), width = 7, height = 1) + facet_grid(label~., switch = "y") + theme_minimal() + theme(axis.text.y = element_blank(), axis.ticks.y = element_blank(), strip.text.y.left = element_text(angle = 0)) + scale_fill_viridis(name = "Allele\nfrequency", trans = "sqrt", option = "A", begin = 0.1, end = 0.9, direction = 1)  + scale_color_viridis(name = "Allele\nfrequency", trans = "sqrt", option = "A", begin = 0.1, end = 0.9, direction = 1) + xlab("") + ylab("") + theme(legend.position="right", legend.direction="vertical", panel.spacing.y=unit(0.1, "lines"), panel.grid.minor.y = element_blank(), panel.grid.major.y = element_blank(), panel.border = element_rect(color = "grey33", fill = NA), axis.ticks = element_line(color = "grey50"), axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) + ggtitle("Growing, excess mutations") + scale_x_date(breaks = "1 weeks") + scale_y_discrete(position = "right", labels = c(match(max(overviewPlot.dt$plotlevel), letters)), breaks=c(max(overviewPlot.dt$plotlevel))) -> overviewPlot
+sort(apply(expand.grid(letters, letters), 1, paste, collapse="")) -> LetterCombs
+overviewPlot.dt %>% group_by(label, kw) %>% arrange(desc(value.freq))  %>% mutate(plotlevel = LetterCombs[1:n()]) -> overviewPlot.dt
+ggplot(data = overviewPlot.dt, aes(x = kw, y = plotlevel)) + geom_raster(aes(fill = value.freq, color = value.freq), width = 7, height = 1) + facet_grid(label~., switch = "y") + theme_minimal() + theme(strip.text.y.left = element_text(angle = 0)) + scale_fill_viridis(name = "Allele\nfrequency", trans = "sqrt", option = "A", begin = 0.1, end = 0.9, direction = 1)  + scale_color_viridis(name = "Allele\nfrequency", trans = "sqrt", option = "A", begin = 0.1, end = 0.9, direction = 1) + xlab("") + ylab("") + theme(legend.position="right", legend.direction="vertical", panel.spacing.y=unit(0.1, "lines"), panel.grid.minor.y = element_blank(), panel.grid.major.y = element_blank(), panel.border = element_rect(color = "grey33", fill = NA), axis.ticks = element_line(color = "grey50"), axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) + ggtitle("Growing, excess mutations") + scale_x_date(breaks = "1 weeks") + scale_y_discrete(position = "right", labels = c(match(max(overviewPlot.dt$plotlevel), LetterCombs)), breaks=c(max(overviewPlot.dt$plotlevel))) -> overviewPlot
 
 plot.height <- 1.2+length(unique(overviewPlot.dt$label))/2
 filename <- paste0(outdir, "/figs/growing_excessmutations/overview/",  paste('/overview_kinetics_excessmutations_filtered', sep="_"), ".pdf")

@@ -24,8 +24,6 @@ option_list = list(
               help="minimal allele frequency [default= %default]"),
   make_option(c("-o", "--output_file_base"), type="character", default="sewagevariants_afs_dps",
               help="output name base [default= %default]"),
-  make_option(c("--nmOnly"), type="logical", default=TRUE,
-              help="Should only be samples from WWTP which were sampled after Sept 2022 at least once be considered [default= %default]"),
   make_option(c("--server"), type="character", default="undisclosed",
               help="Server name [default %default]", metavar="character"),
   make_option(c("--db"), type="character", default="undisclosed",
@@ -48,24 +46,6 @@ con <- dbConnect(odbc(),
   PWD = opt$pwd
 )
 
-
-
-# get all WWTP which were sequenced after Sep 1 2022
-if (opt$nmOnly){
-  print("WARNING: only samples from WWTP were at least one sample was drawn after Sept 2022 are considered.")
-
-  samples_db = setDT(dbReadTable(con, "samples"))
-  seqdata_db = setDT(dbReadTable(con, "seqData"))
-
-  colnames(seqdata_db) <- gsub("_coronA", "", colnames(seqdata_db))
-  colnames(samples_db) <- gsub("_coronA", "", colnames(samples_db))
-
-  left_join(x = samples_db, y = seqdata_db, by = "RNA_ID_int", suffix = c(".samples",".seqData")) -> samples_with_seqdata_db
-
-  samples_db %>% filter(sample_date > as.Date("2022-09-01")) %>% select(LocationID) %>% distinct() -> wwtpOI
-
-  samples_with_seqdata_db %>% filter(LocationID %in% wwtpOI$LocationID) %>% select(BSF_sample_name) %>% filter(!is.na(BSF_sample_name)) -> sampleOI
-}
 
 # create include in report query:
 include_in_rep = strsplit(opt$include_in_report,",",fixed = TRUE)[[1]]
@@ -113,11 +93,6 @@ where allele_freq >= ", opt$minfreq)
 
 ww_afs=setDT(dbGetQuery(con, sql))
 colnames(ww_afs) = c("SAMPLEID", "CHROM", "POS", "REF", "ALT", "GENE", "AA", "AF", "DP")
-
-if(opt$nmOnly){
-  ww_afs %>% filter(SAMPLEID %in% sampleOI$BSF_sample_name) -> ww_afs
-  as.data.table(ww_afs) -> ww_afs
-}
 
 ww_afs[, AA := gsub("^p\\.","",AA)]
 gzfh <- gzfile(paste0(opt$output_file_base,".tsv.gz"), "w")
