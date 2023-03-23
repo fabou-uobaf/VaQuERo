@@ -448,7 +448,7 @@ if( ! dir.exists(paste0(outdir, "/figs/growing_excessmutations/overview"))){
 
 
 ## read alias file
-aliases <- fromJSON(file ="https://raw.githubusercontent.com/cov-lineages/pangolin-data/main/pangolin_data/data/alias_key.json")
+aliases <- fromJSON(file ="https://raw.githubusercontent.com/cov-lineages/pango-designation/master/pango_designation/alias_key.json")
 as.list(names(aliases)) -> dealiases
 names(dealiases) = as.character(aliases)
 
