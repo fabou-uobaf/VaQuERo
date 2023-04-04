@@ -430,8 +430,8 @@ print(paste0("PROGRESS: read mutation files "))
 moi <- fread(file = markermutationFile)
 unite(moi, NUC, c(4,3,5), ALT, sep = "", remove = FALSE) -> moi
 moi %>% mutate(Variants = gsub("other;?", "", Variants)) %>% mutate(Variants = gsub(";;", ";", Variants)) -> moi   ### just there to fix GISAID issue with BQ.1.1 vs BQ.1
-moi %>% dplyr::select("Variants") %>% mutate(Variants = strsplit(as.character(Variants), ";")) %>% unnest() %>% group_by(Variants) %>% summarize(n = n(), .groups = "keep") -> moi_marker_count
-moi %>% filter(!grepl(";", Variants)) %>% dplyr::select("Variants") %>% mutate(Variants = strsplit(as.character(Variants), ";")) %>% unnest() %>% group_by(Variants) %>% summarize(n = n(), .groups = "keep") -> moi_uniq_marker_count
+moi %>% dplyr::select("Variants") %>% mutate(Variants = strsplit(as.character(Variants), ";")) %>% unnest(cols = c(Variants)) %>% group_by(Variants) %>% summarize(n = n(), .groups = "keep") -> moi_marker_count
+moi %>% filter(!grepl(";", Variants)) %>% dplyr::select("Variants") %>% mutate(Variants = strsplit(as.character(Variants), ";")) %>% unnest(cols = c(Variants)) %>% group_by(Variants) %>% summarize(n = n(), .groups = "keep") -> moi_uniq_marker_count
 
 ## read special mutations of interest from file
 soi <- fread(file = specialmutationFile)
