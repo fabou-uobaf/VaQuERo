@@ -641,8 +641,8 @@ left_join(x=sewage_samps.dt, y=sample_dates, by = "RNA_ID_int", multiple = "all"
 ## get most recent sampling date from last Run
 metaDT %>% filter(BSF_start_date == sort(metaDT$BSF_start_date)[length(sort(metaDT$BSF_start_date))]) %>% dplyr::select("BSF_run", "RNA_ID_int", "BSF_sample_name", "sample_date") -> RNA_ID_int_currentRun
 
-RNA_ID_int_currentRun %>% ungroup() %>% summarize(latest = max(as.Date(sample_date)), .groups = "keep") -> latestSample
-RNA_ID_int_currentRun %>% ungroup() %>% summarize(earliest = min(as.Date(sample_date)), .groups = "keep") -> earliestSample
+metaDT %>% ungroup() %>% summarize(latest = max(as.Date(sample_date)), .groups = "keep") -> latestSample
+metaDT %>% ungroup() %>% summarize(earliest = min(as.Date(sample_date)), .groups = "keep") -> earliestSample
 
 print(paste("LOG: current run ID:", unique(RNA_ID_int_currentRun$BSF_run)))
 print(paste("LOG: earliest sample in current run:", earliestSample$earliest))
@@ -1011,7 +1011,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 
         ggplot(sankey.dtt, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = label)) + geom_sankey(flow.alpha = .6, node.color = "gray30", type ='alluvial') + geom_sankey_label(size = 3, color = "white", fill = "gray40", position = position_nudge(x = 0.05, y = 0), na.rm = TRUE, type ='alluvial', hjust = 0) + theme_sankey(base_size = 16) + labs(x = NULL) + ggtitle(roiname, subtitle = sankey_date) + theme(legend.position = "none", axis.text.x = element_blank(), plot.title = element_text(hjust = 0), plot.subtitle=element_text(hjust = 0)) + scale_fill_viridis_d(alpha = 1, begin = 0.025, end = .975, direction = 1, option = "D") + scale_x_discrete(expand = expansion(mult = c(0, .1), add = c(.1, .5))) -> pp
 
-        filename <- paste0(outdir, "/figs/sankey/",  paste('/klaerwerk', roi, sep="_"), ".pdf")
+        filename <- paste0(outdir, "/figs/sankey/",  paste('/wwtp', roi, sep="_"), ".pdf")
         ggsave(filename = filename, plot = pp, width = 8, height = 4.5)
         fwrite(as.list(c("sankey", "WWTP", roiname, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
         rm(pp, filename, sankey.dt, sankey.dtt)
@@ -1059,7 +1059,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
         q3 <- q3 + scale_x_date(date_breaks = "2 month", date_labels =  "%b %y", limits = c(as.Date(NA), as.Date(latestSample$latest)))
         q3 <- q3 + ylab(paste0("Variantenanteil [1/1]") ) + xlab("")
         q3 <- q3 + guides(fill = guide_legend(title = "", ncol = 7), color = guide_legend(title = "", ncol = 7))
-        filename <- paste0(outdir, '/figs/stackview', paste('/klaerwerk', roi, "all", sep="_"), ".pdf")
+        filename <- paste0(outdir, '/figs/stackview', paste('/wwtp', roi, "all", sep="_"), ".pdf")
         ggsave(filename = filename, plot = q3, width = plotWidth, height = plotHeight)
         fwrite(as.list(c("stackOverview", c( ifelse(dim(count_last_BSF_run_id)[1] > 0, "current", "old"), roiname, "all", filename))), file = summaryDataFile, append = TRUE, sep = "\t")
 
@@ -1078,7 +1078,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
           q2 + scale_shape_manual(values = c(0:25, 33:50)) -> q2
           q2 + guides(shape = guide_legend(title = "Spezial-Mutationen", ncol = 2, title.position = "top"), fill = guide_legend(title = "Spezial-Mutationen", ncol = 2, title.position = "top"), col = guide_legend(title = "Varianten", ncol = 3, title.position = "top")) -> q2
 
-          filename <- paste0(outdir, '/figs/specialMutations', paste('/klaerwerk', roi, "all", sep="_"), ".pdf")
+          filename <- paste0(outdir, '/figs/specialMutations', paste('/wwtp', roi, "all", sep="_"), ".pdf")
           #ggsave(filename = filename, plot = q2, width = plotWidth/1.5, height = plotHeight/1.5)
           fwrite(as.list(c("specialMutations", c( ifelse(dim(count_last_BSF_run_id)[1] > 0, "current", "old"), roiname, "all",filename))), file = summaryDataFile, append = TRUE, sep = "\t")
         }
@@ -1102,7 +1102,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
           q1 + guides(shape = guide_legend(title = "Spezial-Mutationen", ncol = 2, title.position = "top"), fill = guide_legend(title = "Spezial-Mutationen", ncol = 2, title.position = "top"), col = guide_legend(title = "Varianten", ncol = 3, title.position = "top")) -> q1
 
 
-          filename <- paste0(outdir, '/figs/specialMutations', paste('/klaerwerk', roi, "VoI", sep="_"), ".pdf")
+          filename <- paste0(outdir, '/figs/specialMutations', paste('/wwtp', roi, "VoI", sep="_"), ".pdf")
           ggsave(filename = filename, plot = q1, width = plotWidth/1.5, height = plotHeight/1.5)
           fwrite(as.list(c("specialMutations", c( ifelse(dim(count_last_BSF_run_id)[1] > 0, "current", "old"), roiname, "VoI", filename))), file = summaryDataFile, append = TRUE, sep = "\t")
         }
@@ -1114,7 +1114,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
         ## print faceted line plot of fitted values plus point plot of measured AF for all VoIs
         plantFullData %>% filter(variant %in% VoI) %>% ggplot()  + geom_line(data = subset(plantFittedData, variant %in% VoI), alpha = 0.6, size = 2, aes(x = as.Date(sample_date), y = value, col = variant)) + geom_jitter(aes(x = as.Date(sample_date), y = singlevalue), alpha = 0.33, size = 1.5, width = 0.33, height = 0) + geom_vline(xintercept = as.Date(latestSample$latest), linetype = "dotdash", color = "grey", size =  0.5) + facet_wrap(~variant)  + scale_color_manual(values = ColorBaseData$col, breaks = ColorBaseData$variant, name = "") + scale_y_continuous(labels=scales::percent) + theme_bw() + theme(legend.position="bottom", strip.background = element_rect(fill="grey97"), axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) + scale_x_date(date_breaks = "2 month", date_labels =  "%b %y", limits = c(as.Date(NA), as.Date(latestSample$latest))) + ylab(paste0("Variantenanteil [1/1]") ) + xlab("") -> p1
 
-        filename <- paste0(outdir, '/figs/detail', paste('/klaerwerk', roi, "VoI", sep="_"), ".pdf")
+        filename <- paste0(outdir, '/figs/detail', paste('/wwtp', roi, "VoI", sep="_"), ".pdf")
         ggsave(filename = filename, plot = p1, width = plotWidth, height = plotHeight)
         fwrite(as.list(c("variantDetail", c( ifelse(dim(count_last_BSF_run_id)[1] > 0, "current", "old"), roiname, "VoI", filename))), file = summaryDataFile, append = TRUE, sep = "\t")
 
@@ -1126,7 +1126,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
         ## print faceted line plot of fitted values plus point plot of measured AF for all lineages
         plantFullData %>% ggplot() +  geom_line(data = plantFittedData, alpha = 0.6, size = 2, aes(x = as.Date(sample_date), y = value, col = variant)) + geom_jitter(aes(x = as.Date(sample_date), y = singlevalue), alpha = 0.33, size = 1.5, width = 0.33, height = 0) + geom_vline(xintercept = as.Date(latestSample$latest), linetype = "dotdash", color = "grey", size =  0.5) + facet_wrap(~variant) + scale_color_manual(values = ColorBaseData$col, breaks = ColorBaseData$variant, name = "") + scale_y_continuous(labels=scales::percent) + theme_bw() + theme(legend.position="bottom", strip.background = element_rect(fill="grey97"), axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) + scale_x_date(date_breaks = "3 month", date_labels =  "%b", limits = c(as.Date(NA), as.Date(latestSample$latest))) + ylab(paste0("Variantenanteil [1/1]") ) + xlab("") + guides(color = guide_legend(title = "", ncol = 7)) -> p2
 
-        filename <- paste0(outdir, '/figs/detail', paste('/klaerwerk', roi, "all", sep="_"), ".pdf")
+        filename <- paste0(outdir, '/figs/detail', paste('/wwtp', roi, "all", sep="_"), ".pdf")
         ggsave(filename = filename, plot = p2, width = plotWidth, height = plotHeight*1.6)
         fwrite(as.list(c("variantDetail", c(ifelse(dim(count_last_BSF_run_id)[1] > 0, "current", "old"), roiname, "all", filename))), file = summaryDataFile, append = TRUE, sep = "\t")
         rm(p2, filename)
@@ -1207,9 +1207,9 @@ if (dim(globalFittedData)[1] >= tpLimitToPlot){
   ap <- ap + xlab("Kalender Woche")
   ap <- ap + ggtitle("Gewichtetes Mittel: Österreich")
 
-  filename <- paste0(outdir, '/figs/stackview', paste('/Austria', "all", sep="_"), ".pdf")
+  filename <- paste0(outdir, '/figs/stackview', '/', paste(opt$country, "all", sep="_"), ".pdf")
   ggsave(filename = filename, plot = ap, width = plotWidth, height = 1.2*plotHeight)
-  fwrite(as.list(c("stacked", "Overview", "Austria", filename)), file = summaryDataFile, append = TRUE, sep = "\t")
+  fwrite(as.list(c("stacked", "Overview", opt$country, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
 
   rm(ap,filename, ColorBaseData, stacker.dt, stacker.dtt)
 }
@@ -1263,9 +1263,9 @@ if(dim(globalFittedData)[1] > 0){
 
         ggplot(sankey.dtt, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = label)) + geom_sankey(flow.alpha = .6, node.color = "gray30", type ='alluvial') + geom_sankey_label(size = 3, color = "white", fill = "gray40", position = position_nudge(x = 0.05, y = 0), na.rm = TRUE, type ='alluvial', hjust = 0) + theme_sankey(base_size = 16) + labs(x = NULL) + ggtitle("Gewichtetes Mittel: Österreich", subtitle = paste( sankey_date$earliest , "bis", sankey_date$latest)) + theme(legend.position = "none", axis.text.x = element_blank(), plot.title = element_text(hjust = 0), plot.subtitle=element_text(hjust = 0)) + scale_fill_manual(values = col2var, breaks = var2col) + scale_x_discrete(expand = expansion(mult = c(0, .1), add = c(.1, .5))) -> pp
 
-        filename <- paste0(outdir, "/figs/sankey/Overview_",  "Austria", ".pdf")
+        filename <- paste0(outdir, "/figs/sankey/Overview_",  opt$country, ".pdf")
         ggsave(filename = filename, plot = pp)
-        fwrite(as.list(c("sankey", "Overview", "Austria", filename)), file = summaryDataFile, append = TRUE, sep = "\t")
+        fwrite(as.list(c("sankey", "Overview", opt$country, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
         rm(pp, filename, sankey.dt, sankey.dtt)
 
 
@@ -1289,9 +1289,9 @@ if(dim(globalFittedData)[1] > 0){
         dpl <- dpl + geom_label(data = occurence.rate, aes(x = variant, y = d, label = r), fill = "grey90")
         dpl <- dpl + coord_flip()
 
-        filename1 <- paste0(outdir, "/figs/sankey/Detection_",  "Austria", ".pdf")
+        filename1 <- paste0(outdir, "/figs/sankey/Detection_",  opt$country, ".pdf")
         ggsave(filename = filename1, plot = dpl, width = plotWidth, height = 0.85*plotHeight)
-        fwrite(as.list(c("detection", "Overview", "Austria", filename1)), file = summaryDataFile, append = TRUE, sep = "\t")
+        fwrite(as.list(c("detection", "Overview", opt$country, filename1)), file = summaryDataFile, append = TRUE, sep = "\t")
 
         print(paste("     PROGRESS: generating WWTP detection table"))
 
@@ -1371,7 +1371,7 @@ globalFittedData %>% group_by(LocationID) %>% mutate(n = length(unique(sample_da
 if (dim(globalFittedData2)[1] >= tpLimitToPlot){
   print(paste("     PROGRESS: plotting overview VoI"))
   ggplot(data = globalFittedData2, aes(x = as.Date(sample_date), y = value, fill = variant)) + geom_area(position = "stack", alpha = 0.7)  + facet_wrap(~LocationName) + scale_fill_viridis_d(alpha = 0.6, begin = .05, end = .95, option = "H", direction = +1, name="") + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1)) + theme_minimal() + theme(legend.position="bottom", strip.text.x = element_text(size = 4.5), panel.grid.minor = element_blank(), panel.spacing.y = unit(0, "lines"), legend.direction="horizontal") + guides(fill = guide_legend(title = "", ncol = 10)) + scale_x_date(date_breaks = "2 month", date_labels =  "%b") + ylab(paste0("Variantenanteil [1/1]") ) + xlab("") -> r2
-  filename <- paste0(outdir, '/figs/fullview', paste('/klaerwerke', "VoI", sep="_"), ".pdf")
+  filename <- paste0(outdir, '/figs/fullview', paste('/wwtp', "VoI", sep="_"), ".pdf")
   #ggsave(filename = filename, plot = r2, width = plotWidth*1.5, height = plotHeight*1.5)
   #fwrite(as.list(c("fullOverview", c(roiname, "VoI", filename))), file = summaryDataFile, append = TRUE, sep = "\t")
   rm(r2,filename)
@@ -1394,7 +1394,7 @@ if (dim(globalFittedData2)[1] >= tpLimitToPlot){
   r1 <- r1 + scale_x_date(date_breaks = "6 month", date_labels =  "%b %y")
   r1 <- r1 + ylab(paste0("Variantenanteil [1/1]") )
   r1 <- r1 + xlab("")
-  filename <- paste0(outdir, '/figs/fullview', paste('/klaerwerke', "all", sep="_"), ".pdf")
+  filename <- paste0(outdir, '/figs/fullview', paste('/wwtp', "all", sep="_"), ".pdf")
   ggsave(filename = filename, plot = r1, width = plotWidth*1.5, height = plotHeight*1.5)
   fwrite(as.list(c("fullOverview", c(roiname, "all", filename))), file = summaryDataFile, append = TRUE, sep = "\t")
   rm(r1,filename)
