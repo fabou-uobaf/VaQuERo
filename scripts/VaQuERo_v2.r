@@ -642,7 +642,7 @@ left_join(x=sewage_samps.dt, y=sample_dates, by = "RNA_ID_int", multiple = "all"
 metaDT %>% filter(BSF_start_date == sort(metaDT$BSF_start_date)[length(sort(metaDT$BSF_start_date))]) %>% dplyr::select("BSF_run", "RNA_ID_int", "BSF_sample_name", "sample_date") -> RNA_ID_int_currentRun
 
 metaDT %>% ungroup() %>% summarize(latest = max(as.Date(sample_date)), .groups = "keep") -> latestSample
-metaDT %>% ungroup() %>% summarize(earliest = min(as.Date(sample_date)), .groups = "keep") -> earliestSample
+RNA_ID_int_currentRun %>% ungroup() %>% summarize(earliest = min(as.Date(sample_date)), .groups = "keep") -> earliestSample
 
 print(paste("LOG: current run ID:", unique(RNA_ID_int_currentRun$BSF_run)))
 print(paste("LOG: earliest sample in current run:", earliestSample$earliest))
