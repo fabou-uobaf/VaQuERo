@@ -757,7 +757,7 @@ my $txt = '
   \begin{center}
     \includegraphics[width=0.99\textwidth]{'."$plot".'}
     \includegraphics[width=0.99\textwidth]{'."$map".'}
-    \caption{Mutation die .}
+    \caption{Mutation die geographisch geclustert oder in >5 Kläranlagen sig. überrepresentiert sind (d.h., nicht durch detektierte Varianten erklärt werden können) und ein wöchentliches Wachstum >0.05 zeigen.}
   \end{center}
 \end{figure}
 '."$table_content".'
