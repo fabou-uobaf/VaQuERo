@@ -1322,37 +1322,27 @@ overviewPlot.dt %>%  left_join(y = nuc2label, by = c("NUC" = "NUC")) -> overview
 # filter mutations which are growing and in excess and geographically clustered
 
 pval_th <- 0.1
+num_th  <- 5
 labelsToUse <- c()
 globalExMutData %>% group_by(LocationID, nuc_mutation) %>% mutate(latest = max(sample_date)) %>% filter(sample_date == latest) %>% dplyr::select(LocationID, nuc_mutation) %>% group_by(nuc_mutation) %>% mutate(n_wwtp = n()) -> all_mutations_excess_growing
 globalExMutData %>% group_by(LocationID, nuc_mutation) %>% mutate(latest = max(sample_date)) %>% filter(sample_date == latest) %>% pull(LocationID) %>% unique() -> all_wwtp_excess_growing
-data.table(LocationID=all_wwtp_excess_growing) %>% left_join(y = metaDT, by = join_by(LocationID)) %>% dplyr::select(LocationID, LocationName, state, connected_people, dcpLatitude, dcpLongitude) %>% distinct() -> all_wwtp_excess_growing
+data.table(LocationID=all_wwtp_excess_growing) %>% left_join(y = metaDT, by = c("LocationID")) %>% dplyr::select(LocationID, LocationName, state, connected_people, dcpLatitude, dcpLongitude) %>% distinct() -> all_wwtp_excess_growing
 length(unique(all_wwtp_excess_growing$LocationID)) -> N_wwtp
 
-if(FALSE){
-  for (nn in unique(all_mutations_excess_growing$n_wwtp)){
+
+for (nn in unique(all_mutations_excess_growing$n_wwtp)){
       if(nn < 2){
           print(paste("LOG: cluster with size", nn, "not considered since to cluster small"))
-      } else if( (N_wwtp - nn) < 2){
-          print(paste("LOG: cluster with size", nn, "not evaluated. P-value set to 0 since cluster to comprehensive"))
-          all_mutations_excess_growing %>% filter(n_wwtp == nn) %>% pull(nuc_mutation) %>% unique() -> selected_mutations_excess_growing
-          labelsToUse <- c(selected_mutations_excess_growing$nuc_mutation, labelsToUse)
-      } else if((nn/N_wwtp)<=0.5){
+      } else if( nn >= 2 & nn < num_th ){
           print(paste("LOG: construct expected wwtp difference for cluster of size", nn))
           expected_distance_distro <- fun_expected_distance_distro(nn, all_wwtp_excess_growing, 1000)
           all_mutations_excess_growing %>% filter(n_wwtp == nn) %>% group_by(nuc_mutation) %>% summarize(locations = paste(LocationID, collapse = ";"), .groups = "keep") %>% rowwise() %>% mutate(odist = fun_observed_distance(locations, all_wwtp_excess_growing)) -> selected_mutations_excess_growing
           selected_mutations_excess_growing %>% rowwise() %>% mutate(bootstrapped = length(expected_distance_distro[expected_distance_distro < odist])/length(expected_distance_distro)) %>% filter(bootstrapped < pval_th) -> selected_mutations_excess_growing
           labelsToUse <- c(selected_mutations_excess_growing$nuc_mutation, labelsToUse)
-      } else if((nn/N_wwtp)>0.5){
-          print(paste("LOG: construct expected wwtp difference for inverse cluster of size", N_wwtp-nn, "(", nn, "positive out of", N_wwtp, "remaining", N_wwtp-nn, ")"))
-          expected_distance_distro <- fun_expected_distance_distro(N_wwtp-nn, all_wwtp_excess_growing, 1000)
-          all_mutations_excess_growing %>% filter(n_wwtp == nn) %>% group_by(nuc_mutation) %>% summarize(locations = paste(all_wwtp_excess_growing$LocationID[all_wwtp_excess_growing$LocationID %notin% LocationID], collapse = ";"), .groups = "keep") %>% rowwise() %>% mutate(odist = fun_observed_distance(locations, all_wwtp_excess_growing)) -> selected_mutations_excess_growing
-          selected_mutations_excess_growing %>% rowwise() %>% mutate(bootstrapped = length(expected_distance_distro[expected_distance_distro < odist])/length(expected_distance_distro)) %>% filter(bootstrapped < pval_th) -> selected_mutations_excess_growing
-          labelsToUse <- c(selected_mutations_excess_growing$nuc_mutation, labelsToUse)
       }
-  }
-} else{
-  all_mutations_excess_growing %>% filter(n_wwtp >=5) %>% pull(nuc_mutation) %>% unique() -> labelsToUse
 }
+all_mutations_excess_growing %>% filter(n_wwtp >= num_th) %>% pull(nuc_mutation) %>% unique() -> labelsToUse
+
 overviewPlot.dt %>% filter(NUC %in% labelsToUse) -> overviewPlot.dt.clust
 length(unique(overviewPlot.dt$label))
 length(unique(overviewPlot.dt.clust$label))
@@ -1386,7 +1376,7 @@ if(length(unique(overviewPlot.dt.clust$label)) > 0){
     #overviewPlot.dt.clust %>% rowwise() %>% mutate(AA = paste(ANN.GENE, gsub("\\D", "", ANN.AA), sep=":")) %>% left_join(y = functional_mutation_annotation, by = "AA") -> overviewPlot.dt.clust
     #overviewPlot.dt.clust %>% group_by(ANN.GENE, ANN.AA, NUC, label, LocationID) %>% filter(kw == max(kw)) %>% group_by(label, significance, reference) %>% summarize(.groups = "keep", min_AF = signif(min(value.freq), digits = 2), median_AF = signif(median(value.freq), digits = 2), max_AF = signif(max(value.freq), digits = 2), Anzahl_Klaeranlagen = length(unique(plotlevel)), Mutation = covspectrumLinkSimple(NUC), effect = ifelse(is.na(significance), "no reported effect", paste0("\\href{", reference, "}{", significance, "}")) ) -> overviewPlot.dt.clust
 
-    legendTxt <- paste0("Mutationen die in $>2$ Kläranlagen sig. überrepresentiert sind und ein wöchentliches Wachstum $>", opt$growthlimit, "$ zeigen.")
+    legendTxt <- paste0("Mutationen die geographisch geclustert oder in $>,", num_th, "$ Kläranlagen sig. überrepresentiert sind (d.h., nicht durch detektierte Varianten erklärt werden können) und ein wöchentliches Wachstum $>", opt$growthlimit, "$ zeigen.")
     filename <- paste0(outdir, "/figs/growing_excessmutations/overview/",  paste('/overview_kinetics_excessmutations_filtered', sep="_"), ".tex")
     overviewPlot.dt.clust %>% group_by(ANN.GENE, ANN.AA, NUC, label, LocationID) %>% filter(kw == max(kw)) %>% group_by(label) %>% summarize(.groups = "keep", min_AF = signif(min(value.freq), digits = 2), median_AF = signif(median(value.freq), digits = 2), max_AF = signif(max(value.freq), digits = 2), Anzahl_Klaeranlagen = length(unique(plotlevel)), Mutation = covspectrumLinkSimple(NUC)) -> overviewTable.dt
     makeTexTab(filename, overviewTable.dt, legendTxt)
@@ -1400,7 +1390,7 @@ if(length(unique(overviewPlot.dt.clust$label)) > 0){
 
     World <- ne_countries(scale = "medium", returnclass = "sf")
     Country <- subset(World, name_sort == mapCountry)
-    all_mutations_excess_growing %>% filter(nuc_mutation %in% labelsToUse) %>% distinct() %>% rowwise() %>% left_join(y = metaDT, by = join_by(LocationID)) %>% dplyr::select(nuc_mutation, LocationID, LocationName, state, connected_people, dcpLatitude, dcpLongitude) %>% distinct() -> map.dt
+    all_mutations_excess_growing %>% filter(nuc_mutation %in% labelsToUse) %>% distinct() %>% rowwise() %>% left_join(y = metaDT, by = c("LocationID")) %>% dplyr::select(nuc_mutation, LocationID, LocationName, state, connected_people, dcpLatitude, dcpLongitude) %>% distinct() -> map.dt
 
     left_join(x = map.dt, y = nuc2label, by = c("nuc_mutation" = "NUC")) -> map.dt
 
