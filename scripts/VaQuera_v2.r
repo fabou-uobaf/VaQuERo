@@ -280,7 +280,7 @@ makeObs <- function(x, n, ll, p){
 # function to generate TeX table from data.frame
 
 makeTexTab <- function(filename, TAB, legendTxt){
-    tabheaddef = paste0("\\begin{longtable}{", paste(rep(paste0("p{", 0.8/length(colnames(TAB)), "\\textwidth}"), length(colnames(TAB))), collapse = " | "), "}")
+    tabheaddef = paste0("\\begin{longtable}{", paste(rep(paste0("p{", 0.98/length(colnames(TAB)), "\\textwidth}"), length(colnames(TAB))), collapse = " | "), "}")
     tabhead    = paste(paste(colnames(TAB), collapse = " & "), "\\\\")
     legend     = paste0("\\caption{", legendTxt, "}\\\\")
 
@@ -1000,7 +1000,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 
                     filename <- paste0(outdir, "/figs/vaquero/sankey/",  paste('/sankeyPlot', sampleID, timePoints_classic[t], roi, sep="_"), ".", opt$graph)
                     ggsave(filename = filename, plot = pp, width = 8, height = 4.5)
-                    fwrite(as.list(c("sankey", "plot", sampleID, timePoints_classic[t], roiname, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
+                    fwrite(as.list(c("sankey", "plot", roiname, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
                     rm(pp, filename, sankey.dt, sankey.dtt)
                 }
 
@@ -1031,7 +1031,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
                 ggplot(expected_vs_observed_AF_transformed, aes(x = expected.freq, y = observed.freq)) + geom_smooth(method = "lm", formula= y~x) + geom_abline(intercept = 0, slope = 1, color = "black") + theme_bw() + geom_point(size = 3, alpha = .5, aes(color = -1*log(qval))) + scale_color_viridis(option = "D", direction = -1, name = "pLog10(qval)") -> expected_vs_observed_AF_scatterPlot
                 filename <- paste0(outdir, "/figs/excessmutations/scatter/",  paste('/scatterPlot', sampleID, timePoints_classic[t], roi, sep="_"), ".", opt$graph)
                 ggsave(filename = filename, plot = expected_vs_observed_AF_scatterPlot, width = 8, height = 4.5)
-                fwrite(as.list(c("scatter", "plot", sampleID, timePoints_classic[t], roiname, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
+                fwrite(as.list(c("scatter", "plot", roiname, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
 
                 ## collect globally data on expected mutations
                 globalAFdata   <- rbind(globalAFdata,
@@ -1089,11 +1089,11 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
                     outbreakInfoPlot3 + theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) + outbreakInfoPlot2 + theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) + outbreakInfoPlot1 + plot_layout(nrow = 3, byrow = FALSE, heights = c(1, 3,10)) -> outbreakInfoPlot
                     filename <- paste0(outdir, "/figs/excessmutations/excessmutation/",  paste('/excessmutationPlot', sampleID, timePoints_classic[t], roi, sep="_"), ".", opt$graph)
                     ggsave(filename = filename, plot = outbreakInfoPlot, width = 8, height = 16)
-                    fwrite(as.list(c("excessmutation", "plot", sampleID, timePoints_classic[t], roiname, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
+                    fwrite(as.list(c("excessmutation", "plot", roiname, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
 
                     filename <- paste0(outdir, "/figs/excessmutations/excessmutation/",  paste('/excessmutationData', sampleID, timePoints_classic[t], roi, sep="_"), ".Rdata")
                     save(list = c("outbreak.dt", "outbreak.selection", "outbreak.freqs"), file = filename)
-                    fwrite(as.list(c("excessmutation", "data", sampleID, timePoints_classic[t], roiname, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
+                    fwrite(as.list(c("excessmutation", "data", roiname, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
 
                     #paste0("[", ceiling(length(unique(globalAFdata$nuc_mutation))/2), "-of:", paste(unique(globalAFdata$nuc_mutation), collapse = ", "), "]")
                 }
@@ -1264,11 +1264,11 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
             outbreakInfoPlot1 + outbreakInfoPlot4 + outbreakInfoPlot2 + outbreakInfoPlot3 + plot_layout(ncol = 4, byrow = FALSE, width = c(8, 4, 2, 2)) -> outbreakInfoPlot
             filename <- paste0(outdir, "/figs/growing_excessmutations/excessmutation/",  paste('/excessmutationPlot', sampleID, timePoints_classic[t], roi, sep="_"), ".", opt$graph)
             ggsave(filename = filename, plot = outbreakInfoPlot, width = 16, height = 8)
-            fwrite(as.list(c("excessmutation", "plot", sampleID, timePoints_classic[t], roiname, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
+            fwrite(as.list(c("excessmutation", "plot", roiname, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
 
-            filename <- paste0(outdir, "/figs/growing_excessmutations/excessmutation/",  paste('/excessmutationData', sampleID, timePoints_classic[t], roi, sep="_"), ".Rdata")
-            save(list = c("mutation_time_course", "outbreak.dt", "outbreak.selection", "outbreak.freqs"), file = filename)
-            fwrite(as.list(c("growing_excessmutation", "data", sampleID, timePoints_classic[t], roiname, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
+            #filename <- paste0(outdir, "/figs/growing_excessmutations/excessmutation/",  paste('/excessmutationData', sampleID, timePoints_classic[t], roi, sep="_"), ".Rdata")
+            #save(list = c("mutation_time_course", "outbreak.dt", "outbreak.selection", "outbreak.freqs"), file = filename)
+            #fwrite(as.list(c("growing_excessmutation", "data", roiname, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
         }
     }
 

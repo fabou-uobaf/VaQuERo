@@ -261,22 +261,20 @@ if (defined($data{variantDetail}->{current}) && defined($data{stackOverview}->{c
 
     # print graphical synapsis
     if ( defined($data{sankey}->{WWTP}->{$wwplant}) ){
-
-
       my $path = $data{sankey}->{WWTP}->{$wwplant};
       &printSankey($path, $wwplant_tidy);
     }
 
     if( defined($data{stackOverview}->{current}->{$wwplant}->{all}) ){
       my $path1 = $data{stackOverview}->{current}->{$wwplant}->{all};
-
       &printStackPlot($wwplant_tidy, $path1);
     }
+
     if ( defined($data{variantDetail}->{current}->{$wwplant}->{all}) ){
       my $path2 = $data{variantDetail}->{current}->{$wwplant}->{all};
-
       &printDetailPlot($wwplant_tidy, $path2);
     }
+
     if ( defined($data{specialMutations}->{current}->{$wwplant}->{VoI}) ){
       my $path3 = $data{specialMutations}->{current}->{$wwplant}->{VoI};
 
