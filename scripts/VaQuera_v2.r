@@ -1020,7 +1020,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 
                 ## filter sig. excess mutations based on beta distriubtion
                 beta_shape1 <- 2.2
-                pval_th <- 0.1
+                pval_th <- 0.01
                 expected_vs_observed_AF  %>% filter(expected.freq > 0 | observed.freq > 0) %>% mutate(expected.freq.trans = ifelse(expected.freq < zeroo, zeroo, expected.freq)) %>% mutate(expected.freq.trans = (expected.freq.trans * (10000 - 1 + 0.5)/10000) ) %>% mutate(observed.freq.trans = ifelse(observed.freq < zeroo, zeroo, observed.freq)) %>% mutate(observed.freq.trans = (observed.freq.trans * (10000 - 1 + 0.5)/10000) ) -> expected_vs_observed_AF_transformed
                 expected_vs_observed_AF_transformed %>% mutate(pval = pbeta(observed.freq.trans, beta_shape1, betaParamFromMean(expected.freq.trans, beta_shape1), ncp = 0, lower.tail = FALSE, log.p = FALSE)) -> expected_vs_observed_AF_transformed
                 expected_vs_observed_AF_transformed$qval <- p.adjust(expected_vs_observed_AF_transformed$pval, method = "fdr")
@@ -1321,27 +1321,28 @@ overviewPlot.dt %>%  left_join(y = nuc2label, by = c("NUC" = "NUC")) -> overview
 
 # filter mutations which are growing and in excess and geographically clustered
 
-pval_th <- 0.1
+pval_th <- 0.01
 num_th  <- 5
 labelsToUse <- c()
+labelsToUse_geocluster <- c()
+labelsToUse_abundance <- c()
+
 globalExMutData %>% group_by(LocationID, nuc_mutation) %>% mutate(latest = max(sample_date)) %>% filter(sample_date == latest) %>% dplyr::select(LocationID, nuc_mutation) %>% group_by(nuc_mutation) %>% mutate(n_wwtp = n()) -> all_mutations_excess_growing
 globalExMutData %>% group_by(LocationID, nuc_mutation) %>% mutate(latest = max(sample_date)) %>% filter(sample_date == latest) %>% pull(LocationID) %>% unique() -> all_wwtp_excess_growing
 data.table(LocationID=all_wwtp_excess_growing) %>% left_join(y = metaDT, by = c("LocationID")) %>% dplyr::select(LocationID, LocationName, state, connected_people, dcpLatitude, dcpLongitude) %>% distinct() -> all_wwtp_excess_growing
 length(unique(all_wwtp_excess_growing$LocationID)) -> N_wwtp
 
-
 for (nn in unique(all_mutations_excess_growing$n_wwtp)){
-      if(nn < 2){
-          print(paste("LOG: cluster with size", nn, "not considered since to cluster small"))
-      } else if( nn >= 2 & nn < num_th ){
-          print(paste("LOG: construct expected wwtp difference for cluster of size", nn))
-          expected_distance_distro <- fun_expected_distance_distro(nn, all_wwtp_excess_growing, 1000)
-          all_mutations_excess_growing %>% filter(n_wwtp == nn) %>% group_by(nuc_mutation) %>% summarize(locations = paste(LocationID, collapse = ";"), .groups = "keep") %>% rowwise() %>% mutate(odist = fun_observed_distance(locations, all_wwtp_excess_growing)) -> selected_mutations_excess_growing
-          selected_mutations_excess_growing %>% rowwise() %>% mutate(bootstrapped = length(expected_distance_distro[expected_distance_distro < odist])/length(expected_distance_distro)) %>% filter(bootstrapped < pval_th) -> selected_mutations_excess_growing
-          labelsToUse <- c(selected_mutations_excess_growing$nuc_mutation, labelsToUse)
-      }
+    if( nn >=2 & nn < num_th ){
+        print(paste("LOG: construct expected wwtp difference for cluster of size", nn))
+        expected_distance_distro <- fun_expected_distance_distro(nn, all_wwtp_excess_growing, 1000)
+        all_mutations_excess_growing %>% filter(n_wwtp == nn) %>% group_by(nuc_mutation) %>% summarize(locations = paste(LocationID, collapse = ";"), .groups = "keep") %>% rowwise() %>% mutate(odist = fun_observed_distance(locations, all_wwtp_excess_growing)) -> selected_mutations_excess_growing
+        selected_mutations_excess_growing %>% rowwise() %>% mutate(bootstrapped = length(expected_distance_distro[expected_distance_distro < odist])/length(expected_distance_distro)) %>% filter(bootstrapped < pval_th) -> selected_mutations_excess_growing
+        labelsToUse_geocluster <- c(selected_mutations_excess_growing$nuc_mutation, labelsToUse_geocluster)
+    }
 }
-all_mutations_excess_growing %>% filter(n_wwtp >= num_th) %>% pull(nuc_mutation) %>% unique() -> labelsToUse
+all_mutations_excess_growing %>% filter(n_wwtp >= num_th) %>% pull(nuc_mutation) %>% unique() -> labelsToUse_abundance
+labelsToUse <- unique(c(labelsToUse_geocluster, labelsToUse_abundance))
 
 overviewPlot.dt %>% filter(NUC %in% labelsToUse) -> overviewPlot.dt.clust
 length(unique(overviewPlot.dt$label))
