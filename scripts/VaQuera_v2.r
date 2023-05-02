@@ -1027,75 +1027,77 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
                 expected_vs_observed_AF_transformed %>% filter(pval < pval_th) -> expected_vs_observed_AF_transformed_filtered
 
                 ## plot expected versus observed AF for all mutations
-                print(paste("PROGRESS: plot expected versus observed AF for", sampleID, roiname, timePoints_classic[t]))
-                ggplot(expected_vs_observed_AF_transformed, aes(x = expected.freq, y = observed.freq)) + geom_smooth(method = "lm", formula= y~x) + geom_abline(intercept = 0, slope = 1, color = "black") + theme_bw() + geom_point(size = 3, alpha = .5, aes(color = -1*log(qval))) + scale_color_viridis(option = "D", direction = -1, name = "pLog10(qval)") -> expected_vs_observed_AF_scatterPlot
-                filename <- paste0(outdir, "/figs/excessmutations/scatter/",  paste('/scatterPlot', sampleID, timePoints_classic[t], roi, sep="_"), ".", opt$graph)
-                ggsave(filename = filename, plot = expected_vs_observed_AF_scatterPlot, width = 8, height = 4.5)
-                fwrite(as.list(c("scatter", "plot", roiname, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
+                if(dim(expected_vs_observed_AF_transformed_filtered)[1]>0){
+                    print(paste("PROGRESS: plot expected versus observed AF for", sampleID, roiname, timePoints_classic[t]))
+                    ggplot(expected_vs_observed_AF_transformed, aes(x = expected.freq, y = observed.freq)) + geom_smooth(method = "lm", formula= y~x) + geom_abline(intercept = 0, slope = 1, color = "black") + theme_bw() + geom_point(size = 3, alpha = .5, aes(color = -1*log(qval))) + scale_color_viridis(option = "D", direction = -1, name = "pLog10(qval)") -> expected_vs_observed_AF_scatterPlot
+                    filename <- paste0(outdir, "/figs/excessmutations/scatter/",  paste('/scatterPlot', sampleID, timePoints_classic[t], roi, sep="_"), ".", opt$graph)
+                    ggsave(filename = filename, plot = expected_vs_observed_AF_scatterPlot, width = 8, height = 4.5)
+                    fwrite(as.list(c("scatter", "plot", roiname, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
 
-                ## collect globally data on expected mutations
-                globalAFdata   <- rbind(globalAFdata,
-                                      data.table(
-                                        sampleID      = sampleID,
-                                        LocationID    = roi,
-                                        LocationName  = roiname,
-                                        sample_date   = as.character(timepoint_classic),
-                                        nuc_mutation  = expected_vs_observed_AF_transformed$nucc,
-                                        aa_mutation   = expected_vs_observed_AF_transformed$AA_change,
-                                        observed      = expected_vs_observed_AF_transformed$observed.freq,
-                                        expected      = expected_vs_observed_AF_transformed$expected.freq,
-                                        excess        = expected_vs_observed_AF_transformed$observed.freq - expected_vs_observed_AF_transformed$expected.freq,
-                                        pvalue        = expected_vs_observed_AF_transformed$qval
-                                      )
-                                  );
+                    ## collect globally data on expected mutations
+                    globalAFdata   <- rbind(globalAFdata,
+                                          data.table(
+                                            sampleID      = sampleID,
+                                            LocationID    = roi,
+                                            LocationName  = roiname,
+                                            sample_date   = as.character(timepoint_classic),
+                                            nuc_mutation  = expected_vs_observed_AF_transformed$nucc,
+                                            aa_mutation   = expected_vs_observed_AF_transformed$AA_change,
+                                            observed      = expected_vs_observed_AF_transformed$observed.freq,
+                                            expected      = expected_vs_observed_AF_transformed$expected.freq,
+                                            excess        = expected_vs_observed_AF_transformed$observed.freq - expected_vs_observed_AF_transformed$expected.freq,
+                                            pvalue        = expected_vs_observed_AF_transformed$qval
+                                          )
+                                      );
 
-                ## generate outbreak.info like heatmap
-                ###  col: enriched mutations
-                ###  row: variants for which at least on of the mutations is > 90%
-                if (opt$verbose){
-                    print(paste("PROGRESS: generate outbreak.info like heatmap for", sampleID, roiname, timePoints_classic[t]))
-                    expected_vs_observed_AF_transformed_filtered %>% group_by(nucc) %>% summarize(AA_change = AA_change, label = paste(nucc, paste0("[", AA_change, "]")), expected.freq = expected.freq, observed.freq = observed.freq, excess.freq = observed.freq-expected.freq, qval = qval, .groups = "keep") %>% arrange(desc(excess.freq)) -> outbreak.selection
-                    data.table::melt(outbreak.selection, id.vars = c("label"), measure.vars = c("expected.freq", "observed.freq")) -> outbreak.freqs
-                    if(any(dim(outbreak.selection) == 0)){
-                      next;
+                    ## generate outbreak.info like heatmap
+                    ###  col: enriched mutations
+                    ###  row: variants for which at least on of the mutations is > 90%
+                    if (opt$verbose){
+                        print(paste("PROGRESS: generate outbreak.info like heatmap for", sampleID, roiname, timePoints_classic[t]))
+                        expected_vs_observed_AF_transformed_filtered %>% group_by(nucc) %>% summarize(AA_change = AA_change, label = paste(nucc, paste0("[", AA_change, "]")), expected.freq = expected.freq, observed.freq = observed.freq, excess.freq = observed.freq-expected.freq, qval = qval, .groups = "keep") %>% arrange(desc(excess.freq)) -> outbreak.selection
+                        data.table::melt(outbreak.selection, id.vars = c("label"), measure.vars = c("expected.freq", "observed.freq")) -> outbreak.freqs
+                        if(any(dim(outbreak.selection) == 0)){
+                          next;
+                        }
+                        mstat %>% filter(nucc %in% outbreak.selection$nucc) -> outbreak.dt
+                        data.table::dcast(outbreak.dt, formula = ID ~ paste(nucc, paste0("[", AA_change, "]")), value.var = "sensitivity", fill = 0) -> outbreak.dt
+                        data.table::melt(outbreak.dt, variable.name = "label", value.name = "AF.freq") -> outbreak.dt
+                        outbreak.dt %>% group_by(ID) %>% mutate(max = max(AF.freq, na.rm = TRUE)) %>% filter(max >= min(max(outbreak.dt$AF.freq), .9)) %>% dplyr::select(-"max") -> outbreak.dt
+                        outbreak.dt %>% mutate(dealiasID = dealias(ID)) -> outbreak.dt
+                        # remove variants which are represented by a ancestor with same fingerprint
+                        outbreak.dt %>% group_by(ID) %>%arrange(label) %>% mutate(fingerprint = paste(ifelse(AF.freq > 0.5, 1, 0), collapse = "")) %>% group_by(fingerprint) %>% mutate(groupIds = paste(unique(dealiasID), sep = ";", collapse = ";")) %>% rowwise() %>% mutate(keep = collapse2mother(dealiasID, groupIds)) %>% filter(keep) -> outbreak.dt
+
+                        # remove mutations which are not seen in all three plots
+                        table(c(unique(as.vector(outbreak.dt$label)), unique(outbreak.freqs$label), unique(outbreak.selection$label))) -> setCompletness
+                        names(setCompletness[setCompletness > 2]) -> labelsToUse
+
+                        outbreak.dt %>% filter(label %in%  labelsToUse) -> outbreak.dt
+                        outbreak.freqs %>% filter(label %in%  labelsToUse) -> outbreak.freqs
+                        outbreak.selection %>% filter(label %in%  labelsToUse) -> outbreak.selection
+
+                        outbreak.dt$label <- factor(outbreak.dt$label, levels = outbreak.selection$label)
+                        outbreak.freqs$label <- factor(outbreak.freqs$label, levels = outbreak.selection$label)
+                        #outbreak.freqs %>% filter(!is.na(label) ) -> outbreak.freqs
+                        outbreak.selection$label <- factor(outbreak.selection$label, levels = outbreak.selection$label)
+                        #outbreak.selection %>% filter(!is.na(label)) -> outbreak.selection
+
+                        ggplot(data = outbreak.dt, aes(x = label, y = ID, fill = AF.freq)) + geom_tile(color = "white", alpha = 0.8) + scale_fill_viridis(name = "Allele\nfrequency", trans = "sqrt", option = "B", begin = 0.1, end = 0.9) + theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) + xlab("Excess Mutations") + ylab("Variants") -> outbreakInfoPlot1
+                        ggplot(data = outbreak.selection, aes(x = label, y = excess.freq, fill = -1*log10(qval))) + geom_col(width = 0.75, color = "grey33") + theme_bw() + xlab("") + ylab("Excess AF") + scale_fill_fermenter(name = "pLog10(p-value)", palette = "Greens", direction = 1, na.value = "grey33") -> outbreakInfoPlot2
+                        ggplot(data = outbreak.freqs, aes(x = label, y = value, fill = variable)) + geom_col(position = "dodge", width = .8, color = "grey33") + theme_bw() + xlab("") + ylab("AF") + scale_fill_manual(label = c("Expected", "Observed"), breaks = c("expected.freq", "observed.freq"), values = c("#9dc6d8", "#7dd0b6"), name = "Allele\nfrequency")-> outbreakInfoPlot3
+
+
+                        outbreakInfoPlot3 + theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) + outbreakInfoPlot2 + theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) + outbreakInfoPlot1 + plot_layout(nrow = 3, byrow = FALSE, heights = c(1, 3,10)) -> outbreakInfoPlot
+                        filename <- paste0(outdir, "/figs/excessmutations/excessmutation/",  paste('/excessmutationPlot', sampleID, timePoints_classic[t], roi, sep="_"), ".", opt$graph)
+                        ggsave(filename = filename, plot = outbreakInfoPlot, width = 8, height = 16)
+                        fwrite(as.list(c("excessmutation", "plot", roiname, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
+
+                        filename <- paste0(outdir, "/figs/excessmutations/excessmutation/",  paste('/excessmutationData', sampleID, timePoints_classic[t], roi, sep="_"), ".Rdata")
+                        save(list = c("outbreak.dt", "outbreak.selection", "outbreak.freqs"), file = filename)
+                        fwrite(as.list(c("excessmutation", "data", roiname, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
+
+                        #paste0("[", ceiling(length(unique(globalAFdata$nuc_mutation))/2), "-of:", paste(unique(globalAFdata$nuc_mutation), collapse = ", "), "]")
                     }
-                    mstat %>% filter(nucc %in% outbreak.selection$nucc) -> outbreak.dt
-                    data.table::dcast(outbreak.dt, formula = ID ~ paste(nucc, paste0("[", AA_change, "]")), value.var = "sensitivity", fill = 0) -> outbreak.dt
-                    data.table::melt(outbreak.dt, variable.name = "label", value.name = "AF.freq") -> outbreak.dt
-                    outbreak.dt %>% group_by(ID) %>% mutate(max = max(AF.freq, na.rm = TRUE)) %>% filter(max >= min(max(outbreak.dt$AF.freq), .9)) %>% dplyr::select(-"max") -> outbreak.dt
-                    outbreak.dt %>% mutate(dealiasID = dealias(ID)) -> outbreak.dt
-                    # remove variants which are represented by a ancestor with same fingerprint
-                    outbreak.dt %>% group_by(ID) %>%arrange(label) %>% mutate(fingerprint = paste(ifelse(AF.freq > 0.5, 1, 0), collapse = "")) %>% group_by(fingerprint) %>% mutate(groupIds = paste(unique(dealiasID), sep = ";", collapse = ";")) %>% rowwise() %>% mutate(keep = collapse2mother(dealiasID, groupIds)) %>% filter(keep) -> outbreak.dt
-
-                    # remove mutations which are not seen in all three plots
-                    table(c(unique(as.vector(outbreak.dt$label)), unique(outbreak.freqs$label), unique(outbreak.selection$label))) -> setCompletness
-                    names(setCompletness[setCompletness > 2]) -> labelsToUse
-
-                    outbreak.dt %>% filter(label %in%  labelsToUse) -> outbreak.dt
-                    outbreak.freqs %>% filter(label %in%  labelsToUse) -> outbreak.freqs
-                    outbreak.selection %>% filter(label %in%  labelsToUse) -> outbreak.selection
-
-                    outbreak.dt$label <- factor(outbreak.dt$label, levels = outbreak.selection$label)
-                    outbreak.freqs$label <- factor(outbreak.freqs$label, levels = outbreak.selection$label)
-                    #outbreak.freqs %>% filter(!is.na(label) ) -> outbreak.freqs
-                    outbreak.selection$label <- factor(outbreak.selection$label, levels = outbreak.selection$label)
-                    #outbreak.selection %>% filter(!is.na(label)) -> outbreak.selection
-
-                    ggplot(data = outbreak.dt, aes(x = label, y = ID, fill = AF.freq)) + geom_tile(color = "white", alpha = 0.8) + scale_fill_viridis(name = "Allele\nfrequency", trans = "sqrt", option = "B", begin = 0.1, end = 0.9) + theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) + xlab("Excess Mutations") + ylab("Variants") -> outbreakInfoPlot1
-                    ggplot(data = outbreak.selection, aes(x = label, y = excess.freq, fill = -1*log10(qval))) + geom_col(width = 0.75, color = "grey33") + theme_bw() + xlab("") + ylab("Excess AF") + scale_fill_fermenter(name = "pLog10(p-value)", palette = "Greens", direction = 1, na.value = "grey33") -> outbreakInfoPlot2
-                    ggplot(data = outbreak.freqs, aes(x = label, y = value, fill = variable)) + geom_col(position = "dodge", width = .8, color = "grey33") + theme_bw() + xlab("") + ylab("AF") + scale_fill_manual(label = c("Expected", "Observed"), breaks = c("expected.freq", "observed.freq"), values = c("#9dc6d8", "#7dd0b6"), name = "Allele\nfrequency")-> outbreakInfoPlot3
-
-
-                    outbreakInfoPlot3 + theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) + outbreakInfoPlot2 + theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) + outbreakInfoPlot1 + plot_layout(nrow = 3, byrow = FALSE, heights = c(1, 3,10)) -> outbreakInfoPlot
-                    filename <- paste0(outdir, "/figs/excessmutations/excessmutation/",  paste('/excessmutationPlot', sampleID, timePoints_classic[t], roi, sep="_"), ".", opt$graph)
-                    ggsave(filename = filename, plot = outbreakInfoPlot, width = 8, height = 16)
-                    fwrite(as.list(c("excessmutation", "plot", roiname, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
-
-                    filename <- paste0(outdir, "/figs/excessmutations/excessmutation/",  paste('/excessmutationData', sampleID, timePoints_classic[t], roi, sep="_"), ".Rdata")
-                    save(list = c("outbreak.dt", "outbreak.selection", "outbreak.freqs"), file = filename)
-                    fwrite(as.list(c("excessmutation", "data", roiname, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
-
-                    #paste0("[", ceiling(length(unique(globalAFdata$nuc_mutation))/2), "-of:", paste(unique(globalAFdata$nuc_mutation), collapse = ", "), "]")
                 }
 
             } else{
