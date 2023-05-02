@@ -113,7 +113,7 @@ if(opt$debug){
   opt$detectmode = "umm"
   opt$ninconsens = 0.1
   opt$zero=0.01
-  opt$depth=5
+  opt$depth=50
   opt$minuniqmark=1
   opt$minuniqmarkfrac=0.4
   opt$minqmark=4
@@ -123,7 +123,7 @@ if(opt$debug){
   opt$periodend = Sys.Date()
   opt$periodlength = 61
   opt$indels = FALSE
-  opt$verbose = TRUE
+  opt$verbose = FALSE
   opt$graph = "pdf"
 
   print("Warning: command line option overwritten")
@@ -1345,8 +1345,8 @@ all_mutations_excess_growing %>% filter(n_wwtp >= num_th) %>% pull(nuc_mutation)
 labelsToUse <- unique(c(labelsToUse_geocluster, labelsToUse_abundance))
 
 overviewPlot.dt %>% filter(NUC %in% labelsToUse) -> overviewPlot.dt.clust
-length(unique(overviewPlot.dt$label))
-length(unique(overviewPlot.dt.clust$label))
+#length(unique(overviewPlot.dt$label))
+#length(unique(overviewPlot.dt.clust$label))
 
 if(length(unique(overviewPlot.dt.clust$label)) > 0){
 
@@ -1395,6 +1395,9 @@ if(length(unique(overviewPlot.dt.clust$label)) > 0){
 
     left_join(x = map.dt, y = nuc2label, by = c("nuc_mutation" = "NUC")) -> map.dt
 
+    map.width  <- round(sqrt(length(labelsToUse)))
+    map.height <- ceiling(length(labelsToUse)/map.width)
+
     s <- ggplot()
     s <- s + geom_sf(data = World, fill = "grey95")
     s <- s + geom_sf(data = Country, fill = "antiquewhite")
@@ -1408,7 +1411,10 @@ if(length(unique(overviewPlot.dt.clust$label)) > 0){
     s <- s + facet_wrap(~label, ncol = round(sqrt(length(labelsToUse))))
     filename <- paste0(outdir, "/figs/growing_excessmutations/overview/",  paste('/map', sep="_"), ".", opt$graph)
 
-    ggsave(filename = filename, plot = s)
+    map.width <- 1+2*map.width
+    map.height <- 1+1.5*map.height
+
+    ggsave(filename = filename, plot = s, height = map.height, width = map.width)
     fwrite(as.list(c("growing_excessmutations", "overview", "map", "filtered", filename)), file = summaryDataFile, append = TRUE, sep = "\t")
     rm(s, filename, map.dt)
 }
