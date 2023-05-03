@@ -24,7 +24,7 @@ suppressPackageStartupMessages(library("circlize"))
 suppressPackageStartupMessages(library("NbClust"))
 suppressPackageStartupMessages(library("gslnls"))
 suppressPackageStartupMessages(library("cowplot"))
-suppressPackageStartupMessages(library("stylo"))
+#suppressPackageStartupMessages(library("stylo"))
 suppressPackageStartupMessages(library("odbc"))
 suppressPackageStartupMessages(library("DBI"))
 suppressPackageStartupMessages(library("ggspatial"))
@@ -103,28 +103,28 @@ opt = parse_args(opt_parser);
 ####  parameter setting for interactive debugging
 if(opt$debug){
   opt$dir = "sandbox1"
-  opt$metadata = "data/metaData_general.csv"
-  opt$data="data/mutationData_DB_NationMonitoringSites.tsv.gz"
+  opt$metadata = "data_recent/metaData_general.csv"
+  opt$data="data_recent/mutationData_DB_NationMonitoringSites.tsv.gz"
   opt$inputformat = "tidy"
   opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2023-03-10_Europe.csv"
   opt$mutstats  = "VaQuERo/resources/mutations_stats_pango_codonPhased_2023-03-10.csv.gz"
   opt$group2var = "VaQuERo/resources/groupMembers_pango_codonPhased_2023-03-10_Europe.csv"
   opt$pmarker="VaQuERo/resources/mutations_problematic_vss1_v3.csv"
   opt$detectmode = "umm"
-  opt$ninconsens = 0.1
+  opt$ninconsens = 0.2
   opt$zero=0.01
   opt$depth=50
   opt$minuniqmark=1
   opt$minuniqmarkfrac=0.4
-  opt$minqmark=4
-  opt$minmarkfrac=0.4
-  opt$colorBase="B.1.617.2,BA.1,BA.2,BA.4,BA.5"
-  opt$growthlimit = 0.01
+  opt$minqmark=3
+  opt$minmarkfrac=0.3
+  opt$colorBase="XBB,BA.1,BA.2,BA.5"
   opt$periodend = Sys.Date()
   opt$periodlength = 61
   opt$indels = FALSE
   opt$verbose = FALSE
   opt$graph = "pdf"
+  opt$growthlimit = 0.05
 
   print("Warning: command line option overwritten")
 }
@@ -1102,6 +1102,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 
             } else{
                 print(paste("LOG: no variant deduced", sampleID, roiname, timePoints_classic[t]))
+                next;
             }
     }
 
@@ -1112,6 +1113,10 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
     ## examine kinetics of excess mutations for last n months
     print(paste0("PROGRESS: analyze kinetics in <", roiname, "> (<", roi, ">)"))
     timestamp()
+    if(!exists("expected_vs_observed_AF_transformed_filtered")){
+      print(paste0("LOG: no mutations to analyse in <", roiname, "> (<", roi, ">)"))
+      next;
+    }
 
     ## data collector per WWTP
     prediction_collector <- data.table(mutation = character(), growth_pred = numeric(), inflection_pred = numeric())
@@ -1198,7 +1203,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 
            if (any(is.na(CI_growth_pred)) | (min(CI_growth_pred[2:3]) < 0 & max(CI_growth_pred[2:3]) > 0) | growth_pred < opt$growthlimit){
              if (opt$verbose){
-                #print(paste("LOG: growth_pred for", mname, "in", roiname, "set to NA since CI spanning 0 [", paste(paste(colnames(CI_growth_pred)[2], signif(CI_growth_pred[2], digits = 2), sep = ": "), paste(colnames(CI_growth_pred)[1], signif(CI_growth_pred[1], digits = 2), sep = ": "), paste(colnames(CI_growth_pred)[3], signif(CI_growth_pred[3], digits = 2), sep = ": "), sep = "; "), "]"))
+                print(paste("LOG: growth_pred for", mname, "in", roiname, "set to NA since CI spanning 0 [", paste(paste(colnames(CI_growth_pred)[2], signif(CI_growth_pred[2], digits = 2), sep = ": "), paste(colnames(CI_growth_pred)[1], signif(CI_growth_pred[1], digits = 2), sep = ": "), paste(colnames(CI_growth_pred)[3], signif(CI_growth_pred[3], digits = 2), sep = ": "), sep = "; "), "]"))
              }
              growth_pred = NA
              inflection_pred = NA
@@ -1217,7 +1222,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 
     ## generate outbreak.info like heatmap for excess mutations which are also sig. growing over time
     print(paste("PROGRESS: generate outbreak.info like heatmap for growing excess mutation for", sampleID, roiname, timePoints_classic[t]))
-    if(1){
+    if(opt$verbose | !opt$verbose){
         prediction_collector %>% filter(!is.na(growth_pred) & growth_pred > 0) %>% pull(mutation) -> growing_mutations
         expected_vs_observed_AF_transformed_filtered  %>% filter(nucc %in% growing_mutations) %>% group_by(nucc) %>% summarize(AA_change = AA_change, expected.freq = expected.freq, observed.freq = observed.freq, excess.freq = observed.freq-expected.freq, qval = qval, .groups = "keep") %>% left_join(y = nuc2label, by = c("nucc" = "NUC")) %>% arrange(desc(excess.freq)) -> outbreak.selection
         data.table::melt(outbreak.selection, id.vars = c("label"), measure.vars = c("expected.freq", "observed.freq")) -> outbreak.freqs
@@ -1268,9 +1273,16 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
             ggsave(filename = filename, plot = outbreakInfoPlot, width = 16, height = 8)
             fwrite(as.list(c("excessmutation", "plot", roiname, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
 
-            #filename <- paste0(outdir, "/figs/growing_excessmutations/excessmutation/",  paste('/excessmutationData', sampleID, timePoints_classic[t], roi, sep="_"), ".Rdata")
-            #save(list = c("mutation_time_course", "outbreak.dt", "outbreak.selection", "outbreak.freqs"), file = filename)
-            #fwrite(as.list(c("growing_excessmutation", "data", roiname, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
+            ## make table of all excess growing mutations
+            legendTxt <- paste0("Überschuss-Mutationen die sig. Wachstum in ", roiname, " [", timepoint_classic,"] zeigen")
+            filename <- paste0(outdir, "/figs/growing_excessmutations/excessmutation/",  paste('/excessmutationTable', sampleID, timePoints_classic[t], roi, sep="_"), ".tex")
+            left_join(x = outbreak.selection, y = prediction_collector, by = c("nucc" = "mutation"))  %>% filter(label %in% labelsToUse) %>% dplyr::select(nucc, AA_change, expected.freq, observed.freq, growth_pred) -> growing_excessmutationsTable.dt
+            growing_excessmutationsTable.dt %>% rowwise() %>% mutate('cov.link' = covspectrumLinkSimple(nucc)) -> growing_excessmutationsTable.dt
+            growing_excessmutationsTable.dt %>% mutate(expected.freq = signif(expected.freq, digits = 2), observed.freq = signif(observed.freq, digits = 2), growth_pred = signif(growth_pred, digits = 2)) -> growing_excessmutationsTable.dt
+            rename_lookup <- c("Nuc Mutation" = "nucc", "AA Mutation" = "AA_change", "Erw. AF" = "expected.freq", "Beob. AF" = "observed.freq", "Wachstum pro Woche" = "growth_pred", "cov-spectrum" = "cov.link")
+            rename(growing_excessmutationsTable.dt, all_of(rename_lookup)) -> growing_excessmutationsTable.dt
+            makeTexTab(filename, growing_excessmutationsTable.dt, legendTxt)
+            fwrite(as.list(c("excessmutation", "table", roiname, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
         }
     }
 
