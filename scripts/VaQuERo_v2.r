@@ -297,8 +297,8 @@ makeTexTab <- function(filename, TAB, legendTxt){
     }
     write("\\hline", file = filename, append = TRUE)
 
-    write("\\label{tab:synopsis}", file = filename, append = TRUE)
     write("\\end{longtable}", file = filename, append = TRUE)
+    write("\\label{tab:synopsis}", file = filename, append = TRUE)
     write("\\end{footnotesize}", file = filename, append = TRUE)
 }
 
@@ -1297,7 +1297,7 @@ if(dim(globalFittedData)[1] > 0){
 
         left_join(x = occurence.rate, y = occurence.freq, by = "variant", multiple = "all") -> synopsis.dt
         synopsis.dt %>% mutate(freq = sprintf("%.2f", freq)) -> synopsis.dt
-        colnames(synopsis.dt) <- c("Variante", "Detektiert", "Nicht detektiert", "Prozent", "Gewichtetes Mittel")
+        colnames(synopsis.dt) <- c("Variante", "Detektiert", "Nicht detektiert", "Prozent", "Gew. Mittel")
         filename2 <- paste0(opt$dir, "/synopsis.tex")
         legendTxt <- paste("Für jede Virus Variente die Österreich in Proben von", sankey_date$earliest , "bis", sankey_date$latest ,"detektiert wurden, jeweils das gewichtete Mittel der relativen Häufigkeit und die Anzahl der Kläranlagen in denen die Variante detektiert wurde")
 

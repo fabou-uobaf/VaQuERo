@@ -275,6 +275,12 @@ if (defined($data{variantDetail}->{current}) && defined($data{stackOverview}->{c
       &printDetailPlot($wwplant_tidy, $path2);
     }
 
+    if( defined($data_m{excessmutation}->{plot}->{$wwplant}) ){
+      my $path1 = $data_m{excessmutation}->{plot}->{$wwplant};
+      my $path2 = $data_m{excessmutation}->{table}->{$wwplant};
+      &prinExcessGrowPlot($wwplant_tidy, $path1, $path2);
+    }
+
     if ( defined($data{specialMutations}->{current}->{$wwplant}->{VoI}) ){
       my $path3 = $data{specialMutations}->{current}->{$wwplant}->{VoI};
 
@@ -667,7 +673,7 @@ my $txt = '
 \begin{figure}[htb!]
   \begin{center}
     \includegraphics[width=0.8\textwidth]{'."$path".'}
-    \caption{Abgeleitete relative Häufigkeit aller detektierten VoC/VoI Variante(n) und der gemessenen Allelfrequenz der dazugehörenden Markermutationen für die gesamte Messzeitreihe für das Klärwerk '."$location".'.}
+    \caption{Abgeleitete relative Häufigkeit aller detektierten VoC/VoI Variante(n) und der gemessenen Allelfrequenz der dazugehörenden uniquen Markermutationen für die gesamte Messzeitreihe für das Klärwerk '."$location".'.}
   \end{center}
 \end{figure}
 \FloatBarrier
@@ -675,6 +681,38 @@ my $txt = '
 print $txt;
 }
 
+##XX##
+
+sub prinExcessGrowPlot{
+  my $location = shift;
+  my $pathp     = shift;
+  my $patht     = shift;
+
+  open TT, "< $patht " or die "can t open patht ($patht): $!\n";
+  my $table_content = "";
+  while(<TT>){
+    $table_content.=$_;
+  };
+  close TT;
+
+
+my $txt = '
+
+{\bf {\large Überschuss Mutationen}}
+
+\begin{figure}[htb!]
+  \begin{center}
+    \includegraphics[width=0.8\textwidth]{'."$pathp".'}
+    \caption{Überschuß-Mutationen für das Klärwerk '."$location".', d.h., Mutationen die nicht durch detektierte Varianten erklärt werden können und ein wöchentliches Wachstum größer 0.02 zeigen.}
+  \end{center}
+\end{figure}
+'."$table_content".'
+\FloatBarrier
+';
+print $txt;
+}
+
+##YY##
 sub printSpecialMutPlot{
   my $location = shift;
   my $path     = shift;
@@ -734,8 +772,6 @@ my $txt = '
 print $txt;
 }
 
-##XX##
-
 sub printMutationOverview{
   my $plot  = shift;
   my $map   = shift;
@@ -755,7 +791,7 @@ my $txt = '
   \begin{center}
     \includegraphics[width=0.99\textwidth]{'."$plot".'}
     \includegraphics[width=0.99\textwidth]{'."$map".'}
-    \caption{Mutation die geographisch geclustert oder in >5 Kläranlagen sig. überrepresentiert sind (d.h., nicht durch detektierte Varianten erklärt werden können) und ein wöchentliches Wachstum >0.05 zeigen.}
+    \caption{Mutation die geographisch geclustert oder in mehr als 5 Kläranlagen sig. überrepresentiert sind (d.h., nicht durch detektierte Varianten erklärt werden können) und ein wöchentliches Wachstum größer 0.02 zeigen.}
   \end{center}
 \end{figure}
 '."$table_content".'
@@ -763,8 +799,6 @@ my $txt = '
 ';
 print $txt;
 }
-
-##YY##
 
 sub printMapPerVariant{
   my $variant = shift;

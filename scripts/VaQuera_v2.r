@@ -124,7 +124,7 @@ if(opt$debug){
   opt$indels = FALSE
   opt$verbose = FALSE
   opt$graph = "pdf"
-  opt$growthlimit = 0.05
+  opt$growthlimit = 0.02
 
   print("Warning: command line option overwritten")
 }
@@ -305,8 +305,8 @@ makeTexTab <- function(filename, TAB, legendTxt){
     }
     write("\\hline", file = filename, append = TRUE)
 
-    write("\\label{tab:synopsis}", file = filename, append = TRUE)
     write("\\end{longtable}", file = filename, append = TRUE)
+    write("\\label{tab:synopsis}", file = filename, append = TRUE)
     write("\\end{footnotesize}", file = filename, append = TRUE)
 }
 
@@ -1270,7 +1270,9 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 
             outbreakInfoPlot1 + outbreakInfoPlot4 + outbreakInfoPlot2 + outbreakInfoPlot3 + plot_layout(ncol = 4, byrow = FALSE, width = c(8, 4, 2, 2)) -> outbreakInfoPlot
             filename <- paste0(outdir, "/figs/growing_excessmutations/excessmutation/",  paste('/excessmutationPlot', sampleID, timePoints_classic[t], roi, sep="_"), ".", opt$graph)
-            ggsave(filename = filename, plot = outbreakInfoPlot, width = 16, height = 8)
+            plot.width <- 6+length(unique(outbreak.dt$ID))/6
+            plot.height <- 1+length(labelsToUse)
+            ggsave(filename = filename, plot = outbreakInfoPlot, width = plot.width, height = plot.height)
             fwrite(as.list(c("excessmutation", "plot", roiname, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
 
             ## make table of all excess growing mutations
@@ -1279,7 +1281,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
             left_join(x = outbreak.selection, y = prediction_collector, by = c("nucc" = "mutation"))  %>% filter(label %in% labelsToUse) %>% dplyr::select(nucc, AA_change, expected.freq, observed.freq, growth_pred) -> growing_excessmutationsTable.dt
             growing_excessmutationsTable.dt %>% rowwise() %>% mutate('cov.link' = covspectrumLinkSimple(nucc)) -> growing_excessmutationsTable.dt
             growing_excessmutationsTable.dt %>% mutate(expected.freq = signif(expected.freq, digits = 2), observed.freq = signif(observed.freq, digits = 2), growth_pred = signif(growth_pred, digits = 2)) -> growing_excessmutationsTable.dt
-            rename_lookup <- c("Nuc Mutation" = "nucc", "AA Mutation" = "AA_change", "Erw. AF" = "expected.freq", "Beob. AF" = "observed.freq", "Wachstum pro Woche" = "growth_pred", "cov-spectrum" = "cov.link")
+            rename_lookup <- c("Nuc Mutation" = "nucc", "AA Mutation" = "AA_change", "Erw. AF" = "expected.freq", "Beob. AF" = "observed.freq", "Wachstum [1/w]" = "growth_pred", "cov-spectrum" = "cov.link")
             rename(growing_excessmutationsTable.dt, all_of(rename_lookup)) -> growing_excessmutationsTable.dt
             makeTexTab(filename, growing_excessmutationsTable.dt, legendTxt)
             fwrite(as.list(c("excessmutation", "table", roiname, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
@@ -1391,7 +1393,7 @@ if(length(unique(overviewPlot.dt.clust$label)) > 0){
     #overviewPlot.dt.clust %>% rowwise() %>% mutate(AA = paste(ANN.GENE, gsub("\\D", "", ANN.AA), sep=":")) %>% left_join(y = functional_mutation_annotation, by = "AA") -> overviewPlot.dt.clust
     #overviewPlot.dt.clust %>% group_by(ANN.GENE, ANN.AA, NUC, label, LocationID) %>% filter(kw == max(kw)) %>% group_by(label, significance, reference) %>% summarize(.groups = "keep", min_AF = signif(min(value.freq), digits = 2), median_AF = signif(median(value.freq), digits = 2), max_AF = signif(max(value.freq), digits = 2), Anzahl_Klaeranlagen = length(unique(plotlevel)), Mutation = covspectrumLinkSimple(NUC), effect = ifelse(is.na(significance), "no reported effect", paste0("\\href{", reference, "}{", significance, "}")) ) -> overviewPlot.dt.clust
 
-    legendTxt <- paste0("Mutationen die geographisch geclustert oder in $>", num_th, "$ Kläranlagen sig. überrepresentiert sind (d.h., nicht durch detektierte Varianten erklärt werden können) und ein wöchentliches Wachstum $>", opt$growthlimit, "$ zeigen.")
+    legendTxt <- paste0("Mutationen die geographisch geclustert oder in mehr als", num_th, " Kläranlagen sig. überrepresentiert sind (d.h., nicht durch detektierte Varianten erklärt werden können) und ein wöchentliches Wachstum größer", opt$growthlimit, " zeigen.")
     filename <- paste0(outdir, "/figs/growing_excessmutations/overview/",  paste('/overview_kinetics_excessmutations_filtered', sep="_"), ".tex")
     overviewPlot.dt.clust %>% group_by(ANN.GENE, ANN.AA, NUC, label, LocationID) %>% filter(kw == max(kw)) %>% group_by(label) %>% summarize(.groups = "keep", min_AF = signif(min(value.freq), digits = 2), median_AF = signif(median(value.freq), digits = 2), max_AF = signif(max(value.freq), digits = 2), Anzahl_Klaeranlagen = length(unique(plotlevel)), Mutation = covspectrumLinkSimple(NUC)) -> overviewTable.dt
     makeTexTab(filename, overviewTable.dt, legendTxt)
