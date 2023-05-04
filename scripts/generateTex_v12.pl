@@ -296,7 +296,7 @@ if(0){
     foreach my $wwplant ( sort keys %{$data{variantDetail}->{old}} ){
       my $wwplant_tidy = $wwplant;
       $wwplant_tidy =~ s/_/ /g;
-      print '\newpage'."\n";
+      print '\FloatBarrier'."\n";
       print '\subsubsection{'."$wwplant_tidy".'}'."\n";
 
       if( defined($data{stackOverview}->{old}->{$wwplant}->{all}) ){
@@ -347,13 +347,13 @@ my $fh = shift;
 my $lbl = shift;
 my $txt='
 
-\begin{figure}[htb!]
+\begin{figure}[h]
   \begin{center}
-    \includegraphics[width=0.8\textwidth]{'."$fh".'}
+    \includegraphics[width=0.66\textwidth]{'."$fh".'}
     \caption{Graphische Darstellung der Varianten Quantifizierung für die neusten Proben jeder Kläranlage '."$lbl".' für den Berichtszeitraum. Dargestellte Werte entsprechende Mittelwerten, gewichtet nach Bevölkerungsgröße. Phylogenetische Verwandtschaft wird durch die Baumorganisation visualisiert.}
   \end{center}
 \end{figure}
-\newpage';
+';
 
 print $txt;
 }
@@ -363,13 +363,13 @@ my $fh = shift;
 my $lbl = shift;
 my $txt='
 
-\begin{figure}[htb!]
+\begin{figure}[h]
   \begin{center}
-    \includegraphics[width=0.8\textwidth]{'."$fh".'}
+    \includegraphics[width=0.66\textwidth]{'."$fh".'}
     \caption{'."$lbl".'}
   \end{center}
 \end{figure}
-\newpage';
+';
 
 print $txt;
 }
@@ -379,15 +379,16 @@ sub printSankey{
 my $fh = shift;
 my $lbl = shift;
 my $txt='
+
 {\bf {\large Überblick aller detektierten Varianten in der aktuellen Probe}}
 
-\begin{figure}[htb!]
+\begin{figure}[h]
   \begin{center}
-    \includegraphics[width=0.9\textwidth]{'."$fh".'}
+    \includegraphics[width=0.66\textwidth]{'."$fh".'}
     \caption{Graphische Darstellung der Varianten Quantifizierung für die neusten Proben der Kläranlage '."$lbl".'. Phylogenetische Verwandtschaft wird durch die Baumorganisation visualisiert.}
   \end{center}
 \end{figure}
-\newpage';
+';
 
 print $txt;
 }
@@ -400,13 +401,13 @@ my $txt='
 \section{Einzel Mutationen Kinetik}
 \label{Fig}
 
-\begin{figure}[htb!]
+\begin{figure}[h]
   \begin{center}
-    \includegraphics[width=1\textwidth]{'."$fh".'}
+    \includegraphics[width=.66\textwidth]{'."$fh".'}
     \caption{'."$lbl".'}
   \end{center}
 \end{figure}
-\newpage';
+';
 
 print $txt;
 }
@@ -418,7 +419,7 @@ my $headline = shift;
 
 
 my $txt = '
-\newpage
+
 \subsection{Einzel Mutationen Kinetik Tabular}
 
 '."$headline".'
@@ -430,7 +431,7 @@ Mutation & Mittleres R $w^{-1}$ & Max R $w^{-1}$ & Nr. WWTP & cov-spectrum \\\\
 \hline
 ';
 
-open D, "< $fh" or die "CAn't open $fh: $!\n";
+open D, "< $fh" or die "Can't open $fh: $!\n";
 while(<D>){
   chomp;
   my @F = split"\t", $_;
@@ -480,6 +481,7 @@ sub printResults{
 
 my $txt = '
 \newpage
+
 \section{Resultate in Tabellen Form}
 
 Tabelle mit allen abgeleiteten Varianten Häufigkeiten für die letzten 21 Tage.
@@ -522,6 +524,7 @@ sub mutationsAppendix{
 
 my $txt = '
 \newpage
+\FloatBarrier
 \section{Appendix: Verwendete Markermutations}
 
 Auflistung aller verwendeter Markermutationen für die untersuchten Varianten. Varianten die hier nicht aufgeführt sind können in den Abwasserproben auch nicht quantifiziert werden. Die Auswahl der Varianten berücksichtigt zum einen, deren Einstufung von ECDC, die Häufigkeit in Europa laut GISAID, und deren globalen Wachstum in den letzten 6 Monaten laut cov-spectrum. Die Spalte Eindeutigkeit gibt an für wieviele betrachteten Varianten die entsprechende Mutation als sensitive Markermutation definiert wurde. Spezifische Markermutationen ("unique marker") sind mit einer 1 in dieser Spalte markiert. Sie Spalte Sensitivität gibt an wie viele Samples in Pango-Designation die dieser Variante zugeordnet werden, diese Mutation auch tragen. Lange INDELS wurden in der Tabelle, zugunsten der Lesbarkeit, gekürzt angegeben.
@@ -571,6 +574,7 @@ sub smutationsAppendix{
 
 my $txt = '
 \newpage
+\FloatBarrier
 \section{Appendix: Berücksichtigte Spezial-Mutationen}
 \label{a:specmut}
 
@@ -619,6 +623,7 @@ sub groupsAppendix{
 
 my $txt = '
 \newpage
+\FloatBarrier
 \section{Appendix: Varianten}
 \label{appendix:Varianten}
 
@@ -670,9 +675,9 @@ my $txt = '
 
 {\bf {\large Detailansicht ausgewählter Varianten}}
 
-\begin{figure}[htb!]
+\begin{figure}[h]
   \begin{center}
-    \includegraphics[width=0.8\textwidth]{'."$path".'}
+    \includegraphics[width=0.66\textwidth]{'."$path".'}
     \caption{Abgeleitete relative Häufigkeit aller detektierten VoC/VoI Variante(n) und der gemessenen Allelfrequenz der dazugehörenden uniquen Markermutationen für die gesamte Messzeitreihe für das Klärwerk '."$location".'.}
   \end{center}
 \end{figure}
@@ -700,14 +705,14 @@ my $txt = '
 
 {\bf {\large Überschuss Mutationen}}
 
-\begin{figure}[htb!]
+'."$table_content".'
+\begin{figure}[h]
   \begin{center}
-    \includegraphics[width=0.8\textwidth]{'."$pathp".'}
+    \includegraphics[width=0.66\textwidth]{'."$pathp".'}
     \caption{Überschuß-Mutationen für das Klärwerk '."$location".', d.h., Mutationen die nicht durch detektierte Varianten erklärt werden können und ein wöchentliches Wachstum größer 0.02 zeigen.}
   \end{center}
 \end{figure}
-'."$table_content".'
-\FloatBarrier
+
 ';
 print $txt;
 }
@@ -721,9 +726,9 @@ my $txt = '
 
 {\bf {\large Detailansicht ausgewählter Spezial-Mutationen}}
 
-\begin{figure}[htb!]
+\begin{figure}[h]
   \begin{center}
-    \includegraphics[width=0.8\textwidth]{'."$path".'}
+    \includegraphics[width=0.66\textwidth]{'."$path".'}
     \caption{Abgeleitete relative Häufigkeit aller detektierten VoC/VoI Variante(n) und der gemessenen Allelfrequenz der ausgewählter Spezial-Mutationen (siehe Appendix \ref{a:specmut}) für die gesamte Messzeitreihe für das Klärwerk '."$location".'.}
   \end{center}
 \end{figure}
@@ -740,9 +745,9 @@ sub printStackPlot{
 my $txt = '
 {\bf {\large Überblick aller detektierten Varianten}}
 
-\begin{figure}[htb!]
+\begin{figure}[h]
   \begin{center}
-    \includegraphics[width=0.8\textwidth]{'."$path".'}
+    \includegraphics[width=0.66\textwidth]{'."$path".'}
     \caption{Relative Häufigkeit aller detektierten Variante(n) für die gesamte Messzeitreihe für das Klärwerk '."$location".'.}
   \end{center}
 \end{figure}
@@ -761,13 +766,14 @@ my $txt = '
 \subsection{Übersicht '."Sequenzierstatus".'}
 \label{map'."status".'}
 
-\begin{figure}[htb!]
+\begin{figure}[h]
   \begin{center}
-    \includegraphics[width=0.99\textwidth]{'."$path".'}
+    \includegraphics[width=0.66\textwidth]{'."$path".'}
     \caption{Zusammenfassung des Sequenziererfolgs aller Proben aus der letzten Sequenziertranche. Wenn mindestens 40\% des Genomes erfolgreich rekonstruiert werden konnte, gilt die Probe als erfolgreich sequenziert und wird im Weiteren auch analysiert. Wenn weniger als 40\% aber mehr als 5\% des Genomes rekonstuiert werden konnte, wird die Probe mit "Virus detektiert" makiert, aber nicht versucht verschiedene Varianten zu quantifizieren. Darunter gilt die Probe als fehlgeschlagen. Da manche Kläranlagen mehrfach pro Woche beprobt werden, können auch fehlgeschlagene und erfolgreiche Beprobungen für die selbe Anlage in einer Sequenziertranche vorkommen. .}
   \end{center}
 \end{figure}
 \newpage
+\FloatBarrier
 ';
 print $txt;
 }
@@ -787,15 +793,15 @@ my $txt = '
 \subsection{Übersicht wachsende Überschuss-Mutationen}
 \label{excess_growth_overview}
 
-\begin{figure}[htb!]
+\begin{figure}[h]
   \begin{center}
-    \includegraphics[width=0.99\textwidth]{'."$plot".'}
-    \includegraphics[width=0.99\textwidth]{'."$map".'}
+    \includegraphics[width=0.66\textwidth]{'."$plot".'}
+    \includegraphics[width=0.66\textwidth]{'."$map".'}
     \caption{Mutation die geographisch geclustert oder in mehr als 5 Kläranlagen sig. überrepresentiert sind (d.h., nicht durch detektierte Varianten erklärt werden können) und ein wöchentliches Wachstum größer 0.02 zeigen.}
   \end{center}
 \end{figure}
 '."$table_content".'
-\newpage
+\FloatBarrier
 ';
 print $txt;
 }
@@ -808,13 +814,13 @@ my $txt = '
 \subsection{Übersicht '."$variant".'}
 \label{map'."$variant".'}
 
-\begin{figure}[htb!]
+\begin{figure}[h]
   \begin{center}
-    \includegraphics[width=0.99\textwidth]{'."$path".'}
-    \caption{Kreuze markieren erfolgreich beprobte Kläranlagen im aktuellen Sequenzierrun. Der Farbton zeigt den relativen Anteil, falls größer Null, der Variante '."$variant".' zum Zeitpunkt der letzten Probennahme. Stellen mit einem Anteil von Null werden nicht gezeichnet.}
+    \includegraphics[width=0.66\textwidth]{'."$path".'}
+    \caption{Der Farbton zeigt den relativen Anteil, falls größer Null, der Variante '."$variant".' zum Zeitpunkt der letzten Probennahme. Stellen mit einem Anteil von Null werden nicht gezeichnet.}
   \end{center}
 \end{figure}
-\newpage
+\FloatBarrier
 ';
 print $txt;
 }
@@ -843,7 +849,7 @@ my $txt1 = '
 %	PACKAGES AND DOCUMENT CONFIGURATIONS
 %----------------------------------------------------------------------------------------
 
-\documentclass[a4paper,11pt]{article}
+\documentclass[a4paper,10pt]{article}
 
 \usepackage{graphicx} % Required for the inclusion of images
 \usepackage{natbib} % Required to change bibliography style to APA
@@ -859,7 +865,7 @@ my $txt1 = '
 
 \renewcommand{\labelenumi}{\alph{enumi}.} % Make numbering in the enumerate environment by letter rather than number (e.g. section 6)
 
-%\usepackage{times} % Uncomment to use the Times New Roman font
+\usepackage{times} % Uncomment to use the Times New Roman font
 
 %----------------------------------------------------------------------------------------
 %	DOCUMENT INFORMATION
@@ -883,7 +889,7 @@ my $txt1 = '
 
 \title{Österreichischer Abwasser Sars-CoV-2 Varianten Bericht} % Title
 
-\author{Fabian \textsc{Amman} \and Lukas \textsc{Endler} \and Anna \textsc{Schedl} \and Matthew \textsc{Thornton} \and Andreas \textsc{Bergthaler}} % Author name
+\author{Fabian \textsc{Amman} \and Lukas \textsc{Endler} \and Anna \textsc{Schedl} \and Matthew \textsc{Thornton} \and Bethany \textsc{Dearlove} \and Andreas \textsc{Bergthaler}} % Author name
 
 \date{\today} % Date for the report
 
@@ -898,10 +904,10 @@ my $txt1 = '
     Auswahlkriterium Varianten: & Berücksichtigte Varianten aus drei Quellen \\\\
                                 & \\\\
                                 & Alle \emph{Variants~of~concern}, \emph{of~interest}, und \emph{under~monitoring}. \\\\
-                                & Definition folgt der Angabe von \href{https://www.ecdc.europa.eu/en/covid-19/variants-concern}{ECDC} (Stand 22 März., 2023)\\\\
+                                & Definition folgt der Angabe von \href{https://www.ecdc.europa.eu/en/covid-19/variants-concern}{ECDC} (Stand 4. Mai, 2023)\\\\
                                 & \\\\
                                 & Alle Varianten die laut \href{https://gisaid.org/}{GISaid} in zumindest drei europäischen\\\\
-                                & Ländern in einem Monat $>$25\% relative Häufigkeit zeigten. \\\\
+                                & Ländern die relative häufigste Variante und $>$10\% relative Häufigkeit aufweisen \\\\
                                 & \\\\
                                 & Alle Varianten die aktuell laut \href{https://cov-spectrum.org/collections/24}{CoV-spectrum Collection 24}\\\\
                                 & ein Wachstumsvorteil $>$50\% (lower CI) zeigen. Detailgrad der \\\\
