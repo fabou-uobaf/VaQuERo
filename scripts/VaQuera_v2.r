@@ -843,9 +843,9 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
               ssdt %>% ungroup() %>% mutate(groupflag = paste(groupflag, ifelse(grepl(";", Variants), "M", "U"), sample_date_decimal)) -> ssdt
 
               ## remove mutations which are not marker of any of the specifiedLineages
-              ## remove mutations which are marker of all of the specifiedLineages
+              ## keep mutations which are marker of all of the specifiedLineages
               if( sum(colnames(ssdt) %in% specifiedLineages) > 1){
-                ssdt[( rowSums(as.data.frame(ssdt)[,colnames(ssdt) %in% specifiedLineages ]) > 0 & rowSums(as.data.frame(ssdt)[,colnames(ssdt) %in% specifiedLineages ]) < length(specifiedLineages)),] -> ssdt
+                ssdt[( rowSums(as.data.frame(ssdt)[,colnames(ssdt) %in% specifiedLineages ]) > 0 & rowSums(as.data.frame(ssdt)[,colnames(ssdt) %in% specifiedLineages ]) <= length(specifiedLineages)),] -> ssdt
               } else{
                 ssdt[as.data.frame(ssdt)[,colnames(ssdt) %in% specifiedLineages ] > 0,] -> ssdt
               }
@@ -860,8 +860,9 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
               ssdt %>% mutate(Variants = gsub("other;*", "", Variants)) -> ssdt
 
               ## remove outlier per group flag
+              ## remove if outside 2*IQR
               dim(ssdt)[1] -> mutationsBeforeOutlierRemoval
-              ssdt %>% group_by(groupflag) %>% mutate(iqr = IQR(value.freq)) %>% mutate(upperbond = quantile(value.freq, 0.75) + 1.5 * iqr, lowerbond = quantile(value.freq, 0.25) - 1.5 * iqr) %>% filter(value.freq <= upperbond & value.freq >= lowerbond) %>% ungroup() %>% dplyr::select(-"groupflag", -"iqr", -"upperbond", -"lowerbond") -> ssdt
+              ssdt %>% group_by(groupflag) %>% mutate(iqr = IQR(value.freq)) %>% mutate(upperbond = quantile(value.freq, 0.75) + 2.0 * iqr, lowerbond = quantile(value.freq, 0.25) - 2.0 * iqr) %>% filter(value.freq <= upperbond & value.freq >= lowerbond) %>% ungroup() %>% dplyr::select(-"groupflag", -"iqr", -"upperbond", -"lowerbond") -> ssdt
               dim(ssdt)[1] -> mutationsAfterOutlierRemoval
               if(mutationsAfterOutlierRemoval < mutationsBeforeOutlierRemoval){
                 print(paste("LOG: ", mutationsBeforeOutlierRemoval-mutationsAfterOutlierRemoval, "mutations ignored since classified as outlier", "(", mutationsAfterOutlierRemoval, " remaining from", mutationsBeforeOutlierRemoval, ")"))
@@ -882,8 +883,8 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
                 next;
               }
 
-              ## add weight (1/(dayDiff+1)*log10(sequencingdepth)
-              ssdt %>% rowwise() %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(weight = log10(value.depth)*timeweight) -> ssdt
+              ## add weight (1/(dayDiff+1)*log10(sequencingdepth)*sqrt(1/number_of_variants)
+              ssdt %>% rowwise() %>% mutate(varweight = sqrt(1/(1+str_count(Variants, ";")))) %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(weight = log10(value.depth)*timeweight*varweight) -> ssdt
 
               ## make regression
               method = "SIMPLEX"

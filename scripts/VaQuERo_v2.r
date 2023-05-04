@@ -521,7 +521,7 @@ s <- s + scale_size(range = c(2, 6), labels = scales::comma, breaks = c(50000, 1
 s <- s + scale_shape_manual(values = c("detected" = 24, "fail" = 25, "pass" = 21), name = "Seq. Status") # set to c(24,25,21)
 s <- s + xlab("") + ylab("")
 filename <- paste0(outdir, "/figs/maps/STATUS.pdf")
-ggsave(filename = filename, plot = s)
+ggsave(filename = filename, plot = s, width = 7, height = 7)
 fwrite(as.list(c("statusmapplot", "status", filename)), file = summaryDataFile, append = TRUE, sep = "\t")
 rm(s, filename)
 
@@ -851,6 +851,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 
             if( length(specifiedLineages) > 0){
               print(paste("LOG:", "TRY REGRESSION WITH", length(specifiedLineages), "LINEAGES"))
+
               # join model matrix columns to measured variables
               smmat <- as.data.frame(mmat)[,which(colnames(mmat) %in% c("NUC", specifiedLineages))]
               if (length(specifiedLineages) > 1){
@@ -862,10 +863,10 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
               ssdt %>% ungroup() %>% mutate(groupflag = paste(groupflag, ifelse(grepl(";", Variants), "M", "U"), sample_date_decimal)) -> ssdt
 
               ## remove mutations which are not marker of any of the specifiedLineages
-              ## remove mutations which are marker of all of the specifiedLineages
+              ## keep mutations which are marker of all of the specifiedLineages
               if( sum(colnames(ssdt) %in% specifiedLineages) > 1){
-                ssdt[( rowSums(as.data.frame(ssdt)[,colnames(ssdt) %in% specifiedLineages ]) > 0 & rowSums(as.data.frame(ssdt)[,colnames(ssdt) %in% specifiedLineages ]) < length(specifiedLineages)),] -> ssdt
-                ssdt[( rowSums(as.data.frame(ssdt)[,colnames(ssdt) %in% unique(specifiedLineages, highlightedVariants) ]) > 0 & rowSums(as.data.frame(ssdt)[,colnames(ssdt) %in% unique(specifiedLineages, highlightedVariants) ]) < length(unique(specifiedLineages, highlightedVariants))),] -> detour4log
+                ssdt[( rowSums(as.data.frame(ssdt)[,colnames(ssdt) %in% specifiedLineages ]) > 0 & rowSums(as.data.frame(ssdt)[,colnames(ssdt) %in% specifiedLineages ]) <= length(specifiedLineages)),] -> ssdt
+                ssdt[( rowSums(as.data.frame(ssdt)[,colnames(ssdt) %in% unique(specifiedLineages, highlightedVariants) ]) > 0 & rowSums(as.data.frame(ssdt)[,colnames(ssdt) %in% unique(specifiedLineages, highlightedVariants) ]) <= length(unique(specifiedLineages, highlightedVariants))),] -> detour4log
               } else{
                 ssdt[as.data.frame(ssdt)[,colnames(ssdt) %in% specifiedLineages ] > 0,] -> ssdt
                 ssdt[as.data.frame(ssdt)[,colnames(ssdt) %in% unique(specifiedLineages, highlightedVariants) ] > 0,] -> detour4log
@@ -881,8 +882,9 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
               ssdt %>% mutate(Variants = gsub("other;*", "", Variants)) -> ssdt
 
               ## remove outlier per group flag
+              ## remove if outside 2*IQR
               dim(ssdt)[1] -> mutationsBeforeOutlierRemoval
-              ssdt %>% group_by(groupflag) %>% mutate(iqr = IQR(value.freq)) %>% mutate(upperbond = quantile(value.freq, 0.75) + 1.5 * iqr, lowerbond = quantile(value.freq, 0.25) - 1.5 * iqr) %>% filter(value.freq <= upperbond & value.freq >= lowerbond) %>% ungroup() %>% dplyr::select(-"groupflag", -"iqr", -"upperbond", -"lowerbond") -> ssdt
+              ssdt %>% group_by(groupflag) %>% mutate(iqr = IQR(value.freq)) %>% mutate(upperbond = quantile(value.freq, 0.75) + 2.0 * iqr, lowerbond = quantile(value.freq, 0.25) - 2.0 * iqr) %>% filter(value.freq <= upperbond & value.freq >= lowerbond) %>% ungroup() %>% dplyr::select(-"groupflag", -"iqr", -"upperbond", -"lowerbond") -> ssdt
               dim(ssdt)[1] -> mutationsAfterOutlierRemoval
               if(mutationsAfterOutlierRemoval < mutationsBeforeOutlierRemoval){
                 print(paste("LOG: ", mutationsBeforeOutlierRemoval-mutationsAfterOutlierRemoval, "mutations ignored since classified as outlier", "(", mutationsAfterOutlierRemoval, " remaining from", mutationsBeforeOutlierRemoval, ")"))
@@ -903,10 +905,10 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
                 next;
               }
 
-              ## add weight (1/(dayDiff+1)*log10(sequencingdepth)
-              ssdt %>% rowwise() %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(weight = log10(value.depth)*timeweight) -> ssdt
-              detour4log %>% rowwise() %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(weight = log10(value.depth)*timeweight) %>% filter(!grepl(";.+;", Variants)) -> detour4log
-              detour4log %>% rowwise() %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(weight = log10(value.depth)*timeweight) %>% dplyr::select(sample_date, NUC, value.freq, weight, all_of(specifiedLineages)) -> detour4log_printer
+              ## add weight (1/(dayDiff+1)*log10(sequencingdepth)*sqrt(1/number_of_variants)
+              ssdt %>% rowwise() %>% mutate(varweight = sqrt(1/(1+str_count(Variants, ";")))) %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(weight = log10(value.depth)*timeweight*varweight) -> ssdt
+              detour4log %>% rowwise() %>% mutate(varweight = sqrt(1/(1+str_count(Variants, ";")))) %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(weight = log10(value.depth)*timeweight*varweight) %>% filter(!grepl(";.+;", Variants)) -> detour4log
+              detour4log %>% rowwise() %>% mutate(varweight = sqrt(1/(1+str_count(Variants, ";")))) %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(weight = log10(value.depth)*timeweight*varweight) %>% dplyr::select(sample_date, NUC, value.freq, weight, all_of(specifiedLineages)) -> detour4log_printer
               detour4log_printer %>% rowwise() %>% mutate(value.freq = signif(value.freq, digits = 2), weight = signif(weight, digits = 2)) -> detour4log_printer
               #print(as.data.frame(detour4log_printer))
               detour4log %>% arrange(Variants) -> detour4log
@@ -1012,7 +1014,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
         ggplot(sankey.dtt, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = label)) + geom_sankey(flow.alpha = .6, node.color = "gray30", type ='alluvial') + geom_sankey_label(size = 3, color = "white", fill = "gray40", position = position_nudge(x = 0.05, y = 0), na.rm = TRUE, type ='alluvial', hjust = 0) + theme_sankey(base_size = 16) + labs(x = NULL) + ggtitle(roiname, subtitle = sankey_date) + theme(legend.position = "none", axis.text.x = element_blank(), plot.title = element_text(hjust = 0), plot.subtitle=element_text(hjust = 0)) + scale_fill_viridis_d(alpha = 1, begin = 0.025, end = .975, direction = 1, option = "D") + scale_x_discrete(expand = expansion(mult = c(0, .1), add = c(.1, .5))) -> pp
 
         filename <- paste0(outdir, "/figs/sankey/",  paste('/wwtp', roi, sep="_"), ".pdf")
-        ggsave(filename = filename, plot = pp, width = 8, height = 4.5)
+        ggsave(filename = filename, plot = pp, width = 6, height = 4.4)
         fwrite(as.list(c("sankey", "WWTP", roiname, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
         rm(pp, filename, sankey.dt, sankey.dtt)
     }
@@ -1080,7 +1082,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 
           filename <- paste0(outdir, '/figs/specialMutations', paste('/wwtp', roi, "all", sep="_"), ".pdf")
           #ggsave(filename = filename, plot = q2, width = plotWidth/1.5, height = plotHeight/1.5)
-          fwrite(as.list(c("specialMutations", c( ifelse(dim(count_last_BSF_run_id)[1] > 0, "current", "old"), roiname, "all",filename))), file = summaryDataFile, append = TRUE, sep = "\t")
+          #fwrite(as.list(c("specialMutations", c( ifelse(dim(count_last_BSF_run_id)[1] > 0, "current", "old"), roiname, "all",filename))), file = summaryDataFile, append = TRUE, sep = "\t")
         }
         rm(q2,filename,spemut_draw2)
 
@@ -1264,7 +1266,7 @@ if(dim(globalFittedData)[1] > 0){
         ggplot(sankey.dtt, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = label)) + geom_sankey(flow.alpha = .6, node.color = "gray30", type ='alluvial') + geom_sankey_label(size = 3, color = "white", fill = "gray40", position = position_nudge(x = 0.05, y = 0), na.rm = TRUE, type ='alluvial', hjust = 0) + theme_sankey(base_size = 16) + labs(x = NULL) + ggtitle("Gewichtetes Mittel: Österreich", subtitle = paste( sankey_date$earliest , "bis", sankey_date$latest)) + theme(legend.position = "none", axis.text.x = element_blank(), plot.title = element_text(hjust = 0), plot.subtitle=element_text(hjust = 0)) + scale_fill_manual(values = col2var, breaks = var2col) + scale_x_discrete(expand = expansion(mult = c(0, .1), add = c(.1, .5))) -> pp
 
         filename <- paste0(outdir, "/figs/sankey/Overview_",  opt$country, ".pdf")
-        ggsave(filename = filename, plot = pp)
+        ggsave(filename = filename, plot = pp, width = 6, height = 6)
         fwrite(as.list(c("sankey", "Overview", opt$country, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
         rm(pp, filename, sankey.dt, sankey.dtt)
 
@@ -1290,13 +1292,13 @@ if(dim(globalFittedData)[1] > 0){
         dpl <- dpl + coord_flip()
 
         filename1 <- paste0(outdir, "/figs/sankey/Detection_",  opt$country, ".pdf")
-        ggsave(filename = filename1, plot = dpl, width = plotWidth, height = 0.85*plotHeight)
+        ggsave(filename = filename1, plot = dpl, width = plotWidth, height = plotHeight)
         fwrite(as.list(c("detection", "Overview", opt$country, filename1)), file = summaryDataFile, append = TRUE, sep = "\t")
 
         print(paste("     PROGRESS: generating WWTP detection table"))
 
         left_join(x = occurence.rate, y = occurence.freq, by = "variant", multiple = "all") -> synopsis.dt
-        synopsis.dt %>% mutate(freq = sprintf("%.2f", freq)) -> synopsis.dt
+        synopsis.dt %>% mutate(freq = signif(freq, digits = 2)) -> synopsis.dt
         colnames(synopsis.dt) <- c("Variante", "Detektiert", "Nicht detektiert", "Prozent", "Gew. Mittel")
         filename2 <- paste0(opt$dir, "/synopsis.tex")
         legendTxt <- paste("Für jede Virus Variente die Österreich in Proben von", sankey_date$earliest , "bis", sankey_date$latest ,"detektiert wurden, jeweils das gewichtete Mittel der relativen Häufigkeit und die Anzahl der Kläranlagen in denen die Variante detektiert wurde")
@@ -1395,8 +1397,8 @@ if (dim(globalFittedData2)[1] >= tpLimitToPlot){
   r1 <- r1 + ylab(paste0("Variantenanteil [1/1]") )
   r1 <- r1 + xlab("")
   filename <- paste0(outdir, '/figs/fullview', paste('/wwtp', "all", sep="_"), ".pdf")
-  ggsave(filename = filename, plot = r1, width = plotWidth*1.5, height = plotHeight*1.5)
-  fwrite(as.list(c("fullOverview", c(roiname, "all", filename))), file = summaryDataFile, append = TRUE, sep = "\t")
+  #ggsave(filename = filename, plot = r1, width = plotWidth*1.5, height = plotHeight*1.5)
+  #fwrite(as.list(c("fullOverview", c(roiname, "all", filename))), file = summaryDataFile, append = TRUE, sep = "\t")
   rm(r1,filename)
 }
 rm(globalFittedData2)
