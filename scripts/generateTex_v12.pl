@@ -248,15 +248,14 @@ else{
 
 
 #print header section kläranlagen ergebnisse
+print '\clearpage'."\n";
 print '\section{Ergebnisse per Kläranlage}'."\n";
-
-
 print '\subsection{Ergebnisse per Kläranlage mit Daten aus aktuellem Run}'."\n";
 if (defined($data{variantDetail}->{current}) && defined($data{stackOverview}->{current})){
   foreach my $wwplant ( sort keys %{$data{variantDetail}->{current}} ){
     my $wwplant_tidy = $wwplant;
     $wwplant_tidy =~ s/_/ /g;
-    print '\newpage'."\n";
+    print '\clearpage'."\n";
     print '\subsubsection{'."$wwplant_tidy".'}'."\n";
 
     # print graphical synapsis
@@ -291,12 +290,13 @@ if (defined($data{variantDetail}->{current}) && defined($data{stackOverview}->{c
 
 
 if(0){
+  print '\clearpage'."\n";
   print '\subsection{Ergebnisse per Kläranlage ohne Daten aus aktuellem Run}'."\n";
   if (defined($data{variantDetail}->{old}) && defined($data{stackOverview}->{old})){
     foreach my $wwplant ( sort keys %{$data{variantDetail}->{old}} ){
       my $wwplant_tidy = $wwplant;
       $wwplant_tidy =~ s/_/ /g;
-      print '\FloatBarrier'."\n";
+      print '\clearpage'."\n";
       print '\subsubsection{'."$wwplant_tidy".'}'."\n";
 
       if( defined($data{stackOverview}->{old}->{$wwplant}->{all}) ){
@@ -347,7 +347,7 @@ my $fh = shift;
 my $lbl = shift;
 my $txt='
 
-\begin{figure}[h]
+\begin{figure}[htpb]
   \begin{center}
     \includegraphics[width=0.66\textwidth]{'."$fh".'}
     \caption{Graphische Darstellung der Varianten Quantifizierung für die neusten Proben jeder Kläranlage '."$lbl".' für den Berichtszeitraum. Dargestellte Werte entsprechende Mittelwerten, gewichtet nach Bevölkerungsgröße. Phylogenetische Verwandtschaft wird durch die Baumorganisation visualisiert.}
@@ -363,7 +363,7 @@ my $fh = shift;
 my $lbl = shift;
 my $txt='
 
-\begin{figure}[h]
+\begin{figure}[htpb]
   \begin{center}
     \includegraphics[width=0.66\textwidth]{'."$fh".'}
     \caption{'."$lbl".'}
@@ -379,10 +379,10 @@ sub printSankey{
 my $fh = shift;
 my $lbl = shift;
 my $txt='
-
+\FloatBarrier
 {\bf {\large Überblick aller detektierten Varianten in der aktuellen Probe}}
 
-\begin{figure}[h]
+\begin{figure}[htpb]
   \begin{center}
     \includegraphics[width=0.66\textwidth]{'."$fh".'}
     \caption{Graphische Darstellung der Varianten Quantifizierung für die neusten Proben der Kläranlage '."$lbl".'. Phylogenetische Verwandtschaft wird durch die Baumorganisation visualisiert.}
@@ -401,7 +401,7 @@ my $txt='
 \section{Einzel Mutationen Kinetik}
 \label{Fig}
 
-\begin{figure}[h]
+\begin{figure}[htpb]
   \begin{center}
     \includegraphics[width=.66\textwidth]{'."$fh".'}
     \caption{'."$lbl".'}
@@ -480,7 +480,7 @@ print $txt;
 sub printResults{
 
 my $txt = '
-\newpage
+\clearpage
 
 \section{Resultate in Tabellen Form}
 
@@ -523,8 +523,7 @@ print $txt;
 sub mutationsAppendix{
 
 my $txt = '
-\newpage
-\FloatBarrier
+\clearpage
 \section{Appendix: Verwendete Markermutations}
 
 Auflistung aller verwendeter Markermutationen für die untersuchten Varianten. Varianten die hier nicht aufgeführt sind können in den Abwasserproben auch nicht quantifiziert werden. Die Auswahl der Varianten berücksichtigt zum einen, deren Einstufung von ECDC, die Häufigkeit in Europa laut GISAID, und deren globalen Wachstum in den letzten 6 Monaten laut cov-spectrum. Die Spalte Eindeutigkeit gibt an für wieviele betrachteten Varianten die entsprechende Mutation als sensitive Markermutation definiert wurde. Spezifische Markermutationen ("unique marker") sind mit einer 1 in dieser Spalte markiert. Sie Spalte Sensitivität gibt an wie viele Samples in Pango-Designation die dieser Variante zugeordnet werden, diese Mutation auch tragen. Lange INDELS wurden in der Tabelle, zugunsten der Lesbarkeit, gekürzt angegeben.
@@ -573,8 +572,7 @@ print $txt;
 sub smutationsAppendix{
 
 my $txt = '
-\newpage
-\FloatBarrier
+\clearpage
 \section{Appendix: Berücksichtigte Spezial-Mutationen}
 \label{a:specmut}
 
@@ -622,8 +620,7 @@ print $txt;
 sub groupsAppendix{
 
 my $txt = '
-\newpage
-\FloatBarrier
+\clearpage
 \section{Appendix: Varianten}
 \label{appendix:Varianten}
 
@@ -672,16 +669,15 @@ sub printDetailPlot{
   my $path     = shift;
 
 my $txt = '
-
+\FloatBarrier
 {\bf {\large Detailansicht ausgewählter Varianten}}
 
-\begin{figure}[h]
+\begin{figure}[htpb]
   \begin{center}
     \includegraphics[width=0.66\textwidth]{'."$path".'}
     \caption{Abgeleitete relative Häufigkeit aller detektierten VoC/VoI Variante(n) und der gemessenen Allelfrequenz der dazugehörenden uniquen Markermutationen für die gesamte Messzeitreihe für das Klärwerk '."$location".'.}
   \end{center}
 \end{figure}
-\FloatBarrier
 ';
 print $txt;
 }
@@ -702,17 +698,16 @@ sub prinExcessGrowPlot{
 
 
 my $txt = '
-
+\FloatBarrier
 {\bf {\large Überschuss Mutationen}}
 
 '."$table_content".'
-\begin{figure}[h]
+\begin{figure}[htpb]
   \begin{center}
     \includegraphics[width=0.66\textwidth]{'."$pathp".'}
     \caption{Überschuß-Mutationen für das Klärwerk '."$location".', d.h., Mutationen die nicht durch detektierte Varianten erklärt werden können und ein wöchentliches Wachstum größer 0.02 zeigen.}
   \end{center}
 \end{figure}
-
 ';
 print $txt;
 }
@@ -723,16 +718,15 @@ sub printSpecialMutPlot{
   my $path     = shift;
 
 my $txt = '
-
+\FloatBarrier
 {\bf {\large Detailansicht ausgewählter Spezial-Mutationen}}
 
-\begin{figure}[h]
+\begin{figure}[htpb]
   \begin{center}
     \includegraphics[width=0.66\textwidth]{'."$path".'}
     \caption{Abgeleitete relative Häufigkeit aller detektierten VoC/VoI Variante(n) und der gemessenen Allelfrequenz der ausgewählter Spezial-Mutationen (siehe Appendix \ref{a:specmut}) für die gesamte Messzeitreihe für das Klärwerk '."$location".'.}
   \end{center}
 \end{figure}
-\FloatBarrier
 ';
 print $txt;
 }
@@ -743,15 +737,15 @@ sub printStackPlot{
   my $path     = shift;
 
 my $txt = '
+\FloatBarrier
 {\bf {\large Überblick aller detektierten Varianten}}
 
-\begin{figure}[h]
+\begin{figure}[htpb]
   \begin{center}
     \includegraphics[width=0.66\textwidth]{'."$path".'}
     \caption{Relative Häufigkeit aller detektierten Variante(n) für die gesamte Messzeitreihe für das Klärwerk '."$location".'.}
   \end{center}
 \end{figure}
-\FloatBarrier
 ';
 print $txt;
 }
@@ -762,18 +756,16 @@ sub printStatusMap{
   my $path    = shift;
 
 my $txt = '
-
+\clearpage
 \subsection{Übersicht '."Sequenzierstatus".'}
 \label{map'."status".'}
 
-\begin{figure}[h]
+\begin{figure}[htpb]
   \begin{center}
-    \includegraphics[width=0.66\textwidth]{'."$path".'}
+    \includegraphics[width=0.5\textwidth]{'."$path".'}
     \caption{Zusammenfassung des Sequenziererfolgs aller Proben aus der letzten Sequenziertranche. Wenn mindestens 40\% des Genomes erfolgreich rekonstruiert werden konnte, gilt die Probe als erfolgreich sequenziert und wird im Weiteren auch analysiert. Wenn weniger als 40\% aber mehr als 5\% des Genomes rekonstuiert werden konnte, wird die Probe mit "Virus detektiert" makiert, aber nicht versucht verschiedene Varianten zu quantifizieren. Darunter gilt die Probe als fehlgeschlagen. Da manche Kläranlagen mehrfach pro Woche beprobt werden, können auch fehlgeschlagene und erfolgreiche Beprobungen für die selbe Anlage in einer Sequenziertranche vorkommen. .}
   \end{center}
 \end{figure}
-\newpage
-\FloatBarrier
 ';
 print $txt;
 }
@@ -790,10 +782,11 @@ sub printMutationOverview{
   close OT;
 
 my $txt = '
+\clearpage
 \subsection{Übersicht wachsende Überschuss-Mutationen}
 \label{excess_growth_overview}
 
-\begin{figure}[h]
+\begin{figure}[htpb]
   \begin{center}
     \includegraphics[width=0.66\textwidth]{'."$plot".'}
     \includegraphics[width=0.66\textwidth]{'."$map".'}
@@ -801,7 +794,7 @@ my $txt = '
   \end{center}
 \end{figure}
 '."$table_content".'
-\FloatBarrier
+
 ';
 print $txt;
 }
@@ -811,16 +804,17 @@ sub printMapPerVariant{
   my $path    = shift;
 
 my $txt = '
+\clearpage
 \subsection{Übersicht '."$variant".'}
 \label{map'."$variant".'}
 
-\begin{figure}[h]
+\begin{figure}[htpb]
   \begin{center}
-    \includegraphics[width=0.66\textwidth]{'."$path".'}
+    \includegraphics[width=0.5\textwidth]{'."$path".'}
     \caption{Der Farbton zeigt den relativen Anteil, falls größer Null, der Variante '."$variant".' zum Zeitpunkt der letzten Probennahme. Stellen mit einem Anteil von Null werden nicht gezeichnet.}
   \end{center}
 \end{figure}
-\FloatBarrier
+
 ';
 print $txt;
 }
@@ -934,9 +928,8 @@ my $txt3 = '
 
 
 \tableofcontents
-\newpage
+\clearpage
 
-\FloatBarrier
 %----------------------------------------------------------------------------------------
 %	SECTION 2
 %----------------------------------------------------------------------------------------
@@ -962,7 +955,7 @@ if (defined($data{sankey}->{Overview}->{Austria}) || defined($data{sankey}->{all
 
     if (defined($data{detection}->{Overview}->{Austria})){
       my $path = $data{detection}->{Overview}->{Austria};
-      my $text = "Alle im Berichtszeitraum detektierten Varianten, aufgeschlüsselt nach der Anzahl der Kläranlagen mit positivem Signa.";
+      my $text = "Alle im Berichtszeitraum detektierten Varianten, aufgeschlüsselt nach der Anzahl der Kläranlagen mit positivem Signal.";
       &printGraphicalSynopsis2($path, $text);
     }else{
       print STDERR "Warning: no graphical synopsis stacked timecourse\n";
