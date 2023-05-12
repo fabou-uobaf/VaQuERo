@@ -109,9 +109,9 @@ if(opt$debug){
     opt$zero=0.02
     opt$depth=50
     opt$minuniqmark=1
-    opt$minuniqmarkfrac=0.4
-    opt$minqmark=4
-    opt$minmarkfrac=0.4
+    opt$minuniqmarkfrac=0.5
+    opt$minqmark=5
+    opt$minmarkfrac=0.5
     opt$smoothingsamples=2
     opt$smoothingtime=2
     opt$voi="XBB.1.5,XBB.1.9,XBB.1.16,EG.1"
@@ -882,9 +882,9 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
               ssdt %>% mutate(Variants = gsub("other;*", "", Variants)) -> ssdt
 
               ## remove outlier per group flag
-              ## remove if outside 2*IQR
+              ## remove if outside 2*IQR+/-0.05
               dim(ssdt)[1] -> mutationsBeforeOutlierRemoval
-              ssdt %>% group_by(groupflag) %>% mutate(iqr = IQR(value.freq)) %>% mutate(upperbond = quantile(value.freq, 0.75) + 2.0 * iqr, lowerbond = quantile(value.freq, 0.25) - 2.0 * iqr) %>% filter(value.freq <= upperbond & value.freq >= lowerbond) %>% ungroup() %>% dplyr::select(-"groupflag", -"iqr", -"upperbond", -"lowerbond") -> ssdt
+              ssdt %>% group_by(groupflag) %>% mutate(iqr = IQR(value.freq)) %>% mutate(upperbond = quantile(value.freq, 0.75) + 2.0 * iqr, lowerbond = quantile(value.freq, 0.25) - 2.0 * iqr) %>% filter((value.freq <= (upperbond+0.05) ) & (value.freq >= (lowerbond-0.05 ))) %>% ungroup() %>% dplyr::select(-"groupflag", -"iqr", -"upperbond", -"lowerbond") -> ssdt
               dim(ssdt)[1] -> mutationsAfterOutlierRemoval
               if(mutationsAfterOutlierRemoval < mutationsBeforeOutlierRemoval){
                 print(paste("LOG: ", mutationsBeforeOutlierRemoval-mutationsAfterOutlierRemoval, "mutations ignored since classified as outlier", "(", mutationsAfterOutlierRemoval, " remaining from", mutationsBeforeOutlierRemoval, ")"))
