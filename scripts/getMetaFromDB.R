@@ -64,6 +64,11 @@
 
   left_join(x = samples_with_seqdata_db, y = sewagePlants_db, by = "LocationID", suffix = c(".db",".location")) -> samples_with_seqdata_with_wwplants_db
 
+  if(1){
+    print("Print number of samples per sequencing run with a BSF start date but no sample_date")
+    samples_with_seqdata_with_wwplants_db %>% filter(host == "wastewater") %>% filter(include_in_report == TRUE | is.na(include_in_report)) %>% filter(is.na(sample_date) & !is.na(BSF_start_date)) %>% group_by(BSF_run, BSF_start_date) %>% summarise(n = n(), .groups = "drop") %>% arrange(BSF_run)
+  }
+
   if (all(is.na(reportsamples))){
     samples_with_seqdata_with_wwplants_db %>% filter(host == "wastewater")  %>% filter(include_in_report == TRUE | is.na(include_in_report)) %>% mutate(include_in_report = TRUE) %>% filter(!is.na(sample_date)) -> samples_with_seqdata_with_wwplants_db
 
