@@ -99,236 +99,31 @@ opt = parse_args(opt_parser);
 #####################################################
 ####  parameter setting for interactive debugging
 if(opt$debug){
-    opt$dir = "debug_output"
-    opt$metadata = "VaQuERo/resources/metaData_debug.csv"
-    opt$data="VaQuERo/resources/mutationData_debug.tsv.gz"
-    opt$inputformat = "tidy"
-    opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2023-03-10_Europe.csv"
-    opt$smarker="VaQuERo/resources/mutations_special_2022-12-21.csv"
+    opt$dir = "dev_output"
+    opt$metadata = "data/metaData_general_short.csv"
+    opt$data="data/mutationData_DB_NationMonitoringSites.tsv.gz"
+    opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2023-05-23_Austria.csv"
     opt$pmarker="VaQuERo/resources/mutations_problematic_vss1_v3.csv"
-    opt$zero=0.02
-    opt$depth=50
+    opt$smarker="VaQuERo/resources/mutations_special_2022-12-21.csv"
+    opt$zero=0.01
+    opt$depth=100
     opt$minuniqmark=1
     opt$minuniqmarkfrac=0.5
     opt$minqmark=5
     opt$minmarkfrac=0.5
     opt$smoothingsamples=2
-    opt$smoothingtime=2
-    opt$voi="XBB.1.5,XBB.1.9,XBB.1.16,EG.1"
-    opt$highlight="XBB,XBB.1.5,XBB.1.9,XBB.1.16,EG.1"
+    opt$smoothingtime=15
+    opt$voi="XBB.1.5,XBB.1.9,XBB.1.16,EG.1,XBB.2.3"
+    opt$highlight="XBB,XBB.1.5,XBB.1.9,XBB.1.16,EG.1,XBB.2.3"
     opt$colorBase="XBB,BA.1,BA.2,BA.5"
-    opt$recent <- 99999
+    opt$recent <- 60
     print("Warning: command line option overwritten")
 }
 #####################################################
 
 ## define functions
 options(warn=-1)
-`%notin%` <- Negate(`%in%`)
-leapYear <- function(y){
-  if((y %% 4) == 0) {
-    if((y %% 100) == 0) {
-      if((y %% 400) == 0) {
-        return(366)
-      } else {
-        return(365)
-      }
-    } else {
-      return(366)
-    }
-  } else {
-    return(365)
-  }
-}
-decimalDate <- function(x, d){
-  strftime(as.POSIXct(as.Date(x)+(d/96)), format="%Y-%m-%d %H:%M", tz="UCT") -> dx
-  daysinyear <- leapYear(year(dx))
-  year(dx) + yday(dx)/daysinyear + hour(dx)/(daysinyear*24) + minute(dx)/(daysinyear*24*60) -> ddx
-  return(ddx)
-}
-
-## dealias variants
-dealias <- function(x){
-  base <- strsplit(x, split="\\.")[[1]][1]
-
-  if(!any(names(aliases) == base)){
-    y <- base
-  } else if(nchar(aliases[names(aliases) == base]) == 0){
-    y <- base
-  } else if(grepl("^X", base)){
-    y <- base
-  } else {
-    y <- aliases[names(aliases) == base]
-  }
-  dealiased <- gsub(base, y, x)
-  return(dealiased)
-}
-objfnct <- function(data, par) {
-  varN <- length(par)
-  rs <-rowSums(as.matrix(data[,2:(varN+1)]) * matrix(rep(par, each = dim(data)[1]), ncol = dim(data)[2]-2))
-  re <- (rs - data$fit1)^2
-  #re <- (rs - data$value.freq)^2
-  re <- unique(re)
-  sum(re)
-}
-
-starterV <- function(data){
-  data <- as.data.frame(data)
-  data[,2:(dim(data)[2])] -> data
-  if(dim(data)[2]-1 > 1){
-    data[which(rowSums(data[,1:(dim(data)[2]-1)]) == 1),] -> data
-  }
-
-  rep(NA, length(data)-1) -> startV
-
-  for (i in seq_along(startV)){
-    startV[i] <-  mean(data[which(data[,i] == 1),]$fit1)
-  }
-  (1-sum(startV, na.rm = TRUE))/sum(is.na(startV)) -> prop.rest
-  startV[is.na(startV)] <- prop.rest
-  return(startV)
-}
-getColor <- function(n, id, i){
-  colorSet <- colorSets[id]
-  cols <- brewer.pal(9, colorSet)
-  col.palette <- colorRampPalette(c(cols[4], cols[5]), space = "Lab")
-  cols <- col.palette(n)
-  cols[i]
-}
-
-realias <- function(x){
-  seq <- strsplit(x, split="\\.")[[1]]
-  seq <- seq[-length(seq)]
-
-  if(length(seq) > 0){
-    for (i in rev(seq_along(seq))){
-      trunc <- paste(seq[1:i], collapse = ".")
-      if ( any(names(dealiases) == trunc) ){
-        alias <- dealiases[names(dealiases) == trunc]
-        realiased <- gsub(trunc, alias, x)
-                  #print(paste("realiased:", x, " <=> ", realiased))
-        break
-      }
-    }
-  } else{
-    realiased <- x
-  }
-  if(exists("realiased")){
-    return(realiased)
-  } else{
-    return(x)
-  }
-}
-
-# functions for sankey plot
-expandVar <- function(var, L){
-  l = length(unlist(strsplit(var, split = "\\.")))
-  while(l < L){
-    paste0(var, ".0") -> var
-    l = length(unlist(strsplit(var, split = "\\.")))
-  }
-  return(var)
-}
-getTree <- function(x){
-  x$variant_dealias -> vars
-  x$long_variant -> long_var
-  list() -> ll
-  for ( i in seq_along(vars)){
-    ancestor <- c()
-    if(grepl("^B", vars[i]) & "B" %notin% vars) {
-      ancestor <- c("B")
-    }
-    for ( j in seq_along(vars)){
-      if(grepl(vars[j], long_var[i], fixed = TRUE) & (vars[i] != vars[j])){
-        ancestor <- c(ancestor, vars[j])
-      }
-    }
-    ll[[long_var[i]]] <- ancestor
-  }
-  return(ll)
-}
-makeObs <- function(x, n, ll, p){
-  x %>% mutate(freq = floor(0.5+p*freq)) -> x
-  Llevels <- paste0("level", 0:n)
-  as.data.frame(matrix(ncol = length(Llevels))) -> res
-  colnames(res) <- Llevels
-
-  for (i in 1:dim(x)[1]){
-    y <- x[i,]
-    var <- y$long_variant
-    freq <- y$freq
-    ancestors <- sort(unlist(ll[names(ll) == var]))
-    Llevel = length(ancestors)+1
-    var1 <- gsub("(\\.0)*$", "", var)
-    var1 <- realias(var1)
-    ancestors <- unlist(lapply(as.list(ancestors), realias))
-    z <- c(as.character(ancestors), rep(var1, length(Llevels) - length(ancestors) ))
-    z <- as.data.frame(t(z))[rep(1, freq),]
-    colnames(z) <- Llevels
-    rbind(res, z) -> res
-  }
-  return(res)
-}
-# function to generate TeX table from data.frame
-
-makeTexTab <- function(filename, TAB, legendTxt){
-    tabheaddef = paste0("\\begin{longtable}{", paste(rep(paste0("p{", 0.8/length(colnames(TAB)), "\\textwidth}"), length(colnames(TAB))), collapse = " | "), "}")
-    tabhead    = paste(paste(colnames(TAB), collapse = " & "), "\\\\")
-    legend     = paste0("\\caption{", legendTxt, "}\\\\")
-
-    tabheaddef = gsub("%", "\\%", tabheaddef, fixed = TRUE)
-    tabheaddef = gsub("_", "\\_", tabheaddef, fixed = TRUE)
-    tabhead = gsub("%", "\\%", tabhead, fixed = TRUE)
-    tabhead = gsub("_", "\\_", tabhead, fixed = TRUE)
-    legend = gsub("%", "\\%", legend, fixed = TRUE)
-    legend = gsub("_", "\\_", legend, fixed = TRUE)
-
-    write("\\begin{footnotesize}", file = filename, append = TRUE)
-    write(tabheaddef, file = filename, append = TRUE)
-    write(legend, file = filename, append = TRUE)
-    write("\\hline", file = filename, append = TRUE)
-    write(tabhead, file = filename, append = TRUE)
-    write("\\hline", file = filename, append = TRUE)
-    for (i in 1:dim(TAB)[1] ){
-      line = paste(paste(TAB[i,], collapse = " & "), "\\\\")
-      line = gsub("%", "\\%", line, fixed = TRUE)
-      line = gsub("_", "\\_", line, fixed = TRUE)
-      write(line, file = filename, append = TRUE)
-    }
-    write("\\hline", file = filename, append = TRUE)
-
-    write("\\end{longtable}", file = filename, append = TRUE)
-    write("\\label{tab:synopsis}", file = filename, append = TRUE)
-    write("\\end{footnotesize}", file = filename, append = TRUE)
-}
-
-# function to calculate shape2 pamerged_samplerameter of a betadistribution, given shape1 and expected value
-betaParamFromMean <- function(mean, shape1){
-    shape2 <- (shape1 - mean*shape1)/mean
-    return(shape2)
-}
-
-# extract from ";"-separated list x all occurences of elements in y
-extract_loi <- function(x, y = expected_value_uniqSupported_lineages$Variants){
-  llisty <- unlist(str_split(x, ";"))
-  if(any(llisty %in% y)){
-    treffer <- paste(llisty[llisty %in% y], collapse = ";", sep=";")
-    restl   <- paste(llisty[llisty %notin% y], collapse = ";", sep=";")
-    return(c(treffer))
-  } else{
-    return(c("NA"))
-  }
-}
-extract_rest <- function(x, y = expected_value_uniqSupported_lineages$Variants){
-  llisty <- unlist(str_split(x, ";"))
-  if(any(llisty %in% y)){
-    treffer <- paste(llisty[llisty %in% y], collapse = ";", sep=";")
-    restl   <- paste(llisty[llisty %notin% y], collapse = ";", sep=";")
-    return(c(restl))
-  } else{
-    return(c(x))
-  }
-}
+source("VaQuERo/scripts/VaQueR_functions.r")
 
 
 ## print parameter to Log
@@ -651,6 +446,8 @@ print(paste("LOG: latest sample in current run:", latestSample$latest))
 ### FROM HERE LOOP OVER EACH SEWAGE PLANTS
 print(paste("PROGRESS: start to loop over WWTP"))
 timestamp()
+# r <-  grep("ATTP_9", unique(sewage_samps.dt$LocationID))
+
 for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
     roi = unique(sewage_samps.dt$LocationID)[r]
     roiname = sewage_samps.dt %>% filter(LocationID == roi ) %>% pull(LocationName) %>% unique()
@@ -958,17 +755,13 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
               rm(detour4log, detour4log_printer)
 
               ## make regression
-              method = "SIMPLEX"
-              fit1 <- tryCatch(gamlss(formula, data = ssdt, family = SIMPLEX, trace = FALSE, weights = weight),error=function(e) e, warning=function(w) w)
-              #if(any(grepl("warning|error", class(fit1)))){
-                method = "BE"
-                fit1 <- tryCatch(gamlss(formula, data = ssdt, family = BE, trace = FALSE, weights = weight),error=function(e) e, warning=function(w) w)
-                print(paste("LOG: fall back to BE"))
-                if(any(grepl("warning|error", class(fit1)))){
-                  print(paste("LOG: BE did not converge either at", timePoints[t], " .. skipped"))
-                  next; ## remove if unconverged BE results should be used
-                }
-              #}
+              method = "BE"
+              fit1 <- tryCatch(gamlss(formula, data = ssdt, family = BE, trace = FALSE, weights = weight),error=function(e) e, warning=function(w) w)
+              if(any(grepl("warning|error", class(fit1)))){
+                print(paste("LOG: BE did not converge at", timePoints[t], " .. skipped"))
+                next; ## remove if unconverged BE results should be used
+              }
+
               ssdt$fit1 <- predict(fit1, type="response", what="mu")
 
               ssdt %>% dplyr::select(value.freq, all_of(specifiedLineages), fit1) -> ssdt_toOp
@@ -1025,7 +818,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
         plantFittedData %>% mutate(latest = max(sample_date, na.rm = TRUE)) %>% filter(sample_date == latest) %>% filter(value > 0) %>% summarize(variant = variant, freq = value, .groups = "keep") -> sankey.dt
 
         plantFittedData %>% summarize(latest = max(sample_date, na.rm = TRUE), .groups = "keep") -> sankey_date
-        sankey.dt %>% mutate(freq = freq/sum(freq)) -> sankey.dt
+        #sankey.dt %>% mutate(freq = freq/sum(freq)) -> sankey.dt
         sankey.dt %>% group_by(variant = "B") %>% summarize(freq = 1-sum(freq), .groups = "keep") -> sankey.dt0
         rbind(sankey.dt, sankey.dt0) -> sankey.dt
         sankey.dt %>% filter(freq > zeroo/10 | variant == "B") -> sankey.dt
@@ -1053,7 +846,15 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 
         sankey.dtt %>% rowwise() %>% mutate(node = ifelse(is.na(node), node, dealias(node))) %>% mutate(next_node = ifelse(is.na(next_node), next_node, dealias(next_node))) -> sankey.dtt
 
-        ggplot(sankey.dtt, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = label)) + geom_sankey(flow.alpha = .6, node.color = "gray30", type ='alluvial') + geom_sankey_label(size = 3, color = "white", fill = "gray40", position = position_nudge(x = 0.05, y = 0), na.rm = TRUE, type ='alluvial', hjust = 0) + theme_sankey(base_size = 16) + labs(x = NULL) + ggtitle(roiname, subtitle = sankey_date) + theme(legend.position = "none", axis.text.x = element_blank(), plot.title = element_text(hjust = 0), plot.subtitle=element_text(hjust = 0)) + scale_fill_viridis_d(alpha = 1, begin = 0.025, end = .975, direction = 1, option = "D") + scale_x_discrete(expand = expansion(mult = c(0, .1), add = c(.1, .5))) -> pp
+        ggplot(sankey.dtt, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = label)) +
+            geom_sankey(flow.alpha = .6, node.color = "gray30", type ='alluvial') +
+            geom_sankey_label(size = 3, color = "white", fill = "gray40", position = position_nudge(x = 0.05, y = 0), na.rm = TRUE, type ='alluvial', hjust = 0) +
+            theme_sankey(base_size = 16) +
+            labs(x = NULL) +
+            ggtitle(roiname, subtitle = sankey_date) +
+            theme(legend.position = "none", axis.text.x = element_blank(), plot.title = element_text(hjust = 0), plot.subtitle=element_text(hjust = 0)) +
+            scale_fill_viridis_d(alpha = 1, begin = 0.025, end = .975, direction = 1, option = "D") +
+            scale_x_discrete(expand = expansion(mult = c(0, .1), add = c(.1, .5))) -> pp
 
         filename <- paste0(outdir, "/figs/sankey/",  paste('/wwtp', roi, sep="_"), ".pdf")
         ggsave(filename = filename, plot = pp, width = 6, height = 4.4)
@@ -1068,8 +869,12 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 
         ## print stacked area overview of all detected lineages
         plantFittedData2 <- plantFittedData
-        plantFittedData2$variant <- factor(plantFittedData2$variant, levels = rev(c(highlightedVariants, unique(plantFittedData2$variant)[unique(plantFittedData2$variant) %notin% highlightedVariants])))
 
+        ## sort variants according dealiased names
+        plantFittedData2 %>% dplyr::select(variant) %>% distinct() %>% rowwise() %>% mutate(variant_dealias = dealias(variant)) %>% arrange(variant_dealias) %>% pull(variant) -> variant_order
+        plantFittedData2$variant <- factor(plantFittedData2$variant, levels = variant_order)
+
+        ## avoid >1 sums per time point
         plantFittedData2 %>% group_by(LocationID) %>% mutate(n = length(unique(sample_date))) %>% ungroup() %>% group_by(LocationID, LocationName, sample_date, variant) %>% summarize(value = mean(value), .groups = "drop") %>% ungroup() %>% group_by(LocationID, LocationName, sample_date) %>% mutate(T = sum(value)) %>% rowwise() %>% summarize(variant = variant, value = ifelse(T>1, value/(T+0.00001), value), .groups = "drop") -> plottng_data
 
         ## get color by lineage base
@@ -1091,23 +896,27 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
         ColorBaseData %>% group_by(base) %>%  mutate(n = n()) %>% arrange(base, variant_dealiased) %>% dplyr::mutate(id = cur_group_id()) %>% mutate(id = ifelse(id > 6, 6, id)) -> ColorBaseData
         ColorBaseData %>% group_by(id) %>% mutate(i = row_number()) %>% rowwise() %>% mutate(col = getColor(n, id, i)) -> ColorBaseData
 
+        plottng_data %>% filter(sample_date == max(sample_date)) %>% filter(value > 0) -> plottng_labels
+
         ggplot(data = plottng_data, aes(x = as.Date(sample_date), y = value, fill = variant, color = variant)) -> q3
         q3 <- q3 + geom_area(position = "stack", alpha = 0.6)
         q3 <- q3 + geom_vline(xintercept = as.Date(latestSample$latest), linetype = "dotdash", color = "grey", size =  0.5)
         q3 <- q3 + facet_wrap(~LocationName, ncol = 4)
-        #q3 <- q3 + scale_fill_viridis_d(alpha = 0.6, begin = .05, end = .95, option = "H", direction = +1, name="")
         q3 <- q3 + scale_fill_manual(values = ColorBaseData$col, breaks = ColorBaseData$variant, name = "")
         q3 <- q3 + scale_color_manual(values = ColorBaseData$col, breaks = ColorBaseData$variant, name = "")
 	      q3 <- q3 + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1))
         q3 <- q3 + theme_bw() + theme(legend.position="bottom", strip.text.x = element_text(size = 10), panel.grid.minor = element_blank(), panel.spacing.y = unit(0, "lines"),  strip.background = element_rect(fill="grey97"), axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
-        q3 <- q3 + scale_x_date(date_breaks = "2 month", date_labels =  "%b %y", limits = c(as.Date(NA), as.Date(latestSample$latest)))
+        q3 <- q3 + scale_x_date(date_breaks = "2 month", date_labels =  "%b %y", limits = c(as.Date(NA), as.Date(latestSample$latest)+14))
         q3 <- q3 + ylab(paste0("Variantenanteil [1/1]") ) + xlab("")
-        q3 <- q3 + guides(fill = guide_legend(title = "", ncol = 7), color = guide_legend(title = "", ncol = 7))
+        q3 <- q3 + guides(fill = guide_legend(title = "", ncol = 7, override.aes = aes(label = "")), color = guide_legend(title = "", ncol = 7, override.aes = aes(label = "")))
+        q3 <- q3 + geom_text_repel(data=plottng_labels, aes(x=as.Date(sample_date), y=value, label=variant), position = position_stack(), min.segment.length = .01, direction = "y", alpha = 0.6, xlim = c(max(as.Date(plottng_labels$sample_date)), Inf), size = 2)
+
+
         filename <- paste0(outdir, '/figs/stackview', paste('/wwtp', roi, "all", sep="_"), ".pdf")
         ggsave(filename = filename, plot = q3, width = plotWidth, height = plotHeight)
         fwrite(as.list(c("stackOverview", c( ifelse(dim(count_last_BSF_run_id)[1] > 0, "current", "old"), roiname, "all", filename))), file = summaryDataFile, append = TRUE, sep = "\t")
 
-        rm(q3, filename, plantFittedData2, FillIdx, LabelTxt, GrpIdx, g)
+        rm(q3, filename, plantFittedData2, FillIdx, LabelTxt, GrpIdx, g, plottng_labels)
 
         ## print faceted line plot of fitted values for all detected lineages
         plantFittedData %>% filter(sample_date > as.Date(latestSample$latest)-(2*recentEnought)) %>% group_by(variant) %>% mutate(maxValue = pmax(value)) %>% filter(maxValue > 0) %>% ggplot(aes(x = as.Date(sample_date), y = value, col = variant)) + geom_line(alpha = 0.6) + geom_point(alpha = 0.66, shape = 13) + geom_vline(xintercept = as.Date(latestSample$latest), linetype = "dotdash", color = "grey", size =  0.5) + scale_color_manual(values = ColorBaseData$col, breaks = ColorBaseData$variant, name = "Varianten") + scale_y_continuous(labels=scales::percent, trans = "log10") + theme_bw() + theme(legend.position="bottom", strip.background = element_rect(fill="grey97")) + scale_x_date(date_breaks = "2 weeks", date_labels =  "%b %d", limits = c(as.Date(latestSample$latest)-(2*recentEnought), as.Date(latestSample$latest))) + ylab(paste0("Variantenanteil [1/1]") ) + xlab("") -> q2
@@ -1236,6 +1045,8 @@ if (dim(globalFittedData)[1] >= tpLimitToPlot){
   ColorBaseData %>% group_by(base) %>%  mutate(n = n()) %>% arrange(base, variant_dealiased) %>% dplyr::mutate(id = cur_group_id()) %>% mutate(id = ifelse(id > 6, 6, id)) -> ColorBaseData
   ColorBaseData %>% group_by(id) %>% mutate(i = row_number()) %>% rowwise() %>% mutate(col = getColor(n, id, i)) -> ColorBaseData
 
+  stacker.dtt %>% ungroup() %>% filter(kw == max(kw)) %>% filter(agg_value > 0) -> stacker.labels
+
 
   ap <- ggplot(data = stacker.dtt, aes(x = as.Date(kw), y = agg_value, fill = variant, color = variant))
   ap <- ap + geom_area(position = "stack", alpha = 0.6)
@@ -1245,11 +1056,13 @@ if (dim(globalFittedData)[1] >= tpLimitToPlot){
   ap <- ap + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1))
   ap <- ap + theme_minimal()
   ap <- ap + theme(legend.position="bottom", strip.text.x = element_text(size = 4.5), panel.grid.minor = element_blank(), panel.spacing.y = unit(0, "lines"), legend.direction="horizontal")
-  ap <- ap + guides(fill = guide_legend(title = "", ncol = 7), color = guide_legend(title = "", ncol = 7))
-  ap <- ap + scale_x_date(date_breaks = "2 month", date_labels =  "%b %y", limits = c(as.Date(NA), as.Date(latestSample$latest)))
+  ap <- ap + guides(fill = guide_legend(title = "", ncol = 7, override.aes = aes(label = "")), color = guide_legend(title = "", ncol = 7, override.aes = aes(label = "")))
+  ap <- ap + scale_x_date(date_breaks = "2 month", date_labels =  "%b %y", limits = c(as.Date(NA), as.Date(latestSample$latest)+14))
   ap <- ap + ylab(paste0("Variantenanteil [1/1]") )
   ap <- ap + xlab("Kalender Woche")
   ap <- ap + ggtitle("Gewichtetes Mittel: Österreich")
+  ap <- ap + geom_text_repel(data=stacker.labels, aes(x=as.Date(kw), y=agg_value, label=variant), position = position_stack(), min.segment.length = .01, direction = "y", alpha = 0.6, xlim = c(max(as.Date(stacker.labels$kw)), Inf), size = 3)
+
 
   filename <- paste0(outdir, '/figs/stackview', '/', paste(opt$country, "all", sep="_"), ".pdf")
   ggsave(filename = filename, plot = ap, width = plotWidth, height = 1.2*plotHeight)
@@ -1423,7 +1236,9 @@ if (dim(globalFittedData2)[1] >= tpLimitToPlot){
 rm(globalFittedData2)
 
 ## print overview of all variants and all plants
-globalFittedData$variant <- factor(globalFittedData$variant, levels = rev(c(highlightedVariants, unique(globalFittedData$variant)[unique(globalFittedData$variant) %notin% highlightedVariants])))
+globalFittedData %>% dplyr::select(variant) %>% distinct() %>% rowwise() %>% mutate(variant_dealias = dealias(variant)) %>% arrange(variant_dealias) %>% pull(variant) -> variant_order
+
+globalFittedData$variant <- factor(globalFittedData$variant, levels = variant_order)
 globalFittedData %>% group_by(LocationID) %>% mutate(n = length(unique(sample_date))) %>% filter(n > tpLimitToPlot*2) %>% ungroup() %>% group_by(LocationID, LocationName, sample_date, variant) %>% summarize(value = mean(value), .groups = "drop") -> globalFittedData2
 if (dim(globalFittedData2)[1] >= tpLimitToPlot){
   print(paste("     PROGRESS: plotting overview"))
