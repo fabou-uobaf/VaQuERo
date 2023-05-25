@@ -526,7 +526,7 @@ my $txt = '
 \clearpage
 \section{Appendix: Verwendete Markermutations}
 
-Auflistung aller verwendeter Markermutationen für die untersuchten Varianten. Varianten die hier nicht aufgeführt sind können in den Abwasserproben auch nicht quantifiziert werden. Die Auswahl der Varianten berücksichtigt zum einen, deren Einstufung von ECDC, die Häufigkeit in Europa laut GISAID, und deren globalen Wachstum in den letzten 6 Monaten laut cov-spectrum. Die Spalte Eindeutigkeit gibt an für wieviele betrachteten Varianten die entsprechende Mutation als sensitive Markermutation definiert wurde. Spezifische Markermutationen ("unique marker") sind mit einer 1 in dieser Spalte markiert. Sie Spalte Sensitivität gibt an wie viele Samples in Pango-Designation die dieser Variante zugeordnet werden, diese Mutation auch tragen. Lange INDELS wurden in der Tabelle, zugunsten der Lesbarkeit, gekürzt angegeben.
+Auflistung aller verwendeter Markermutationen für die untersuchten Varianten. Varianten die hier nicht aufgeführt sind können in den Abwasserproben auch nicht quantifiziert werden. Die Auswahl der Varianten berücksichtigt zum einen, deren Einstufung von ECDC, die Häufigkeit in Österreich laut GISAID, und deren globalen Wachstum in den letzten 6 Monaten laut cov-spectrum. Die Spalte Eindeutigkeit gibt an für wieviele betrachteten Varianten die entsprechende Mutation als sensitive Markermutation definiert wurde. Spezifische Markermutationen ("unique marker") sind mit einer 1 in dieser Spalte markiert. Sie Spalte Sensitivität gibt den Anteil der Samples an, die in Pango-Designation die dieser Variante zugeordnet werden, und diese Mutation tragen. Lange INDELS wurden in der Tabelle, zugunsten der Lesbarkeit, gekürzt angegeben.
 
 \begin{footnotesize}
 \begin{longtable}{p{.08\textwidth} | p{.05\textwidth} | p{.06\textwidth} | p{.06\textwidth} | p{.10\textwidth} | p{.10\textwidth} | p{.11\textwidth} | p{.11\textwidth} | p{.03\textwidth}}
@@ -898,10 +898,10 @@ my $txt1 = '
     Auswahlkriterium Varianten: & Berücksichtigte Varianten aus drei Quellen \\\\
                                 & \\\\
                                 & Alle \emph{Variants~of~concern}, \emph{of~interest}, und \emph{under~monitoring}. \\\\
-                                & Definition folgt der Angabe von \href{https://www.ecdc.europa.eu/en/covid-19/variants-concern}{ECDC} (Stand 4. Mai, 2023)\\\\
+                                & Definition folgt der Angabe von \href{https://www.ecdc.europa.eu/en/covid-19/variants-concern}{ECDC} (Stand 23. Mai, 2023)\\\\
                                 & \\\\
-                                & Alle Varianten die laut \href{https://gisaid.org/}{GISaid} in zumindest drei europäischen\\\\
-                                & Ländern die relative häufigste Variante und $>$10\% relative Häufigkeit aufweisen \\\\
+                                & Alle Varianten die laut \href{https://gisaid.org/}{GISaid} Daten in Österreich in zumindest\\\\
+                                & einem Monat die relative häufigste Variante mit $>$50\% Fällen war \\\\
                                 & \\\\
                                 & Alle Varianten die aktuell laut \href{https://cov-spectrum.org/collections/24}{CoV-spectrum Collection 24}\\\\
                                 & ein Wachstumsvorteil $>$50\% (lower CI) zeigen. Detailgrad der \\\\
