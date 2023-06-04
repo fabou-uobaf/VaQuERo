@@ -679,7 +679,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
     if(dim(plantFittedData)[1] > 0){
         plantFittedData %>% mutate(latest = max(sample_date, na.rm = TRUE)) %>% filter(sample_date == latest) %>% filter(value > 0) %>% summarize(variant = variant, freq = value, .groups = "keep") -> sankey.dt
 
-        plantFittedData %>% summarize(latest = max(sample_date, na.rm = TRUE), .groups = "keep") -> sankey_date
+        plantFittedData  %>% group_by() %>% summarize(latest = max(sample_date, na.rm = TRUE), .groups = "keep") -> sankey_date
 
         sankey.dt  %>% rowwise() %>% mutate(freq = ifelse(freq<0, 0, freq)) -> sankey.dt
         sankey.dt  %>% rowwise() %>% mutate(freq = ifelse(freq>1, 1, freq)) -> sankey.dt
@@ -764,7 +764,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
         ColorBaseData %>% group_by(base) %>%  mutate(n = n()) %>% arrange(base, variant_dealiased) %>% dplyr::mutate(id = cur_group_id()) %>% mutate(id = ifelse(id > 6, 6, id)) -> ColorBaseData
         ColorBaseData %>% group_by(id) %>% mutate(i = row_number()) %>% rowwise() %>% mutate(col = getColor(n, id, i)) -> ColorBaseData
 
-        plottng_data %>% filter(sample_date == max(sample_date)) %>% filter(value > 0) -> plottng_labels
+        plottng_data %>% filter(sample_date == max(sample_date, na.rm = TRUE)) %>% filter(value > 0) -> plottng_labels
 
         ggplot(data = plottng_data, aes(x = as.Date(sample_date), y = value, fill = variant, color = variant)) -> q3
         q3 <- q3 + geom_area(position = "stack", alpha = 0.6)
