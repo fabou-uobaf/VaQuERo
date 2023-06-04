@@ -689,7 +689,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 
         sankey.dt %>% group_by(variant = "B") %>% summarize(freq = 1-sum(freq), .groups = "keep") -> sankey.dt0
         rbind(sankey.dt, sankey.dt0) -> sankey.dt
-        sankey.dt %>% filter(freq > zeroo/10 | variant == "B") -> sankey.dt
+        sankey.dt %>% rowwise() %>% filter(freq > zeroo/10 | variant == "B") -> sankey.dt
 
         sankey.dt$variant_dealias <- unlist(lapply(as.list(sankey.dt$variant), dealias))
         for ( baseForColor in baseForColorsVariants ){
@@ -968,7 +968,7 @@ if(dim(globalFittedData)[1] > 0){
         sankey.dt %>% group_by(variant = "B") %>% summarize(freq = 1-sum(freq), .groups = "keep") -> sankey.dt0
 
         rbind(sankey.dt, sankey.dt0) -> sankey.dt
-        sankey.dt %>% filter(freq > zeroo/10 | variant == "B") -> sankey.dt
+        sankey.dt %>% rowwise() %>% filter(freq > zeroo/10 | variant == "B") -> sankey.dt
 
         sankey.dt$variant_dealias <- unlist(lapply(as.list(sankey.dt$variant), dealias))
         for ( baseForColor in baseForColorsVariants ){
@@ -1059,7 +1059,7 @@ if(dim(globalFittedData)[1] > 0){
             sankey.dt %>% group_by(variant = "B") %>% summarize(freq = 1-sum(freq), .groups = "keep") -> sankey.dt0
 
             rbind(sankey.dt, sankey.dt0) -> sankey.dt
-            sankey.dt %>% filter(freq > zeroo/10 | variant == "B") -> sankey.dt
+            sankey.dt %>% rowwise() %>% filter(freq > zeroo/10 | variant == "B") -> sankey.dt
 
             sankey.dt$variant_dealias <- unlist(lapply(as.list(sankey.dt$variant), dealias))
             for ( baseForColor in baseForColorsVariants ){
