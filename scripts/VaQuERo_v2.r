@@ -680,7 +680,13 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
         plantFittedData %>% mutate(latest = max(sample_date, na.rm = TRUE)) %>% filter(sample_date == latest) %>% filter(value > 0) %>% summarize(variant = variant, freq = value, .groups = "keep") -> sankey.dt
 
         plantFittedData %>% summarize(latest = max(sample_date, na.rm = TRUE), .groups = "keep") -> sankey_date
-        #sankey.dt %>% mutate(freq = freq/sum(freq)) -> sankey.dt
+
+        sankey.dt  %>% rowwise() %>% mutate(freq = ifelse(freq<0, 0, freq)) -> sankey.dt
+        sankey.dt  %>% rowwise() %>% mutate(freq = ifelse(freq>1, 1, freq)) -> sankey.dt
+        if(sum(sankey.dt$freq)>1){
+          sankey.dt  %>% ungroup() %>% mutate(freq = freq/sum(freq)) -> sankey.dt
+        }
+
         sankey.dt %>% group_by(variant = "B") %>% summarize(freq = 1-sum(freq), .groups = "keep") -> sankey.dt0
         rbind(sankey.dt, sankey.dt0) -> sankey.dt
         sankey.dt %>% filter(freq > zeroo/10 | variant == "B") -> sankey.dt
@@ -951,7 +957,12 @@ if(dim(globalFittedData)[1] > 0){
 
         left_join(x = sankey_all.dt, y = (metaDT %>% dplyr::select(LocationID, connected_people) %>% distinct()), by = "LocationID", multiple = "all") %>% group_by(variant) %>% summarize(freq = weighted.mean(freq, w = connected_people, na.rm = TRUE), .groups = "keep") %>% filter(freq > 0) -> sankey.dt
 
-        #sankey.dt  %>% ungroup() %>% mutate(freq = freq/sum(freq)) -> sankey.dt
+        sankey.dt  %>% rowwise() %>% mutate(freq = ifelse(freq<0, 0, freq)) -> sankey.dt
+        sankey.dt  %>% rowwise() %>% mutate(freq = ifelse(freq>1, 1, freq)) -> sankey.dt
+        if(sum(sankey.dt$freq)>1){
+          sankey.dt  %>% ungroup() %>% mutate(freq = freq/sum(freq)) -> sankey.dt
+        }
+
         sankey.dt  %>% ungroup() -> sankey.dt
         sankey.dt -> occurence.freq
         sankey.dt %>% group_by(variant = "B") %>% summarize(freq = 1-sum(freq), .groups = "keep") -> sankey.dt0
@@ -1038,7 +1049,12 @@ if(dim(globalFittedData)[1] > 0){
 
             left_join(x = sankey_state.dt, y = (metaDT %>% dplyr::select(LocationID, connected_people) %>% distinct() %>% rowwise() %>% mutate(connected_people = ifelse(connected_people < 1, 1, connected_people))), multiple = "all", by = "LocationID") %>% group_by(variant) %>% summarize(freq = weighted.mean(freq, w = connected_people, na.rm = TRUE), .groups = "keep") %>% filter(freq > 0) -> sankey.dt
 
-            #sankey.dt %>% ungroup() %>% mutate(freq = freq/sum(freq)) -> sankey.dt
+            sankey.dt  %>% rowwise() %>% mutate(freq = ifelse(freq<0, 0, freq)) -> sankey.dt
+            sankey.dt  %>% rowwise() %>% mutate(freq = ifelse(freq>1, 1, freq)) -> sankey.dt
+            if(sum(sankey.dt$freq)>1){
+              sankey.dt  %>% ungroup() %>% mutate(freq = freq/sum(freq)) -> sankey.dt
+            }
+
             sankey.dt %>% ungroup() -> sankey.dt
             sankey.dt %>% group_by(variant = "B") %>% summarize(freq = 1-sum(freq), .groups = "keep") -> sankey.dt0
 
