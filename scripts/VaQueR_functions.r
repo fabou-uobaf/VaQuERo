@@ -1,4 +1,26 @@
+
+
+##################
+#generic helper functions
+
 `%notin%` <- Negate(`%in%`)
+
+
+
+
+##################
+#statistics helper functions
+
+# function to calculate shape2 pamerged_samplerameter of a betadistribution, given shape1 and expected value
+betaParamFromMean <- function(mean, shape1){
+    shape2 <- (shape1 - mean*shape1)/mean
+    return(shape2)
+}
+
+
+##################
+#time/date helper functions
+
 leapYear <- function(y){
   if((y %% 4) == 0) {
     if((y %% 100) == 0) {
@@ -21,28 +43,16 @@ decimalDate <- function(x, d){
   return(ddx)
 }
 
-## dealias variants
-dealias <- function(x){
-  base <- strsplit(x, split="\\.")[[1]][1]
 
-  if(!any(names(aliases) == base)){
-    y <- base
-  } else if(nchar(aliases[names(aliases) == base]) == 0){
-    y <- base
-  } else if(grepl("^X", base)){
-    y <- base
-  } else {
-    y <- aliases[names(aliases) == base]
-  }
-  dealiased <- gsub(base, y, x)
-  return(dealiased)
-}
+##################
+#optim optimisation
+
 objfnct <- function(data, par) {
   varN <- length(par)
   rs <-rowSums(as.matrix(data[,2:(varN+1)]) * matrix(rep(par, each = dim(data)[1]), ncol = dim(data)[2]-2))
   re <- (rs - data$fit1)^2
   #re <- (rs - data$value.freq)^2
-  re <- unique(re)
+  #re <- (rs - (data$fit1 + data$value.freq)/2)^2
   sum(re)
 }
 
@@ -62,14 +72,63 @@ starterV <- function(data){
   startV[is.na(startV)] <- prop.rest
   return(startV)
 }
-getColor <- function(n, id, i){
-  colorSet <- colorSets[id]
-  cols <- brewer.pal(9, colorSet)
-  col.palette <- colorRampPalette(c(cols[4], cols[5]), space = "Lab")
-  cols <- col.palette(n)
-  cols[i]
+
+
+##################
+#NLoptr inequality constrainted optimisation
+
+# Objective function
+eval_f <- function(par, data){
+        varN <- length(par)
+        rs <-rowSums(as.matrix(data[,2:(varN+1)]) * matrix(rep(par, each = dim(data)[1]), ncol = dim(data)[2]-2))
+        #re <- (data$fit1 + data$value.freq)/2
+        #re <- data$value.freq
+        re <- data$fit1
+        ev <- (rs-re)^2
+        return(sum(ev))
 }
 
+
+# Inequality constraints
+eval_g_ineq <- function (x, data) {
+        constr <- c(sum(x)-1)
+        return (constr)
+}
+
+# Equality constraints
+eval_g_eq <- function (x, data) {
+        constr <- c(sum(x)-1)
+        return (constr)
+}
+
+opts <- list(
+            "algorithm" = "NLOPT_LN_COBYLA",
+            "maxeval"   = 2000,
+            "tol_constraints_ineq" = 0.0001
+        )
+
+##################
+#Variant name conversion
+
+
+## dealias variants
+dealias <- function(x){
+  base <- strsplit(x, split="\\.")[[1]][1]
+
+  if(!any(names(aliases) == base)){
+    y <- base
+  } else if(nchar(aliases[names(aliases) == base]) == 0){
+    y <- base
+  } else if(grepl("^X", base)){
+    y <- base
+  } else {
+    y <- aliases[names(aliases) == base]
+  }
+  dealiased <- gsub(base, y, x)
+  return(dealiased)
+}
+
+## re-alias dealiased variant names
 realias <- function(x){
   seq <- strsplit(x, split="\\.")[[1]]
   seq <- seq[-length(seq)]
@@ -92,6 +151,41 @@ realias <- function(x){
   } else{
     return(x)
   }
+}
+
+
+# extract from ";"-separated list x all occurences of elements in y
+extract_loi <- function(x, y ){
+  llisty <- unlist(str_split(x, ";"))
+  if(any(llisty %in% y)){
+    treffer <- paste(llisty[llisty %in% y], collapse = ";", sep=";")
+    restl   <- paste(llisty[llisty %notin% y], collapse = ";", sep=";")
+    return(c(treffer))
+  } else{
+    return(c("NA"))
+  }
+}
+extract_rest <- function(x, y ){
+  llisty <- unlist(str_split(x, ";"))
+  if(any(llisty %in% y)){
+    treffer <- paste(llisty[llisty %in% y], collapse = ";", sep=";")
+    restl   <- paste(llisty[llisty %notin% y], collapse = ";", sep=";")
+    return(c(restl))
+  } else{
+    return(c(x))
+  }
+}
+
+
+##################
+#Plotting functions
+
+getColor <- function(n, id, i){
+  colorSet <- colorSets[id]
+  cols <- brewer.pal(9, colorSet)
+  col.palette <- colorRampPalette(c(cols[4], cols[5]), space = "Lab")
+  cols <- col.palette(n)
+  cols[i]
 }
 
 # functions for sankey plot
@@ -145,6 +239,10 @@ makeObs <- function(x, n, ll, p){
 }
 # function to generate TeX table from data.frame
 
+
+##################
+#TeX
+
 makeTexTab <- function(filename, TAB, legendTxt){
     tabheaddef = paste0("\\begin{longtable}{", paste(rep(paste0("p{", 0.8/length(colnames(TAB)), "\\textwidth}"), length(colnames(TAB))), collapse = " | "), "}")
     tabhead    = paste(paste(colnames(TAB), collapse = " & "), "\\\\")
@@ -176,36 +274,12 @@ makeTexTab <- function(filename, TAB, legendTxt){
     write("\\end{footnotesize}", file = filename, append = TRUE)
 }
 
-# function to calculate shape2 pamerged_samplerameter of a betadistribution, given shape1 and expected value
-betaParamFromMean <- function(mean, shape1){
-    shape2 <- (shape1 - mean*shape1)/mean
-    return(shape2)
-}
-
-# extract from ";"-separated list x all occurences of elements in y
-extract_loi <- function(x, y ){
-  llisty <- unlist(str_split(x, ";"))
-  if(any(llisty %in% y)){
-    treffer <- paste(llisty[llisty %in% y], collapse = ";", sep=";")
-    restl   <- paste(llisty[llisty %notin% y], collapse = ";", sep=";")
-    return(c(treffer))
-  } else{
-    return(c("NA"))
-  }
-}
-extract_rest <- function(x, y ){
-  llisty <- unlist(str_split(x, ";"))
-  if(any(llisty %in% y)){
-    treffer <- paste(llisty[llisty %in% y], collapse = ";", sep=";")
-    restl   <- paste(llisty[llisty %notin% y], collapse = ";", sep=";")
-    return(c(restl))
-  } else{
-    return(c(x))
-  }
-}
 
 
-detect_lineages <- function(DT_, timepoint_){
+##################
+#Function to detect lineages in mutation data based on (mutation) counts
+
+detect_lineages <- function(DT_, timepoint_, verbose_ = FALSE){
     ## define variants for which at least minMarker and at least minMarkerRatio are found
     ## define variants which could be detected by unique markers
     ## define variants with at least minUniqMarkerRatio and minUniqMarker of all uniq markers are found
@@ -247,8 +321,10 @@ detect_lineages <- function(DT_, timepoint_){
             ungroup() %>% dplyr::select(Variants, NUCS) %>%
             pull(Variants) %>% unique() -> variants_passed_uniqMarkerCount_filter
 
-        print(paste("LOG: variants detected based on unique markers as following:"))
-        print(variants_passed_uniqMarkerCount_filter)
+        if(verbose_){
+            print(paste("LOG: variants detected based on unique markers as following:"))
+            print(variants_passed_uniqMarkerCount_filter)
+        }
 
         DT_ %>% filter(sample_date_decimal %in% timepoint_) %>%
             filter(!grepl(";",Variants)) %>%
@@ -310,8 +386,10 @@ detect_lineages <- function(DT_, timepoint_){
             summarize(NUCS = paste(NUC, collapse = "; "), .groups = "drop_last") %>%
             ungroup() %>% dplyr::select(Variants, NUCS) %>% distinct() -> variants_passed_uniqMarkerCount_filter
 
-        print(paste("LOG: [", c, "] variants detected based on unique markers after excluding detectable-but-not-detected lineages as following:"))
-        print(variants_passed_uniqMarkerCount_filter %>% filter(Variants %notin% variants_passed_uniqMarkerCount_filter))
+        if(verbose_){
+            print(paste("LOG: [", c, "] variants detected based on unique markers after excluding detectable-but-not-detected lineages as following:"))
+            print(variants_passed_uniqMarkerCount_filter %>% filter(Variants %notin% variants_passed_uniqMarkerCount_filter))
+        }
 
         variants_passed_uniqMarkerCount_filter %>%
             pull(Variants) %>% unique() -> variants_passed_uniqMarkerCount_filter_list
@@ -381,8 +459,10 @@ detect_lineages <- function(DT_, timepoint_){
             mutate(pval = pbeta(value.freq, beta_shape1, betaParamFromMean(mean_overhang, beta_shape1), ncp = 0, lower.tail = FALSE, log.p = FALSE)) %>%
             filter(pval <= pval_th) -> iteratively.added
         if(dim(iteratively.added)[1] > 0){
+            if(verbose_){
                 print(paste("LOG: lineages [rest] detected due to mutations [NUC] observed in excess [value.freq] to uniquely detected lineages [overhang]. only overhang would explain mean_overhang of AF"))
                 print(iteratively.added %>% dplyr::select(rest, overhang, NUC, value.freq, mean_overhang, pval))
+            }
         }
         iteratively.added %>% pull(rest) %>% unique() -> iteratively.overhang.added.lineages
         DT_reduced %>%
@@ -419,4 +499,238 @@ detect_lineages <- function(DT_, timepoint_){
     detectedLineages <- unique(c(detectedLineages, ancestors_to_add))
 
     return(detectedLineages)
+}
+
+##############################################
+## function to detect lineage in mutation data by phylogenetic tree guided stepwise regression
+
+
+getPhyloGuideTree <- function(x){
+  x$variant         -> variant
+  x$variant_dealias -> variant_dealias
+
+  res.dt <- data.table(basis = character(), add1 = character(), status = character())
+
+  for ( i in seq_along(variant_dealias)){
+    descendant <- variant_dealias[i]
+    potential_ancestors <- c()
+    for ( j in seq_along(variant_dealias)){
+      potential_ancestor <- variant_dealias[j]
+      if ( potential_ancestor == descendant){
+        next
+      }
+      if(grepl(paste0("^", potential_ancestor), descendant, fixed = FALSE, perl = TRUE)){
+        potential_ancestors <- c(potential_ancestors, potential_ancestor)
+      }
+    }
+    if(is.null(potential_ancestors)){
+      res.dt <- rbind(res.dt, data.table(basis = "1", add1 = descendant, status = "to_be_considered"))
+    } else{
+      closest_ancestor <- data.table(potential_ancestors = potential_ancestors, descendant = descendant) %>%
+          rowwise() %>% mutate(descendant_level = length(unlist(str_split(pattern="\\.", descendant)))) %>%
+          mutate(ancestors_level = length(unlist(str_split(pattern="\\.", potential_ancestors)))) %>%
+          mutate(diff_level = ancestors_level-descendant_level) %>%
+          group_by(1) %>% filter(diff_level == max(diff_level))
+      res.dt <- rbind(res.dt, data.table(basis = closest_ancestor$potential_ancestors, add1 = descendant, status = "to_be_considered"))
+    }
+  }
+
+  return(res.dt)
+}
+
+
+drop1All.wrapper <- function(dt, all_vars, scope_vars){
+    formula_full <- as.formula(paste0("value.freq ~ ", paste(all_vars, collapse = " + ")))
+    mod0 <- gamlss(formula = formula_full, data = dt, family = "NO", trace = FALSE)
+    droper <- drop1All(object = mod0, scope = scope_vars, print = TRUE, parallel = "no")
+    return(droper)
+}
+
+treeguided_stepwise_regression_dataprep <- function(dt, dm, tree, time, verbose = 0, cores=1, q=.1, f=.02){
+
+    ## remove data point not in current time point
+    dt %>% filter(sample_date_decimal == time) -> dt
+
+    ### transform to avoid 0|1
+    dt %>% mutate(value.freq = asin(sqrt(value.freq))) -> dt
+
+    # remove "OTHERS"
+    dt %>% mutate(Variants = gsub("other;*", "", Variants)) -> dt
+
+    # join desing matrix to data matrix
+    left_join(x = dt, y = dm, by = c("NUC"), multiple = "all") -> dt
+
+    ## remove mutations which are not marker of any of the tree$add1
+    ## keep mutations which are marker of all of the tree$add1
+    if( sum(colnames(dt) %in% tree$add1) > 1){
+      dt[( rowSums(as.data.frame(dt)[,colnames(dt) %in% tree$add1 ]) > 0 & rowSums(as.data.frame(dt)[,colnames(dt) %in% tree$add1 ]) <= length(tree$add1)),] -> dt
+    } else{
+      dt[as.data.frame(dt)[,colnames(dt) %in% tree$add1 ] > 0,] -> dt
+    }
+
+    ## select only essential columns
+    dt[,colnames(dt) %in% c(tree$add1, "value.freq")] -> dt
+
+    return(dt)
+}
+
+
+treeguided_stepwise_regression_backward <- function(dt, dm, tree, time, verbose = 0, cores=1, q=.1, f=.02){
+    cur_included <- c()
+    cidx <- 1
+
+    while( cidx < 100 & any(grepl("consider", tree$status)) ){
+
+        tree %>% filter(status == "to_be_considered") %>% pull(basis) %>% unique() -> to_be_considered_prenodes
+
+        tree <-  tree %>% rowwise() %>% mutate(status = ifelse( (status == "to_be_considered" & (add1 %notin% to_be_considered_prenodes | basis %in% cur_included)), "in_consideration", status))
+
+        ## define regression formula
+        scope_vars <- tree %>% filter(status == "in_consideration") %>% pull(add1) %>% unique()
+        all_vars  <- tree %>% filter(status != "excluded") %>% pull(add1) %>% unique() ##!!
+
+        dropMod <- drop1All.wrapper(dt = dt, all_vars = all_vars, scope_vars = scope_vars)
+
+        mod0_aic  <- dropMod$AIC[1]
+        dropMod_aic  <- dropMod$AIC[2:length(dropMod$AIC)]
+        dropMod_pval <- p.adjust(dropMod$`Pr(Chi)`[2:length(dropMod$`Pr(Chi)`)], method="fdr")
+        droppedVar <- data.table(var = scope_vars, aic = dropMod_aic, pval = dropMod_pval) %>% filter(aic < mod0_aic) %>% filter(pval > q)
+        fixedVar  <- data.table(var = scope_vars, aic = dropMod_aic, pval = dropMod_pval) %>% filter(aic > mod0_aic) %>% filter(pval < q) %>% ungroup() %>% filter(aic == max(aic))
+
+        tree <- tree %>% rowwise() %>% mutate(status = ifelse(add1 %in% droppedVar$var, "excluded", status))
+        tree <- tree %>% rowwise() %>% mutate(status = ifelse(add1 %in% fixedVar$var, "included", status))
+
+        if(verbose){
+            left_join(x = tree, y = data.table(var = scope_vars, aic = dropMod_aic, pval = dropMod_pval), by = c("add1" = "var")) %>% mutate(pval_crit = ifelse(pval<q, "***", "")) %>% mutate(aic_crit = ifelse(aic > mod0_aic, "***", "")) -> log_overview
+            print(paste("LOG [", cidx, "iteration ] | included: ", paste(fixedVar$var, collapse = ",")))
+            print(paste("LOG [", cidx, "iteration ] | excluded: ", paste(droppedVar$var, collapse = ",")))
+            print(paste("LOG [", cidx, "iteration ] | mod0_aic: ", mod0_aic))
+            print(log_overview, n = 100)
+        }
+
+        tree <- tree %>% rowwise() %>% filter(status != "excluded")
+        table(tree$status)
+
+        if(length(fixedVar$var) == 0 & length(droppedVar$var) == 0){
+          break
+        }
+        cidx <- cidx+1
+    }
+
+    cur_included <- tree %>% filter(status == "included") %>% pull(add1) %>% unique()
+
+    formula_full <- as.formula(paste( "value.freq", "~", paste(cur_included, collapse=" + ")))
+    for (method in c("NO")){
+        mod1 <- tryCatch(gamlss(formula_full, data = dt, family = method, trace = FALSE),error=function(e) e, warning=function(w) w)
+        if(!any(grepl("Error|Warning", mod1))){
+            if(verbose){
+               print(paste("LOG: gamlss formula_full:", method, "successful"))
+            }
+            break
+        }
+    }
+    if(any(grepl("Error|Warning", mod1))){
+      print(paste("WARNING: no successful regression with any of the tried methods: [", cidx, "iteration ]", methods))
+      return(cur_included)
+    }
+    predicted_freqs_fullModel <- sin(coef(mod1)[names(coef(mod1)) != "(Intercept)"] + coef(mod1)["(Intercept)"])^2
+    cur_included <- names(predicted_freqs_fullModel[predicted_freqs_fullModel > f])
+
+    return(cur_included)
+
+}
+
+stepwise_regression <- function(data, design_matrix, voi, direction = "both", time, cores=1, verbose=0){
+
+    methods <- c("NO")
+
+    if(any("Variants" == colnames(data))){
+        ## remove data point not in current time point
+        data %>% filter(sample_date_decimal == time) -> data
+
+        ### transform to avoid 1
+        data %>% mutate(value.freq = asin(sqrt(value.freq))) -> data
+
+        # remove "OTHERS"
+        data %>% mutate(Variants = gsub("other;*", "", Variants)) -> data
+
+        # join desing matrix to data matrix
+        left_join(x = data, y = design_matrix, by = c("NUC"), multiple = "all") -> data
+
+        ## remove mutations which are not marker of any of the voi
+        ## keep mutations which are marker of all of the voi
+        if( sum(colnames(data) %in% voi) > 1){
+          data[( rowSums(as.data.frame(data)[,colnames(data) %in% voi ]) > 0 & rowSums(as.data.frame(data)[,colnames(data) %in% voi ]) <= length(voi)),] -> data
+        } else{
+          data[as.data.frame(data)[,colnames(data) %in% voi ] > 0,] -> data
+        }
+
+        ## select only essential columns
+        data[,colnames(data) %in% c(voi, "value.freq")] -> data
+    }
+
+    ## define basic formula
+    if(direction == "forward"){
+      formula_basis <- as.formula(paste("value.freq", "~", "1"))
+    } else{
+      formula_basis <- as.formula(paste("value.freq", "~", paste(unique(colnames(data)[colnames(data) != "value.freq"]), collapse = " + ")))
+    }
+
+    ## run basic model
+    for (method in methods){
+        mod0 <- tryCatch(gamlss(formula = formula_basis, data = data, family = method, trace = FALSE),error=function(e) e, warning=function(w) w)
+        if(!any(grepl("Error|Warning", mod0))){
+            if(verbose){
+               print(paste("LOG: gamlss formula_basis: <", method, "> successful"))
+            }
+            break
+        }
+    }
+
+    ## run stepwise regression
+    scope_lower <- as.formula(paste("~", 1))
+    scope_upper <- as.formula(paste("~", paste(unique(colnames(data)[colnames(data) != "value.freq"]), collapse = " + ")))
+    mod1.log <- capture.output(tryCatch(mod1 <- stepGAICAll.B(mod0, scope=list(lower=scope_lower, upper=scope_upper), what="mu", direction = direction, trace = FALSE),error=function(e) e, warning=function(w) w))
+
+    if(exists("mod1.log") & any(grepl("Model with term", mod1.log))){
+      if(any(grepl(paste(voi, collapse = "|"), mod1.log))){
+          ignored_terms <- c()
+          for(voi_ in voi){
+             if(any(grepl(paste("", voi_, ""), mod1.log, fixed = TRUE))){
+                ignored_terms <- c(ignored_terms, voi_)
+             }
+          }
+          voi <- voi[voi %notin% ignored_terms]
+          data[,colnames(data) %in% c(voi, "value.freq")] -> data
+          design_matrix[,colnames(data) %in% c(voi, "NUC")] -> design_matrix
+
+          print(paste("WARNING: gamlss stepGAICAll.B:", method, "failed; retry without following term(s): ", paste(collapse=", ", ignored_terms)))
+
+          included <- stepwise_regression(data = data, design_matrix = design_matrix, voi = voi, direction = direction, time = time, cores=cores, verbose=verbose)
+          return(included)
+      }
+    }
+
+
+    if(exists("mod1.log") & any(grepl("Error|Warning", mod1.log))){
+      if(verbose){
+        print(paste("LOG: gamlss stepGAICAll.B:", method, "failed; return NA"))
+      }
+      return(NA)
+    }
+
+    if(!exists("mod1")){
+      print(paste("WARNING: gamlss stepGAICAll.B:", method, "failed; return NA"))
+      return(NA)
+    }
+
+
+    ## deduce coefficients and select coefficients > 0 z-score
+    deduded_freqs <- coef(mod1)[names(coef(mod1)) != "(Intercept)"] + coef(mod1)["(Intercept)"]
+    deduded_freqs_zscore <- (deduded_freqs - mean(deduded_freqs))/sd(deduded_freqs)
+    included_freqs <- deduded_freqs[deduded_freqs_zscore > .0]
+    included <- names(included_freqs)
+
+    return(included)
+
 }

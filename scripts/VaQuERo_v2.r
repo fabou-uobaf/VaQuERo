@@ -22,6 +22,9 @@ suppressPackageStartupMessages(library("RColorBrewer"))
 suppressPackageStartupMessages(library("ggsankey"))
 suppressPackageStartupMessages(library("cowplot"))
 suppressPackageStartupMessages(library("viridis"))
+suppressPackageStartupMessages(library("boot"))
+suppressPackageStartupMessages(library("nloptr"))
+
 
 timestamp()
 
@@ -69,6 +72,10 @@ option_list = list(
               help="How old (in days) most recent sample might be to be still considered in overview maps [default %default]", metavar="character"),
   make_option(c("--plottp"), type="integer", default=3,
               help="Produce timecourse plots only if more than this timepoints are available [default %default]", metavar="character"),
+  make_option(c("--detectionmethod"), type="character", default="mutationcount",
+              help="Select method for variant detection. Implemented options are <mutationcount>, <stepwiseregression> [default %default]", metavar="character"),
+  make_option(c("--optimization"), type="character", default="optim",
+              help="Select method for variant frequency optimization. Implemented options are <optim>, <NLoptr>, <nooptimisation> [default %default]", metavar="character"),
   make_option(c("--minuniqmark"), type="integer", default=1,
               help="Minimal absolute number of uniq markers that variant is considered detected [default %default]", metavar="character"),
   make_option(c("--minuniqmarkfrac"), type="double", default=0.4,
@@ -87,13 +94,20 @@ option_list = list(
               help="List of variants which should be plotted at the bottom axis. List separated by semicolon [default %default]", metavar="character"),
   make_option(c("--colorBase"), type="character", default="B.1.617.2,BA.1,BA.2,BA.4,BA.5",
               help="List of variants whos decendences should be grouped by color in plots. Maximal 5 variants. List separated by semicolon [default %default]", metavar="character"),
-
+  make_option(c("--ncores"), type="double", default="1",
+              help="Set number of cores for parallelised analysis [default %default]", metavar="character"),
+  make_option(c("--verbose"), type="logical", default="FALSE",
+              help="Toggle to produce more verbose output [default %default]", metavar="character"),
   make_option(c("--debug"), type="logical", default="FALSE",
               help="Toggle to use run with provided example data [default %default]", metavar="character")
 );
 opt_parser = OptionParser(option_list=option_list);
 opt = parse_args(opt_parser);
 
+## set opt$verbose = TRUE if opt$debug = TRUE
+if(opt$debug == TRUE){
+  opt$verbose = TRUE
+}
 
 
 #####################################################
@@ -102,11 +116,14 @@ if(opt$debug){
     opt$dir = "dev_output"
     opt$metadata = "data/metaData_general_short.csv"
     opt$data="data/mutationData_DB_NationMonitoringSites.tsv.gz"
-    opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2023-05-23_Austria.csv"
+    #opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2023-05-23_Austria.csv"
+    opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2023-06-05_Austria.csv"
     opt$pmarker="VaQuERo/resources/mutations_problematic_vss1_v3.csv"
     opt$smarker="VaQuERo/resources/mutations_special_2022-12-21.csv"
     opt$zero=0.01
     opt$depth=50
+    opt$detectionmethod = "mutationcount"
+    opt$optimization = "optim"
     opt$minuniqmark=1
     opt$minuniqmarkfrac=0.5
     opt$minqmark=5
@@ -124,7 +141,6 @@ if(opt$debug){
 ## define functions
 options(warn=-1)
 source("VaQuERo/scripts/VaQueR_functions.r")
-
 
 ## print parameter to Log
 
@@ -255,13 +271,6 @@ unique(metaDT$BSF_sample_name) -> sampleoi
 ## check if all voi can be detected in principle given used parameters
 moi %>% dplyr::select("Variants") %>% mutate(Variants = strsplit(as.character(Variants), ";")) %>% unnest() %>% distinct() %>% filter(Variants != "other")-> variants_total
 moi %>% filter(!grepl(";", Variants)) %>% group_by(Variants) %>% summarize(n = n(),  .groups = "keep") %>% filter(n >= minUniqMarker) -> variants_w_enough_uniq
-
-variants_total$Variants[variants_total$Variants %notin% variants_w_enough_uniq$Variants] -> variants_futile
-if(length(variants_futile) > 0){
-  for (c in seq_along(variants_futile)){
-    print(paste("Warning(s):", variants_futile[c], "has less than", minUniqMarker, "unique markers defined."))
-  }
-}
 
 # check for same date, same location issue
 # introduce artifical decimal date
@@ -413,6 +422,12 @@ if(opt$inputformat == "sparse"){
 }
 
 
+## add variant of interests to table
+moi %>% rowwise() %>% mutate(ID = list(unique(sewage_samps.dt$ID))) %>% unnest(cols=ID) -> moi_expanded_by_sampleID
+full_join(x=sewage_samps.dt, y=moi_expanded_by_sampleID, by = c("ID", "POS"="Postion", "REF", "ALT", "NUC"), multiple = "all") -> sewage_samps.dt
+sewage_samps.dt %>% rowwise() %>% mutate(value.freq = ifelse(is.na(value.freq), 0, value.freq)) -> sewage_samps.dt
+
+
 ## add location to sewage_samps.dt
 sewage_samps.dt %>% mutate(RNA_ID_int = gsub("_S\\d+$","", ID)) -> sewage_samps.dt
 metaDT %>% filter(! is.na(LocationID) ) %>% dplyr::select("RNA_ID_int", "LocationID", "LocationName") -> sample_location
@@ -425,9 +440,6 @@ sewage_samps.dt %>% filter(ID %in% sample_includeInReport$BSF_sample_name) -> se
 ## remove samples with >N_in_Consensus_filter N
 metaDT  %>% filter(N_in_Consensus < N_in_Consensus_filter) %>% dplyr::select("RNA_ID_int", "BSF_sample_name") -> passed_samples
 sewage_samps.dt <- sewage_samps.dt[sewage_samps.dt$ID %in% passed_samples$BSF_sample_name,]
-
-## add variant of interests to table
-left_join(x=sewage_samps.dt, y=moi, by = c("POS"="Postion", "REF", "ALT", "NUC"), multiple = "all") -> sewage_samps.dt
 
 ## add sampling date
 metaDT %>% dplyr::select("RNA_ID_int", "sample_date", "sample_date_decimal") -> sample_dates
@@ -451,7 +463,7 @@ timestamp()
 for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
     roi = unique(sewage_samps.dt$LocationID)[r]
     roiname = sewage_samps.dt %>% filter(LocationID == roi ) %>% pull(LocationName) %>% unique()
-    print(paste("PROGRESS:", r, roiname, roi))
+    print(paste("PROGRESS: start with wwtp", r, roiname, roi))
 
     ### define data collector
     plantFittedData <- data.table(variant = character(), LocationID = character(), LocationName  = character(), sample_id = character(), sample_date = character(), value = numeric() )
@@ -472,19 +484,57 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 
     specifiedLineagesTimecourse <- moi_marker_count$Variants
 
-    ### FROM HERE LOOP OVER TIME POINTS
+
+    ### FROM HERE LOOP OVER TIME POINTS TWICE
     sdt %>% dplyr::select(sample_date_decimal, sample_date) %>% distinct() -> timePointsCombinations
     timePoints <- timePointsCombinations$sample_date_decimal[order(timePointsCombinations$sample_date_decimal)]
     timePoints_classic <- timePointsCombinations$sample_date[order(timePointsCombinations$sample_date_decimal)]
 
+    ## detect lineage per timepoint
+    print(paste0("PROGRESS: start variant detection for all timePoints "))
+    specifiedLineagesPerTimePoints <- list()
+    data.table(variant = unique(moi_marker_count$Variants)) %>% rowwise() %>% mutate(variant_dealias= dealias(variant)) -> data_for_phyloTree
+    getPhyloGuideTree(data_for_phyloTree) -> phylo_guided_steps
+    phylo_guided_steps %>% rowwise() %>% mutate(basis = realias(basis), add1 = realias(add1)) -> phylo_guided_steps
+
+    if (length(timePoints) >= timeStart){
+        for (t in timeStart:length(timePoints)) {
+            timepoint <- timePoints[t]
+            timepoint_classic <- timePoints_classic[t]
+            if(opt$verbose){
+              print(paste("LOG:", t, timepoint_classic))
+            }
+            sdt %>% filter(sample_date_decimal %in% c(timepoint)) -> ssdt
+
+            starttime <- Sys.time()
+            if(opt$detectionmethod == "stepwiseregression"){
+              dt <- treeguided_stepwise_regression_dataprep(dt = ssdt, dm = mmat, tree = phylo_guided_steps, time = timepoint, cores = opt$ncores, verbose = opt$verbose, f = 0.02, q = .1)
+              specifiedLineagesPerTimePoint <- treeguided_stepwise_regression_backward(dt = dt, dm = mmat, tree = phylo_guided_steps, time = timepoint, cores = opt$ncores, verbose = opt$verbose, f = 0.02, q = .1)
+              rm(dt)
+            } else{
+              specifiedLineagesPerTimePoint <- detect_lineages(DT_ = ssdt %>% filter(value.freq > zeroo), timepoint_ = timepoint, verbose_ = opt$verbose)
+            }
+            endtime <- Sys.time()
+            if(opt$verbose){
+              print(paste0("DEBUG: lineage detection per time point for with ", opt$detectionmethod," for ", timepoint_classic, " took: ", as.numeric(endtime-starttime), " seconds"))
+            }
+            rm(starttime, endtime)
+            specifiedLineagesPerTimePoints[[as.character(timepoint)]] <- specifiedLineagesPerTimePoint
+        }
+    }
+    print(paste0("PROGRESS: finished variant detection for all timePoints "))
+
+    print(paste0("PROGRESS: start variant quantification for all timePoints "))
     if (length(timePoints) >= timeStart){
           for (t in timeStart:length(timePoints)) {
             timepoint <- timePoints[t]
+            ref_timepoint <- timepoint
             timepoint_classic <- timePoints_classic[t]
+            ref_timepoint_classic <- timepoint_classic
             timepoint_day <- decimalDate(timepoint_classic,0)
             T <- which(timePoints_classic == timepoint_classic)
             timepoint <- timePoints[T]
-            print(paste("PROGRESS:", roiname, "@", timepoint_classic, "(", signif(timepoint, digits = 10), ")"))
+            print(paste("PROGRESS:", roiname, paste0("(tp: ", t, ")"), "@", paste(ref_timepoint_classic, collapse=", "), "(", paste(signif(timepoint, digits = 10), collapse=", "), ")"))
 
             lowerDiff <- ifelse(min(T) > timeLag, timeLag, min(T)-1)
             upperDiff <- ifelse((max(T)+timeLag) <= length(timePoints), timeLag, length(timePoints)-max(T))
@@ -502,179 +552,229 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 
             sdt %>% filter(sample_date %in% c(timepoint_classic, allTimepoints_classic) ) -> ssdt
 
-            # detect lineage in current center timepoint
-            specifiedLineages <- detect_lineages(DT_ = ssdt, timepoint_ = timepoint)
+            # retrieve detected lineage
+            {
+                specifiedLineages <- specifiedLineagesPerTimePoints[[as.character(ref_timepoint)]]
 
-            # check if current timepoint is squeezed between two timepoint
-            # detect lineage in neighboring timepoints
-            # add lineages detected in both to specifiedLineages
-            # or if last time point, check which lineages are detecten in both previous two timePoints
-            # add them
-            prev_timepoints <- allTimepoints[allTimepoints < timepoint]
-            aft_timepoints <- allTimepoints[allTimepoints > timepoint]
-            if(length(prev_timepoints)>0 & length(aft_timepoints)>0){
-              print("LOG: augment variant detection be previous and following time points")
-              prev_specifiedLineages <- detect_lineages(DT_ = ssdt, timepoint_ = max(prev_timepoints))
-              aft_specifiedLineages <- detect_lineages(DT_ = ssdt, timepoint_ = min(aft_timepoints))
-              specifiedLineages <- unique(c(specifiedLineages, prev_specifiedLineages[prev_specifiedLineages %in% aft_specifiedLineages]))
-            } else if(timepoint == max(timePoints) & length(prev_timepoints)>=2){
-              print("LOG: augment variant detection be the two previous time points")
-              precursor_specifiedLineages <- detect_lineages(DT_ = ssdt, timepoint_ = sort(prev_timepoints, decreasing=TRUE)[1])
-              preprecursor_specifiedLineages <- detect_lineages(DT_ = ssdt, timepoint_ = sort(prev_timepoints, decreasing=TRUE)[2])
-              specifiedLineages <- unique(c(specifiedLineages, precursor_specifiedLineages[precursor_specifiedLineages %in% preprecursor_specifiedLineages]))
+                # check if current timepoint is squeezed between two timepoint
+                # detect lineage in neighboring timepoints
+                # add lineages detected in both to specifiedLineages
+                # or if last time point, check which lineages are detecten in both previous two timePoints
+                # add them
+                prev_timepoints <- allTimepoints[allTimepoints < timepoint]
+                aft_timepoints <- allTimepoints[allTimepoints > timepoint]
+                if(length(prev_timepoints)>0 & length(aft_timepoints)>0){
+                  if(opt$verbose){
+                    print("  LOG: augment variant detection be previous and following time points")
+                  }
+                  prev_specifiedLineages <- specifiedLineagesPerTimePoints[[as.character(max(prev_timepoints))]]
+                  aft_specifiedLineages <- specifiedLineagesPerTimePoints[[as.character(min(aft_timepoints))]]
+                  specifiedLineages <- unique(c(specifiedLineages, prev_specifiedLineages[prev_specifiedLineages %in% aft_specifiedLineages]))
+                } else if(timepoint_classic == max(timePoints_classic) & length(prev_timepoints)>=2){
+                  if(opt$verbose){
+                    print("  LOG: augment variant detection be the two previous time points")
+                  }
+                  precursor_specifiedLineages <- specifiedLineagesPerTimePoints[[as.character(min(sort(prev_timepoints, decreasing=TRUE)[1]))]]
+                  preprecursor_specifiedLineages <- specifiedLineagesPerTimePoints[[as.character(min(sort(prev_timepoints, decreasing=TRUE)[2]))]]
+                  specifiedLineages <- unique(c(specifiedLineages, precursor_specifiedLineages[precursor_specifiedLineages %in% preprecursor_specifiedLineages]))
+                }
+            }
+
+            if(opt$verbose){
+              print(paste("LOG: (", t, ")", timepoint_classic, roiname, paste("(",length(allTimepoints[allTimepoints %in% timepoint]), "same day;", "+", length(allTimepoints[allTimepoints %notin% timepoint]), "neighboring TP;", length(specifiedLineages), "detected lineages)")))
+              print(paste0("LOG: detected lineages (", length(specifiedLineages), "): ", paste(specifiedLineages, sep = ", ", collapse = ", ")))
+            }
+
+            if( length(specifiedLineages) == 0){
+              print(paste("    WARNING:", "NOTHIN FOR REGRESSION AT", timePoints[t], "since number of lineages detected ==", length(specifiedLineages), "; ... ignore TIMEPOINT"))
+              next;
+            }
+
+            if(opt$verbose){
+              print(paste("LOG:", "PERFORM REGRESSION WITH", length(specifiedLineages), "LINEAGES"))
+            }
+
+            # join model matrix columns to measured variables
+            smmat <- as.data.frame(mmat)[,which(colnames(mmat) %in% c("NUC", specifiedLineages))]
+            if (length(specifiedLineages) > 1){
+              smmat$groupflag <- apply( as.data.frame(mmat)[,which(colnames(mmat) %in% c(specifiedLineages))], 1 , paste , collapse = "" )
+            } else{
+              smmat$groupflag <-  as.data.frame(mmat)[,which(colnames(mmat) %in% c(specifiedLineages))]
+            }
+            left_join(x = ssdt, y = smmat, by = c("NUC"), multiple = "all") -> ssdt
+            ssdt %>% ungroup() %>% mutate(groupflag = paste(groupflag, ifelse(grepl(";", Variants), "M", "U"), sample_date_decimal)) -> ssdt
+
+            ## remove mutations which are not marker of any of the specifiedLineages
+            ## keep mutations which are marker of all of the specifiedLineages
+            if( sum(colnames(ssdt) %in% specifiedLineages) > 1){
+              ssdt[( rowSums(as.data.frame(ssdt)[,colnames(ssdt) %in% specifiedLineages ]) > 0 & rowSums(as.data.frame(ssdt)[,colnames(ssdt) %in% specifiedLineages ]) <= length(specifiedLineages)),] -> ssdt
+              ssdt[( rowSums(as.data.frame(ssdt)[,colnames(ssdt) %in% unique(specifiedLineages, highlightedVariants) ]) > 0 & rowSums(as.data.frame(ssdt)[,colnames(ssdt) %in% unique(specifiedLineages, highlightedVariants) ]) <= length(unique(specifiedLineages, highlightedVariants))),] -> detour4log
+            } else{
+              ssdt[as.data.frame(ssdt)[,colnames(ssdt) %in% specifiedLineages ] > 0,] -> ssdt
+              ssdt[as.data.frame(ssdt)[,colnames(ssdt) %in% unique(specifiedLineages, highlightedVariants) ] > 0,] -> detour4log
+            }
+
+            ## remove zeros and low depth
+            ssdt %>% filter(value.freq > 0)  %>% filter(value.depth > min.depth) -> ssdt
+
+            ## transform to avoid 1
+            ssdt %>% mutate(value.freq = (value.freq * (value.depth-1) + 0.5)/value.depth) -> ssdt
+
+            # remove "OTHERS"
+            ssdt %>% mutate(Variants = gsub("other;*", "", Variants)) -> ssdt
+
+            ## remove outlier per group flag
+              ## remove if outside 1.5*IQR+/-0.05
+            dim(ssdt)[1] -> mutationsBeforeOutlierRemoval
+              ssdt %>% group_by(groupflag) %>% mutate(iqr = IQR(value.freq)) %>% mutate(upperbond = quantile(value.freq, 0.75) + 1.5 * iqr + 0.05, lowerbond = quantile(value.freq, 0.25) - 1.5 * iqr - 0.05) %>% filter((value.freq <= upperbond ) & (value.freq >= lowerbond)) %>% ungroup() %>% dplyr::select(-"groupflag", -"iqr", -"upperbond", -"lowerbond") -> ssdt
+            dim(ssdt)[1] -> mutationsAfterOutlierRemoval
+            if(mutationsAfterOutlierRemoval < mutationsBeforeOutlierRemoval & opt$verbose){
+              print(paste("  LOG: ", mutationsBeforeOutlierRemoval-mutationsAfterOutlierRemoval, "mutations ignored since classified as outlier", "(", mutationsAfterOutlierRemoval, " remaining from", mutationsBeforeOutlierRemoval, ")"))
+            }
+
+            ## generate regression formula
+            if ( length(specifiedLineages) > 1 ){
+              formula <- as.formula(paste("value.freq", paste(specifiedLineages, collapse='+'), sep = " ~" ))
+            } else{
+              ssdt %>% filter(grepl(specifiedLineages, Variants)) -> ssdt
+              formula <- as.formula(paste("value.freq", "1", sep = " ~" ))
+            }
+
+            ## check if the current timepoint is still represented in the data
+            ssdt %>% filter(sample_date_decimal %in% timepoint) -> ssdt2
+            if(dim(ssdt2)[1] == 0){
+              print(paste("  WARNING: since no mutations found in timepoint of interest (", timepoint, ") regression will be skipped"))
+              next;
+            }
+
+            ## add weight (1/(dayDiff+1)*log10(sequencingdepth)*sqrt(1/number_of_variants)*1/mutationLength
+            ssdt %>% rowwise() %>% mutate(varweight = sqrt(1/(1+str_count(Variants, ";")))) %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(mutationweight = 1/nchar(gsub("\\d", "", NUC))/2) %>% mutate(weight = 1*timeweight*varweight*mutationweight) -> ssdt
+            detour4log %>% rowwise() %>% mutate(varweight = sqrt(1/(1+str_count(Variants, ";")))) %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(weight = timeweight*varweight) %>% filter(!grepl(";.+;", Variants)) -> detour4log
+            detour4log %>% rowwise() %>% mutate(varweight = sqrt(1/(1+str_count(Variants, ";")))) %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(weight = timeweight*varweight) %>% dplyr::select(sample_date, NUC, value.freq, weight, all_of(specifiedLineages)) -> detour4log_printer
+            detour4log_printer %>% rowwise() %>% mutate(value.freq = signif(value.freq, digits = 2), weight = signif(weight, digits = 2)) -> detour4log_printer
+            #print(as.data.frame(detour4log_printer))
+            detour4log %>% arrange(Variants) -> detour4log
+            if(opt$verbose){
+              print(data.frame(date = detour4log$sample_date, Tweight = round(detour4log$timeweight, digits = 2), depth = detour4log$value.depth, weight = round(detour4log$weight, digits = 2), value = round(detour4log$value.freq, digits = 2), variants = detour4log$Variants, mutation = detour4log$NUC))
+            }
+            rm(detour4log, detour4log_printer)
+
+            ## make regression
+            method = "BE"
+            fit1 <- tryCatch(gamlss(formula, data = ssdt, family = BE, trace = FALSE, weights = weight),error=function(e) e, warning=function(w) w)
+            if(any(grepl("warning|error", class(fit1)))){
+              print(paste("  WARNING: BE did not converge at", timePoints[t], " .. skipped"))
+              next; ## remove if unconverged BE results should be used
             }
 
 
+            # predict response
+            ssdt$fit1 <- predict(fit1, type="response", what="mu")
 
-            print(paste("LOG: (", t, ")", timepoint_classic, roiname, paste("(",length(allTimepoints[allTimepoints %in% timepoint]), "same day;", "+", length(allTimepoints[allTimepoints %notin% timepoint]), "neighboring TP;", length(specifiedLineages), "detected lineages)")))
-            print(paste0("LOG: detected lineages (", length(specifiedLineages), "): ", paste(specifiedLineages, sep = ", ", collapse = ", ")))
+            # extract coefficients
+            coefFit <- inv.logit(coef(fit1) + coef(fit1)["(Intercept)"])
+            coefFit[is.na(coefFit)] <- 0
+            data.table(Variants = names(coefFit), fit1 = coefFit) %>% filter(Variants %in% specifiedLineages) -> coefFit.dt
 
-            if( length(specifiedLineages) > 0){
-              print(paste("LOG:", "PERFORM REGRESSION WITH", length(specifiedLineages), "LINEAGES"))
 
-              # join model matrix columns to measured variables
-              smmat <- as.data.frame(mmat)[,which(colnames(mmat) %in% c("NUC", specifiedLineages))]
-              if (length(specifiedLineages) > 1){
-                smmat$groupflag <- apply( as.data.frame(mmat)[,which(colnames(mmat) %in% c(specifiedLineages))], 1 , paste , collapse = "" )
+            if(opt$optimization == "optim"){
+              ssdt %>% filter(sample_date == timepoint_classic) %>% dplyr::select(value.freq, all_of(specifiedLineages), fit1) -> ssdt_toOp
+              if(length(coefFit.dt$fit1) > 0 & all(colnames(ssdt_toOp)[2:(1+length(coefFit.dt$Variants))] == coefFit.dt$Variants)){
+                startValues <- coefFit.dt$fit1
+                names(startValues) <- coefFit.dt$Variants
               } else{
-                smmat$groupflag <-  as.data.frame(mmat)[,which(colnames(mmat) %in% c(specifiedLineages))]
+                startValues <- starterV(ssdt_toOp)
+                names(startValues) <- colnames(ssdt_toOp)[colnames(ssdt_toOp) %in% specifiedLineages]
               }
-              left_join(x = ssdt, y = smmat, by = c("NUC"), multiple = "all") -> ssdt
-              ssdt %>% ungroup() %>% mutate(groupflag = paste(groupflag, ifelse(grepl(";", Variants), "M", "U"), sample_date_decimal)) -> ssdt
-
-              ## remove mutations which are not marker of any of the specifiedLineages
-              ## keep mutations which are marker of all of the specifiedLineages
-              if( sum(colnames(ssdt) %in% specifiedLineages) > 1){
-                ssdt[( rowSums(as.data.frame(ssdt)[,colnames(ssdt) %in% specifiedLineages ]) > 0 & rowSums(as.data.frame(ssdt)[,colnames(ssdt) %in% specifiedLineages ]) <= length(specifiedLineages)),] -> ssdt
-                ssdt[( rowSums(as.data.frame(ssdt)[,colnames(ssdt) %in% unique(specifiedLineages, highlightedVariants) ]) > 0 & rowSums(as.data.frame(ssdt)[,colnames(ssdt) %in% unique(specifiedLineages, highlightedVariants) ]) <= length(unique(specifiedLineages, highlightedVariants))),] -> detour4log
-              } else{
-                ssdt[as.data.frame(ssdt)[,colnames(ssdt) %in% specifiedLineages ] > 0,] -> ssdt
-                ssdt[as.data.frame(ssdt)[,colnames(ssdt) %in% unique(specifiedLineages, highlightedVariants) ] > 0,] -> detour4log
-              }
-
-              ## remove zeros and low depth
-              ssdt %>% filter(value.freq > 0)  %>% filter(value.depth > min.depth) -> ssdt
-
-              ## transform to avoid 1
-              ssdt %>% mutate(value.freq = (value.freq * (value.depth-1) + 0.5)/value.depth) -> ssdt
-
-              # remove "OTHERS"
-              ssdt %>% mutate(Variants = gsub("other;*", "", Variants)) -> ssdt
-
-              ## remove outlier per group flag
-              ## remove if outside 1.5*IQR+/-0.05
-              dim(ssdt)[1] -> mutationsBeforeOutlierRemoval
-              ssdt %>% group_by(groupflag) %>% mutate(iqr = IQR(value.freq)) %>% mutate(upperbond = quantile(value.freq, 0.75) + 1.5 * iqr + 0.05, lowerbond = quantile(value.freq, 0.25) - 1.5 * iqr - 0.05) %>% filter((value.freq <= upperbond ) & (value.freq >= lowerbond)) %>% ungroup() %>% dplyr::select(-"groupflag", -"iqr", -"upperbond", -"lowerbond") -> ssdt
-              dim(ssdt)[1] -> mutationsAfterOutlierRemoval
-              if(mutationsAfterOutlierRemoval < mutationsBeforeOutlierRemoval){
-                print(paste("LOG: ", mutationsBeforeOutlierRemoval-mutationsAfterOutlierRemoval, "mutations ignored since classified as outlier", "(", mutationsAfterOutlierRemoval, " remaining from", mutationsBeforeOutlierRemoval, ")"))
-              }
-
-              ## generate regression formula
-              if ( length(specifiedLineages) > 1 ){
-                formula <- as.formula(paste("value.freq", paste(specifiedLineages, collapse='+'), sep = " ~" ))
-              } else{
-                ssdt %>% filter(grepl(specifiedLineages, Variants)) -> ssdt
-                formula <- as.formula(paste("value.freq", "1", sep = " ~" ))
-              }
-
-              ## check if the current timepoint is still represented in the data
-              ssdt %>% filter(sample_date_decimal %in% timepoint) -> ssdt2
-              if(dim(ssdt2)[1] == 0){
-                print(paste("LOG: since no mutations found in timepoint of interest (", timepoint, ") regression will be skipped"))
-                next;
-              }
-
-              ## add weight (1/(dayDiff+1)*log10(sequencingdepth)*sqrt(1/number_of_variants)*1/mutationLength
-              ssdt %>% rowwise() %>% mutate(varweight = sqrt(1/(1+str_count(Variants, ";")))) %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(mutationweight = 1/nchar(gsub("\\d", "", NUC))/2) %>% mutate(weight = 1*timeweight*varweight*mutationweight) -> ssdt
-              detour4log %>% rowwise() %>% mutate(varweight = sqrt(1/(1+str_count(Variants, ";")))) %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(weight = timeweight*varweight) %>% filter(!grepl(";.+;", Variants)) -> detour4log
-              detour4log %>% rowwise() %>% mutate(varweight = sqrt(1/(1+str_count(Variants, ";")))) %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(weight = timeweight*varweight) %>% dplyr::select(sample_date, NUC, value.freq, weight, all_of(specifiedLineages)) -> detour4log_printer
-              detour4log_printer %>% rowwise() %>% mutate(value.freq = signif(value.freq, digits = 2), weight = signif(weight, digits = 2)) -> detour4log_printer
-              #print(as.data.frame(detour4log_printer))
-              detour4log %>% arrange(Variants) -> detour4log
-              print(data.frame(date = detour4log$sample_date, Tweight = round(detour4log$timeweight, digits = 2), depth = detour4log$value.depth, weight = round(detour4log$weight, digits = 2), value = round(detour4log$value.freq, digits = 2), variants = detour4log$Variants, mutation = detour4log$NUC))
-              rm(detour4log, detour4log_printer)
-
-              ## make regression
-              if(0){
-                method = "SIMPLEX"
-                fit1 <- tryCatch(gamlss(formula, data = ssdt, family = SIMPLEX, trace = FALSE, weights = weight),error=function(e) e, warning=function(w) w)
-                if(any(grepl("warning|error", class(fit1)))){
-                  method = "BE"
-                  fit1 <- tryCatch(gamlss(formula, data = ssdt, family = BE, trace = FALSE, weights = weight),error=function(e) e, warning=function(w) w)
-                  print(paste("LOG: fall back to BE"))
-                  if(any(grepl("warning|error", class(fit1)))){
-                    print(paste("LOG: BE did not converge either at", timePoints[t], " .. skipped"))
-                    next; ## remove if unconverged BE results should be used
-                  }
-                }
-              }
-              if(1){
-                method = "BE"
-                fit1 <- tryCatch(gamlss(formula, data = ssdt, family = BE, trace = FALSE, weights = weight),error=function(e) e, warning=function(w) w)
-                print(paste("LOG: fall back to BE"))
-                if(any(grepl("warning|error", class(fit1)))){
-                  print(paste("LOG: BE did not converge either at", timePoints[t], " .. skipped"))
-                  next; ## remove if unconverged BE results should be used
-                }
-              }
-
-
-              ssdt$fit1 <- predict(fit1, type="response", what="mu")
-
-              ssdt %>% dplyr::select(value.freq, all_of(specifiedLineages), fit1) -> ssdt_toOp
-              startValues <- starterV(ssdt_toOp)
 
               O = 5
               matrix(rep(0, length(specifiedLineages)*O), O) -> optimizedN
               for (o in 1:O){
-                optim(par=startValues, fn=objfnct, data=ssdt_toOp, method = "L-BFGS-B", lower = 0, upper = 1) -> optimized
-                optimizedN[o,] <- optimized$par
+                optimized <- tryCatch(optim(par=startValues, fn=objfnct, data=ssdt_toOp, method = "L-BFGS-B", lower = 0, upper = 1),error=function(e) e, warning=function(w) w)
+                if(!any(grepl("error", class(optimized)))){
+                  optimizedN[o,] <- optimized$par
+                }
               }
               optimized$par <- apply(optimizedN, 2, median)
+              if(opt$verbose & sum(abs(startValues - optimized$par)) > .2) {
+                print(paste0("DEBUGG: poor correlation (", signif(sum(abs(startValues - optimized$par)), digits = 2) ,") between coef and optim for ", roi, timepoint_classic))
+              }
 
               ## normalize fitted value if sum is > 1
               ssdt %>% filter(!grepl(";", Variants)) %>% filter(Variants %in% specifiedLineages) %>% mutate(fit1 = signif(fit1, 5))%>% dplyr::select("Variants", "fit1") %>% arrange(Variants) %>%  distinct()  %>% ungroup()  %>% mutate(T = sum(fit1)) %>% mutate(fit2 = ifelse(T>1, fit1/(T+0.00001), fit1)) -> ssdtFit
-              data.table(Variants = specifiedLineages, fit1 = signif(optimized$par, 5))  %>% arrange(Variants) %>%  distinct()  %>% ungroup()  %>% mutate(T = sum(fit1)) %>% mutate(fit2 = ifelse(T>1, fit1/(T+0.00001), fit1)) -> ssdtFit
+              data.table(Variants = specifiedLineages, fit1 = signif(optimized$par, 5)) %>%  distinct()  %>% ungroup()  %>% mutate(T = sum(fit1)) %>% mutate(fit2 = ifelse(T>1, fit1/(T+0.00001), fit1)) -> ssdtFit
+              ssdtFit$starter <- startValues
+            } else if(opt$optimization == "NLoptr"){
 
-              ## add sample ID to output
-              if (any(ssdt$sample_date_decimal == timePoints[t])){
-                ssdt %>% filter(sample_date_decimal == timePoints[t]) %>% dplyr::select(ID) %>% distinct() -> sample_ID
+              ssdt %>% filter(sample_date == timepoint_classic) %>% dplyr::select(value.freq, all_of(specifiedLineages), fit1) -> ssdt_toOp
+              if(length(coefFit.dt$fit1) > 0 & all(colnames(ssdt_toOp)[2:(1+length(coefFit.dt$Variants))] == coefFit.dt$Variants)){
+                startValues <- coefFit.dt$fit1
+                names(startValues) <- coefFit.dt$Variants
               } else{
-                data.frame(ID = ".") -> sample_ID
-                print(paste("Warning:", "no sample ID for", roi, "@", timePoints[t]))
-              }
-              ssdtFit$ID = rep(unique(sample_ID$ID)[length(unique(sample_ID$ID))], n = length(ssdtFit$Variants))
-
-              if(unique(ssdtFit$T)>1){
-                print(paste("LOG: fitted value corrected for >1: T =", unique(ssdtFit$T), "; method used =", method))
+                startValues <- starterV(ssdt_toOp)
+                names(startValues) <- colnames(ssdt_toOp)[colnames(ssdt_toOp) %in% specifiedLineages]
               }
 
-              ssdt %>% ungroup() %>% filter(Variants %in% specifiedLineagesTimecourse) %>% mutate(T = unique(ssdtFit$T)) %>% mutate(fit2 = ifelse(T > 1, fit1/T, fit1)) %>% filter(sample_date_decimal == timePoints[t]) -> ssdt2
-              plantFullData <- rbind(plantFullData, data.table(variant = ssdt2$Variants, LocationID =  rep(roi, length(ssdt2$fit1)), LocationName  =  rep(roiname, length(ssdt2$fit1)), sample_date = as.character(ssdt2$sample_date), value = ssdt2$fit2, marker = ssdt2$NUC, singlevalue = ssdt2$value.freq ))
+              optimized <- nloptr(
+                    x0          = startValues,
+                    eval_f      = eval_f,
+                    lb          = rep(0, length(startValues)),
+                    ub          = rep(1, length(startValues)),
+                    eval_g_ineq = eval_g_ineq,
+                    data        = ssdt_toOp,
+                    opts        = opts )
+              optimized$par <- optimized$solution
 
-              ## save norm.fitted values into global DF; set all untested variants to 0
-              for (j in specifiedLineagesTimecourse){
-                ssdtFit %>% filter(Variants == j) -> extractedFt
-                if (dim(extractedFt)[1] > 0){
-                  plantFittedData <- rbind(plantFittedData, data.table(variant = rep(j, length(extractedFt$fit2)), LocationID =  rep(roi, length(extractedFt$fit2)), LocationName  =  rep(roiname, length(extractedFt$fit2)), sample_id = extractedFt$ID, sample_date =  rep(as.character(unique(ssdt2$sample_date)), length(extractedFt$fit2)), value = extractedFt$fit2 ))
-                } else{
-                  plantFittedData <- rbind(plantFittedData, data.table(variant = j, LocationID = roi, LocationName  = roiname, sample_id = extractedFt$ID, sample_date = as.character(unique(ssdt2$sample_date)), value = 0 ))
-                }
+              ## normalize fitted value if still sum is > 1
+              ssdt %>% filter(!grepl(";", Variants)) %>% filter(Variants %in% specifiedLineages) %>% mutate(fit1 = signif(fit1, 5))%>% dplyr::select("Variants", "fit1") %>% arrange(Variants) %>%  distinct()  %>% ungroup()  %>% mutate(T = sum(fit1)) %>% mutate(fit2 = ifelse(T>1, fit1/(T+0.00001), fit1)) -> ssdtFit
+              data.table(Variants = specifiedLineages, fit1 = signif(optimized$par, 5)) %>%  distinct()  %>% ungroup()  %>% mutate(T = sum(fit1)) %>% mutate(fit2 = ifelse(T>1, fit1/(T+0.00001), fit1)) -> ssdtFit
+              ssdtFit$starter <- startValues
+
+
+            }
+            if(opt$optimization == "nooptimization"){
+              if(all(dim(coefFit.dt)>0)){
+                coefFit.dt %>%  distinct()  %>% ungroup()  %>% mutate(T = sum(fit1)) %>% mutate(fit2 = ifelse(T>1, fit1/(T+0.00001), fit1)) -> ssdtFit
+              } else{
+                ssdt %>% filter(Variants %in% specifiedLineages) %>% filter(sample_date == timepoint_classic) %>% group_by(Variants) %>% summarize( fit1 = mean(fit1)) %>%  distinct()  %>% ungroup()  %>% mutate(T = sum(fit1)) %>% mutate(fit2 = ifelse(T>1, fit1/(T+0.00001), fit1)) -> ssdtFit
               }
-              rm(formula, fit1, ssdt, ssdt2)
-            } else {
-              print(paste("LOG:", "NOTHIN FOR REGRESSION AT", timePoints[t], "since number of lineages detected ==", length(specifiedLineages), "; ... ignore TIMEPOINT"))
             }
 
+            ## add sample ID to output
+            if (any(ssdt$sample_date_decimal == timePoints[t])){
+              ssdt %>% filter(sample_date_decimal == timePoints[t]) %>% dplyr::select(ID) %>% distinct() -> sample_ID
+            } else{
+              data.frame(ID = ".") -> sample_ID
+              print(paste("WARNING:", "no sample ID for", roi, "@", timePoints[t]))
+            }
+            ssdtFit$ID = rep(unique(sample_ID$ID)[length(unique(sample_ID$ID))], n = length(ssdtFit$Variants))
+
+            if(unique(ssdtFit$T)>1){
+              print(paste("  LOG: fitted value corrected for >1: T =", unique(ssdtFit$T), "; method used =", method))
+            }
+
+            ssdt %>% ungroup() %>% filter(Variants %in% specifiedLineagesTimecourse) %>% mutate(T = unique(ssdtFit$T)) %>% mutate(fit2 = ifelse(T > 1, fit1/T, fit1)) %>% filter(sample_date_decimal == timePoints[t]) -> ssdt2
+            plantFullData <- rbind(plantFullData, data.table(variant = ssdt2$Variants, LocationID =  rep(roi, length(ssdt2$fit1)), LocationName  =  rep(roiname, length(ssdt2$fit1)), sample_date = as.character(ssdt2$sample_date), value = ssdt2$fit2, marker = ssdt2$NUC, singlevalue = ssdt2$value.freq ))
+
+            ## save norm.fitted values into global DF; set all untested variants to 0
+            for (j in specifiedLineagesTimecourse){
+              ssdtFit %>% filter(Variants == j) -> extractedFt
+              if (dim(extractedFt)[1] > 0){
+                plantFittedData <- rbind(plantFittedData, data.table(variant = rep(j, length(extractedFt$fit2)), LocationID =  rep(roi, length(extractedFt$fit2)), LocationName  =  rep(roiname, length(extractedFt$fit2)), sample_id = extractedFt$ID, sample_date =  rep(as.character(unique(ssdt2$sample_date)), length(extractedFt$fit2)), value = extractedFt$fit2 ))
+              } else{
+                plantFittedData <- rbind(plantFittedData, data.table(variant = j, LocationID = roi, LocationName  = roiname, sample_id = extractedFt$ID, sample_date = as.character(unique(ssdt2$sample_date)), value = 0 ))
+              }
+            }
+            rm(formula, fit1, ssdt, ssdt2)
           }
     }
+    print(paste0("PROGRESS: finished variant quantifiaction for all timePoints "))
 
     # remove variants which are never observed
     plantFittedData %>% group_by(variant) %>% mutate(maxValue = max(value)) %>% filter(maxValue>0) %>% dplyr::select(-"maxValue") -> plantFittedData
 
 
-    print(paste("     PROGRESS: start plotting ", roiname))
+    print(paste("PROGRESS: start plotting ", roiname))
 
     if(dim(plantFittedData)[1] > 0){
         plantFittedData %>% mutate(latest = max(sample_date, na.rm = TRUE)) %>% filter(sample_date == latest) %>% filter(value > 0) %>% summarize(variant = variant, freq = value, .groups = "keep") -> sankey.dt
@@ -733,7 +833,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
     if(length(unique(plantFittedData$sample_date)) >= tpLimitToPlot){
 
       if(dim(plantFittedData)[1] >= 1){
-        print(paste("     PROGRESS: plotting stackedview", roiname))
+        print(paste("PROGRESS: plotting stackedview", roiname))
 
         ## print stacked area overview of all detected lineages
         plantFittedData2 <- plantFittedData
@@ -791,7 +891,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 
         spemut_sdt %>% filter(value.freq > 0) %>% dplyr::select("ID", "sample_date", "value.freq", "LocationID", "LocationName", "NUC") %>% filter(sample_date > as.Date(latestSample$latest)-(2*recentEnought)) -> spemut_draw2
         if(dim(spemut_draw2)[1] > 0){
-          print(paste("     PROGRESS: plotting special mutations", roiname))
+          print(paste("PROGRESS: plotting special mutations", roiname))
           left_join(x = spemut_draw2, y = soi, by = "NUC", multiple = "all") -> spemut_draw2
           spemut_draw2 %>% rowwise() %>% mutate(marker =  paste(sep = "|", NUC, paste(Gene, AA, sep = ":"), paste0("[", Variants, "]")) ) -> spemut_draw2
           colnames(spemut_draw2)[colnames(spemut_draw2) == "Variants"] <- "variant"
@@ -814,7 +914,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 
         spemut_sdt %>% filter(value.freq > 0) %>% dplyr::select("ID", "sample_date", "value.freq", "LocationID", "LocationName", "NUC")  %>% filter(sample_date > as.Date(latestSample$latest)-(2*recentEnought)) -> spemut_draw1
         if(dim(spemut_draw1)[1] > 0){
-          print(paste("     PROGRESS: plotting special mutations VoI", roiname))
+          print(paste("PROGRESS: plotting special mutations VoI", roiname))
           left_join(x = spemut_draw1, y = soi, by = "NUC", multiple = "all") -> spemut_draw1
           spemut_draw1 %>% rowwise() %>% mutate(marker = paste(sep = "|", NUC, paste(Gene, AA, sep = ":"), paste0("[", Variants, "]")) ) -> spemut_draw1
           colnames(spemut_draw1)[colnames(spemut_draw1) == "Variants"] <- "variant"
@@ -831,7 +931,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
       }
 
       if(dim(filter(plantFullData, variant %in% VoI))[1] >= 1){
-        print(paste("     PROGRESS: plotting variantDetails VoI", roiname))
+        print(paste("PROGRESS: plotting variantDetails VoI", roiname))
         ## print faceted line plot of fitted values plus point plot of measured AF for all VoIs
         plantFullData %>% filter(variant %in% VoI) %>% ggplot()  + geom_line(data = subset(plantFittedData, variant %in% VoI), alpha = 0.6, size = 2, aes(x = as.Date(sample_date), y = value, col = variant)) + geom_jitter(aes(x = as.Date(sample_date), y = singlevalue), alpha = 0.33, size = 1.5, width = 0.33, height = 0) + geom_vline(xintercept = as.Date(latestSample$latest), linetype = "dotdash", color = "grey", size =  0.5) + facet_wrap(~variant)  + scale_color_manual(values = ColorBaseData$col, breaks = ColorBaseData$variant, name = "") + scale_y_continuous(labels=scales::percent) + theme_bw() + theme(legend.position="bottom", strip.background = element_rect(fill="grey97"), axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) + scale_x_date(date_breaks = "2 month", date_labels =  "%b %y", limits = c(as.Date(NA), as.Date(latestSample$latest))) + ylab(paste0("Variantenanteil [1/1]") ) + xlab("") -> p1
 
@@ -843,7 +943,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
       }
 
       if(dim(plantFullData)[1] >= 1){
-        print(paste("     PROGRESS: plotting variant Details", roiname))
+        print(paste("PROGRESS: plotting variant Details", roiname))
         ## print faceted line plot of fitted values plus point plot of measured AF for all lineages
         plantFullData %>% ggplot() +  geom_line(data = plantFittedData, alpha = 0.6, size = 2, aes(x = as.Date(sample_date), y = value, col = variant)) + geom_jitter(aes(x = as.Date(sample_date), y = singlevalue), alpha = 0.33, size = 1.5, width = 0.33, height = 0) + geom_vline(xintercept = as.Date(latestSample$latest), linetype = "dotdash", color = "grey", size =  0.5) + facet_wrap(~variant) + scale_color_manual(values = ColorBaseData$col, breaks = ColorBaseData$variant, name = "") + scale_y_continuous(labels=scales::percent) + theme_bw() + theme(legend.position="bottom", strip.background = element_rect(fill="grey97"), axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) + scale_x_date(date_breaks = "3 month", date_labels =  "%b", limits = c(as.Date(NA), as.Date(latestSample$latest))) + ylab(paste0("Variantenanteil [1/1]") ) + xlab("") + guides(color = guide_legend(title = "", ncol = 7)) -> p2
 
@@ -874,14 +974,11 @@ fwrite(globalFullSoiData, file = paste0(outdir, "/globalSpecialmutData.csv"), se
 ## print overview of all VoI and all plants
 print(paste("PROGRESS: start plotting overviews"))
 
-
-
-
 ##
 
 if (dim(globalFittedData)[1] >= tpLimitToPlot){
 
-  print(paste("     PROGRESS: plotting aggregated stack plot"))
+  print(paste("PROGRESS: plotting aggregated stack plot"))
 
   globalFittedData$sample_date <- as.Date(globalFittedData$sample_date)
   metaDT$sample_date <- as.Date(metaDT$sample_date)
@@ -939,9 +1036,8 @@ if (dim(globalFittedData)[1] >= tpLimitToPlot){
   rm(ap,filename, ColorBaseData, stacker.dt, stacker.dtt)
 }
 
-
 if(dim(globalFittedData)[1] > 0){
-    print(paste("     PROGRESS: plotting overview Sankey plot + Detection Plot"))
+    print(paste("PROGRESS: plotting overview Sankey plot + Detection Plot"))
 
     ## make complete plot
     globalFittedData %>% filter( (as.Date(format(Sys.time(), "%Y-%m-%d")) - recentEnought) < sample_date) %>% group_by(LocationID) %>% mutate(latest = max(sample_date, na.rm = TRUE)) %>% filter(sample_date == latest) %>% summarize(variant = variant, freq = value, .groups = "keep") -> sankey_all.dt
@@ -992,6 +1088,8 @@ if(dim(globalFittedData)[1] > 0){
 
         sankey.dtt %>% rowwise() %>% mutate(node = ifelse(is.na(node), node, dealias(node))) %>% mutate(next_node = ifelse(is.na(next_node), next_node, dealias(next_node))) -> sankey.dtt
 
+        sankey.dtt %>% rowwise() %>% mutate(label = ifelse((node == "B" & level>0), gsub("B", "unclassified", label), label)) -> sankey.dtt
+
         ggplot(sankey.dtt, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = label)) + geom_sankey(flow.alpha = .6, node.color = "gray30", type ='alluvial') + geom_sankey_label(size = 3, color = "white", fill = "gray40", position = position_nudge(x = 0.05, y = 0), na.rm = TRUE, type ='alluvial', hjust = 0) + theme_sankey(base_size = 16) + labs(x = NULL) + ggtitle("Gewichtetes Mittel: Österreich", subtitle = paste( sankey_date$earliest , "bis", sankey_date$latest)) + theme(legend.position = "none", axis.text.x = element_blank(), plot.title = element_text(hjust = 0), plot.subtitle=element_text(hjust = 0)) + scale_fill_manual(values = col2var, breaks = var2col) + scale_x_discrete(expand = expansion(mult = c(0, .1), add = c(.1, .5))) -> pp
 
         filename <- paste0(outdir, "/figs/sankey/Overview_",  opt$country, ".pdf")
@@ -1000,7 +1098,7 @@ if(dim(globalFittedData)[1] > 0){
         rm(pp, filename, sankey.dt, sankey.dtt)
 
 
-        print(paste("     PROGRESS: plotting WWTP detection plot"))
+        print(paste("PROGRESS: plotting WWTP detection plot"))
 
         left_join(x = sankey_all.dt, y = (metaDT %>% dplyr::select(LocationID, connected_people) %>% distinct()), multiple = "all") %>% group_by(variant) %>% summarize(freq = weighted.mean(freq, w = connected_people, na.rm = TRUE), .groups = "keep") %>% filter(freq > 0) -> depicted_in_sankey
         sankey_all.dt %>% ungroup() %>% filter(variant %in% depicted_in_sankey$variant) %>% mutate(N = length(unique(LocationID)))  %>% filter(freq > 0) %>% group_by(variant) %>% summarize(N = unique(N), d = length(unique(LocationID)), .groups = "keep") %>% mutate(nd = N - d) %>% dplyr::select(-"N") -> occurence.dt
@@ -1024,7 +1122,7 @@ if(dim(globalFittedData)[1] > 0){
         ggsave(filename = filename1, plot = dpl, width = plotWidth, height = plotHeight)
         fwrite(as.list(c("detection", "Overview", opt$country, filename1)), file = summaryDataFile, append = TRUE, sep = "\t")
 
-        print(paste("     PROGRESS: generating WWTP detection table"))
+        print(paste("PROGRESS: generating WWTP detection table"))
 
         left_join(x = occurence.rate, y = occurence.freq, by = "variant", multiple = "all") -> synopsis.dt
         synopsis.dt %>% mutate(freq = signif(freq, digits = 2)) -> synopsis.dt
@@ -1038,7 +1136,7 @@ if(dim(globalFittedData)[1] > 0){
     }
 
     ## make plot per state
-    if(any(colnames(metaDT) == "state")){
+    if(dim(sankey_all.dt)[1] > 0 & any(colnames(metaDT) == "state")){
       left_join(x = sankey_all.dt, y = metaDT, by = "LocationID", multiple = "all") %>% dplyr::select(LocationID, variant, freq, state) %>% distinct() -> sankey_allState.dt
       sankey_state_plot_list <- list()
       for (stateoi in unique(sankey_allState.dt$state)){
@@ -1083,6 +1181,8 @@ if(dim(globalFittedData)[1] > 0){
 
             sankey.dtt %>% rowwise() %>% mutate(node = ifelse(is.na(node), node, dealias(node))) %>% mutate(next_node = ifelse(is.na(next_node), next_node, dealias(next_node))) -> sankey.dtt
 
+            sankey.dtt %>% rowwise() %>% mutate(label = ifelse((node == "B" & level>0), gsub("B", "unclassified", label), label)) -> sankey.dtt
+
             ggplot(sankey.dtt, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = label)) + geom_sankey(flow.alpha = .6, node.color = "gray30", type ='alluvial') + geom_sankey_label(size = 3, color = "white", fill = "gray40", position = position_nudge(x = 0.05, y = 0), na.rm = TRUE, type ='alluvial', hjust = 0) + theme_sankey(base_size = 16) + labs(x = NULL) + ggtitle(paste0("Gewichtetes Mittel: ", stateoi), subtitle = paste( sankey_date$earliest , "bis", sankey_date$latest)) + theme(legend.position = "none", axis.text.x = element_blank(), plot.title = element_text(hjust = 0), plot.subtitle=element_text(hjust = 0)) + scale_fill_manual(values = col2var, breaks = var2col) + scale_x_discrete(expand = expansion(mult = c(0, .1), add = c(.1, .5))) -> pp
             sankey_state_plot_list[[length(sankey_state_plot_list)+1]] <- pp
 
@@ -1103,10 +1203,9 @@ if(dim(globalFittedData)[1] > 0){
 
 ##
 
-
 globalFittedData %>% group_by(LocationID) %>% mutate(n = length(unique(sample_date))) %>% filter(n > tpLimitToPlot*2) %>% filter(variant %in% VoI) %>% ungroup() %>% group_by(LocationID, LocationName, sample_date, variant) %>% summarize(value = mean(value), .groups = "drop") -> globalFittedData2
 if (dim(globalFittedData2)[1] >= tpLimitToPlot){
-  print(paste("     PROGRESS: plotting overview VoI"))
+  print(paste("PROGRESS: plotting overview VoI"))
   ggplot(data = globalFittedData2, aes(x = as.Date(sample_date), y = value, fill = variant)) + geom_area(position = "stack", alpha = 0.7)  + facet_wrap(~LocationName) + scale_fill_viridis_d(alpha = 0.6, begin = .05, end = .95, option = "H", direction = +1, name="") + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1)) + theme_minimal() + theme(legend.position="bottom", strip.text.x = element_text(size = 4.5), panel.grid.minor = element_blank(), panel.spacing.y = unit(0, "lines"), legend.direction="horizontal") + guides(fill = guide_legend(title = "", ncol = 10)) + scale_x_date(date_breaks = "2 month", date_labels =  "%b") + ylab(paste0("Variantenanteil [1/1]") ) + xlab("") -> r2
   filename <- paste0(outdir, '/figs/fullview', paste('/wwtp', "VoI", sep="_"), ".pdf")
   #ggsave(filename = filename, plot = r2, width = plotWidth*1.5, height = plotHeight*1.5)
@@ -1121,7 +1220,7 @@ globalFittedData %>% dplyr::select(variant) %>% distinct() %>% rowwise() %>% mut
 globalFittedData$variant <- factor(globalFittedData$variant, levels = variant_order)
 globalFittedData %>% group_by(LocationID) %>% mutate(n = length(unique(sample_date))) %>% filter(n > tpLimitToPlot*2) %>% ungroup() %>% group_by(LocationID, LocationName, sample_date, variant) %>% summarize(value = mean(value), .groups = "drop") -> globalFittedData2
 if (dim(globalFittedData2)[1] >= tpLimitToPlot){
-  print(paste("     PROGRESS: plotting overview"))
+  print(paste("PROGRESS: plotting overview"))
   r1 <- ggplot(data = globalFittedData2, aes(x = as.Date(sample_date), y = value, fill = variant))
   r1 <- r1 + geom_area(position = "stack", alpha = 0.7)
   r1 <- r1 + facet_wrap(~LocationName)
@@ -1145,7 +1244,7 @@ rm(globalFittedData2)
 
 print(paste("PROGRESS: start plotting maps"))
 for (voi in VoI){
-  print(paste("     PROGRESS: considering", voi))
+  print(paste("  PROGRESS: considering", voi))
 
   globalFittedData %>% filter(variant == voi) %>% filter(! is.na(sample_id) ) -> mapdata
   if(all(dim(mapdata) > 0)){
@@ -1158,7 +1257,7 @@ for (voi in VoI){
       mapdata %>% filter(value > 0) -> mapdata
 
       if (length(mapdata$value) > 0 ){
-        print(paste("     PROGRESS: plotting map for", voi))
+        print(paste("  PROGRESS: plotting map for", voi))
         print(data.frame(location=mapdata$LocationName, dates = mapdata$sample_date, values = mapdata$value))
 
         s <- ggplot()
