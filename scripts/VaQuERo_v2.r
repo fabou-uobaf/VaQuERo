@@ -814,6 +814,8 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 
         sankey.dtt %>% rowwise() %>% mutate(node = ifelse(is.na(node), node, dealias(node))) %>% mutate(next_node = ifelse(is.na(next_node), next_node, dealias(next_node))) -> sankey.dtt
 
+	sankey.dtt %>% rowwise() %>% mutate(label = ifelse((node == "B" & level>0), gsub("B", "unclassified", label), label)) -> sankey.dtt
+
         ggplot(sankey.dtt, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = label)) +
             geom_sankey(flow.alpha = .6, node.color = "gray30", type ='alluvial') +
             geom_sankey_label(size = 3, color = "white", fill = "gray40", position = position_nudge(x = 0.05, y = 0), na.rm = TRUE, type ='alluvial', hjust = 0) +
@@ -822,7 +824,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
             ggtitle(roiname, subtitle = sankey_date) +
             theme(legend.position = "none", axis.text.x = element_blank(), plot.title = element_text(hjust = 0), plot.subtitle=element_text(hjust = 0)) +
             scale_fill_viridis_d(alpha = 1, begin = 0.025, end = .975, direction = 1, option = "D") +
-            scale_x_discrete(expand = expansion(mult = c(0, .1), add = c(.1, .5))) -> pp
+            scale_x_discrete(expand = expansion(mult = c(0, .1), add = c(.1, .8))) -> pp
 
         filename <- paste0(outdir, "/figs/sankey/",  paste('/wwtp', roi, sep="_"), ".pdf")
         ggsave(filename = filename, plot = pp, width = 6, height = 4.4)
@@ -1090,7 +1092,15 @@ if(dim(globalFittedData)[1] > 0){
 
         sankey.dtt %>% rowwise() %>% mutate(label = ifelse((node == "B" & level>0), gsub("B", "unclassified", label), label)) -> sankey.dtt
 
-        ggplot(sankey.dtt, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = label)) + geom_sankey(flow.alpha = .6, node.color = "gray30", type ='alluvial') + geom_sankey_label(size = 3, color = "white", fill = "gray40", position = position_nudge(x = 0.05, y = 0), na.rm = TRUE, type ='alluvial', hjust = 0) + theme_sankey(base_size = 16) + labs(x = NULL) + ggtitle("Gewichtetes Mittel: Österreich", subtitle = paste( sankey_date$earliest , "bis", sankey_date$latest)) + theme(legend.position = "none", axis.text.x = element_blank(), plot.title = element_text(hjust = 0), plot.subtitle=element_text(hjust = 0)) + scale_fill_manual(values = col2var, breaks = var2col) + scale_x_discrete(expand = expansion(mult = c(0, .1), add = c(.1, .5))) -> pp
+        ggplot(sankey.dtt, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = label)) + 
+	    geom_sankey(flow.alpha = .6, node.color = "gray30", type ='alluvial') + 
+	    geom_sankey_label(size = 3, color = "white", fill = "gray40", position = position_nudge(x = 0.05, y = 0), na.rm = TRUE, type ='alluvial', hjust = 0) + 
+	    theme_sankey(base_size = 16) + 
+	    labs(x = NULL) + 
+	    ggtitle("Gewichtetes Mittel: Österreich", subtitle = paste( sankey_date$earliest , "bis", sankey_date$latest)) + 
+	    theme(legend.position = "none", axis.text.x = element_blank(), plot.title = element_text(hjust = 0), plot.subtitle=element_text(hjust = 0)) + 
+	    scale_fill_manual(values = col2var, breaks = var2col) + 
+	    scale_x_discrete(expand = expansion(mult = c(0, .1), add = c(.1, .8))) -> pp
 
         filename <- paste0(outdir, "/figs/sankey/Overview_",  opt$country, ".pdf")
         ggsave(filename = filename, plot = pp, width = 6, height = 6)
@@ -1183,7 +1193,14 @@ if(dim(globalFittedData)[1] > 0){
 
             sankey.dtt %>% rowwise() %>% mutate(label = ifelse((node == "B" & level>0), gsub("B", "unclassified", label), label)) -> sankey.dtt
 
-            ggplot(sankey.dtt, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = label)) + geom_sankey(flow.alpha = .6, node.color = "gray30", type ='alluvial') + geom_sankey_label(size = 3, color = "white", fill = "gray40", position = position_nudge(x = 0.05, y = 0), na.rm = TRUE, type ='alluvial', hjust = 0) + theme_sankey(base_size = 16) + labs(x = NULL) + ggtitle(paste0("Gewichtetes Mittel: ", stateoi), subtitle = paste( sankey_date$earliest , "bis", sankey_date$latest)) + theme(legend.position = "none", axis.text.x = element_blank(), plot.title = element_text(hjust = 0), plot.subtitle=element_text(hjust = 0)) + scale_fill_manual(values = col2var, breaks = var2col) + scale_x_discrete(expand = expansion(mult = c(0, .1), add = c(.1, .5))) -> pp
+            ggplot(sankey.dtt, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = label)) + 
+		geom_sankey(flow.alpha = .6, node.color = "gray30", type ='alluvial') + 
+		geom_sankey_label(size = 3, color = "white", fill = "gray40", position = position_nudge(x = 0.05, y = 0), na.rm = TRUE, type ='alluvial', hjust = 0) + 
+		theme_sankey(base_size = 16) + 
+		labs(x = NULL) + ggtitle(paste0("Gewichtetes Mittel: ", stateoi), subtitle = paste( sankey_date$earliest , "bis", sankey_date$latest)) + 
+		theme(legend.position = "none", axis.text.x = element_blank(), plot.title = element_text(hjust = 0), plot.subtitle=element_text(hjust = 0)) + 
+		scale_fill_manual(values = col2var, breaks = var2col) + 
+		scale_x_discrete(expand = expansion(mult = c(0, .1), add = c(.1, .8))) -> pp
             sankey_state_plot_list[[length(sankey_state_plot_list)+1]] <- pp
 
             filename <- paste0(outdir, "/figs/sankey/Overview_",  gsub(" ", "_", stateoi), ".pdf")
