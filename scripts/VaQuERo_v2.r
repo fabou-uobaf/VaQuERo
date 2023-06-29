@@ -484,7 +484,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
             timepoint_day <- decimalDate(timepoint_classic,0)
             T <- which(timePoints_classic == timepoint_classic)
             timepoint <- timePoints[T]
-            print(paste("PROGRESS:", roiname, "@", timepoint_classic, "(", signif(timepoint, digits = 10), ")"))
+            print(paste("PROGRESS:", roiname, paste0("(tp: ", t, ")"), "@", paste(ref_timepoint_classic, collapse=", "), "(", paste(signif(timepoint, digits = 10), collapse=", "), ")"))
 
             lowerDiff <- ifelse(min(T) > timeLag, timeLag, min(T)-1)
             upperDiff <- ifelse((max(T)+timeLag) <= length(timePoints), timeLag, length(timePoints)-max(T))
@@ -581,7 +581,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
               ## check if the current timepoint is still represented in the data
               ssdt %>% filter(sample_date_decimal %in% timepoint) -> ssdt2
               if(dim(ssdt2)[1] == 0){
-                print(paste("LOG: since no mutations found in timepoint of interest (", timepoint, ") regression will be skipped"))
+              print(paste("  WARNING: since no mutations found in timepoint of interest (", timepoint, ") regression will be skipped"))
                 next;
               }
 
@@ -604,7 +604,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
                   fit1 <- tryCatch(gamlss(formula, data = ssdt, family = BE, trace = FALSE, weights = weight),error=function(e) e, warning=function(w) w)
                   print(paste("LOG: fall back to BE"))
                   if(any(grepl("warning|error", class(fit1)))){
-                    print(paste("LOG: BE did not converge either at", timePoints[t], " .. skipped"))
+              print(paste("  WARNING: BE did not converge at", timePoints[t], " .. skipped"))
                     next; ## remove if unconverged BE results should be used
                   }
                 }
@@ -642,12 +642,12 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
                 ssdt %>% filter(sample_date_decimal == timePoints[t]) %>% dplyr::select(ID) %>% distinct() -> sample_ID
               } else{
                 data.frame(ID = ".") -> sample_ID
-                print(paste("Warning:", "no sample ID for", roi, "@", timePoints[t]))
+              print(paste("WARNING:", "no sample ID for", roi, "@", timePoints[t]))
               }
               ssdtFit$ID = rep(unique(sample_ID$ID)[length(unique(sample_ID$ID))], n = length(ssdtFit$Variants))
 
               if(unique(ssdtFit$T)>1){
-                print(paste("LOG: fitted value corrected for >1: T =", unique(ssdtFit$T), "; method used =", method))
+              print(paste("  LOG: fitted value corrected for >1: T =", unique(ssdtFit$T), "; method used =", method))
               }
 
               ssdt %>% ungroup() %>% filter(Variants %in% specifiedLineagesTimecourse) %>% mutate(T = unique(ssdtFit$T)) %>% mutate(fit2 = ifelse(T > 1, fit1/T, fit1)) %>% filter(sample_date_decimal == timePoints[t]) -> ssdt2
@@ -668,22 +668,27 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
             }
 
           }
-    }
+    print(paste0("PROGRESS: finished variant quantifiaction for all timePoints "))
 
     # remove variants which are never observed
     plantFittedData %>% group_by(variant) %>% mutate(maxValue = max(value)) %>% filter(maxValue>0) %>% dplyr::select(-"maxValue") -> plantFittedData
 
 
-    print(paste("     PROGRESS: start plotting ", roiname))
+    print(paste("PROGRESS: start plotting ", roiname))
 
     if(dim(plantFittedData)[1] > 0){
         plantFittedData %>% mutate(latest = max(sample_date, na.rm = TRUE)) %>% filter(sample_date == latest) %>% filter(value > 0) %>% summarize(variant = variant, freq = value, .groups = "keep") -> sankey.dt
 
-        plantFittedData %>% summarize(latest = max(sample_date, na.rm = TRUE), .groups = "keep") -> sankey_date
-        #sankey.dt %>% mutate(freq = freq/sum(freq)) -> sankey.dt
+        plantFittedData  %>% group_by() %>% summarize(latest = max(sample_date, na.rm = TRUE), .groups = "keep") -> sankey_date
+
+        sankey.dt  %>% rowwise() %>% mutate(freq = ifelse(freq<0, 0, freq)) -> sankey.dt
+        sankey.dt  %>% rowwise() %>% mutate(freq = ifelse(freq>1, 1, freq)) -> sankey.dt
+        if(sum(sankey.dt$freq)>1){
+          sankey.dt  %>% ungroup() %>% mutate(freq = freq/sum(freq)) -> sankey.dt
+        }
         sankey.dt %>% group_by(variant = "B") %>% summarize(freq = 1-sum(freq), .groups = "keep") -> sankey.dt0
         rbind(sankey.dt, sankey.dt0) -> sankey.dt
-        sankey.dt %>% filter(freq > zeroo/10 | variant == "B") -> sankey.dt
+        sankey.dt %>% rowwise() %>% filter(freq > zeroo/10 | variant == "B") -> sankey.dt
 
         sankey.dt$variant_dealias <- unlist(lapply(as.list(sankey.dt$variant), dealias))
         for ( baseForColor in baseForColorsVariants ){
@@ -708,6 +713,8 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 
         sankey.dtt %>% rowwise() %>% mutate(node = ifelse(is.na(node), node, dealias(node))) %>% mutate(next_node = ifelse(is.na(next_node), next_node, dealias(next_node))) -> sankey.dtt
 
+        sankey.dtt %>% rowwise() %>% mutate(label = ifelse((node == "B" & level>0), gsub("B", "unclassified", label), label)) -> sankey.dtt
+
         ggplot(sankey.dtt, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = label)) +
             geom_sankey(flow.alpha = .6, node.color = "gray30", type ='alluvial') +
             geom_sankey_label(size = 3, color = "white", fill = "gray40", position = position_nudge(x = 0.05, y = 0), na.rm = TRUE, type ='alluvial', hjust = 0) +
@@ -716,7 +723,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
             ggtitle(roiname, subtitle = sankey_date) +
             theme(legend.position = "none", axis.text.x = element_blank(), plot.title = element_text(hjust = 0), plot.subtitle=element_text(hjust = 0)) +
             scale_fill_viridis_d(alpha = 1, begin = 0.025, end = .975, direction = 1, option = "D") +
-            scale_x_discrete(expand = expansion(mult = c(0, .1), add = c(.1, .5))) -> pp
+            scale_x_discrete(expand = expansion(mult = c(0, .1), add = c(.1, .8))) -> pp
 
         filename <- paste0(outdir, "/figs/sankey/",  paste('/wwtp', roi, sep="_"), ".pdf")
         ggsave(filename = filename, plot = pp, width = 6, height = 4.4)
@@ -727,7 +734,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
     if(length(unique(plantFittedData$sample_date)) >= tpLimitToPlot){
 
       if(dim(plantFittedData)[1] >= 1){
-        print(paste("     PROGRESS: plotting stackedview", roiname))
+        print(paste("PROGRESS: plotting stackedview", roiname))
 
         ## print stacked area overview of all detected lineages
         plantFittedData2 <- plantFittedData
@@ -758,7 +765,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
         ColorBaseData %>% group_by(base) %>%  mutate(n = n()) %>% arrange(base, variant_dealiased) %>% dplyr::mutate(id = cur_group_id()) %>% mutate(id = ifelse(id > 6, 6, id)) -> ColorBaseData
         ColorBaseData %>% group_by(id) %>% mutate(i = row_number()) %>% rowwise() %>% mutate(col = getColor(n, id, i)) -> ColorBaseData
 
-        plottng_data %>% filter(sample_date == max(sample_date)) %>% filter(value > 0) -> plottng_labels
+        plottng_data %>% filter(sample_date == max(sample_date, na.rm = TRUE)) %>% filter(value > 0) -> plottng_labels
 
         ggplot(data = plottng_data, aes(x = as.Date(sample_date), y = value, fill = variant, color = variant)) -> q3
         q3 <- q3 + geom_area(position = "stack", alpha = 0.6)
@@ -785,7 +792,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 
         spemut_sdt %>% filter(value.freq > 0) %>% dplyr::select("ID", "sample_date", "value.freq", "LocationID", "LocationName", "NUC") %>% filter(sample_date > as.Date(latestSample$latest)-(2*recentEnought)) -> spemut_draw2
         if(dim(spemut_draw2)[1] > 0){
-          print(paste("     PROGRESS: plotting special mutations", roiname))
+          print(paste("PROGRESS: plotting special mutations", roiname))
           left_join(x = spemut_draw2, y = soi, by = "NUC", multiple = "all") -> spemut_draw2
           spemut_draw2 %>% rowwise() %>% mutate(marker =  paste(sep = "|", NUC, paste(Gene, AA, sep = ":"), paste0("[", Variants, "]")) ) -> spemut_draw2
           colnames(spemut_draw2)[colnames(spemut_draw2) == "Variants"] <- "variant"
@@ -808,7 +815,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 
         spemut_sdt %>% filter(value.freq > 0) %>% dplyr::select("ID", "sample_date", "value.freq", "LocationID", "LocationName", "NUC")  %>% filter(sample_date > as.Date(latestSample$latest)-(2*recentEnought)) -> spemut_draw1
         if(dim(spemut_draw1)[1] > 0){
-          print(paste("     PROGRESS: plotting special mutations VoI", roiname))
+          print(paste("PROGRESS: plotting special mutations VoI", roiname))
           left_join(x = spemut_draw1, y = soi, by = "NUC", multiple = "all") -> spemut_draw1
           spemut_draw1 %>% rowwise() %>% mutate(marker = paste(sep = "|", NUC, paste(Gene, AA, sep = ":"), paste0("[", Variants, "]")) ) -> spemut_draw1
           colnames(spemut_draw1)[colnames(spemut_draw1) == "Variants"] <- "variant"
@@ -825,7 +832,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
       }
 
       if(dim(filter(plantFullData, variant %in% VoI))[1] >= 1){
-        print(paste("     PROGRESS: plotting variantDetails VoI", roiname))
+        print(paste("PROGRESS: plotting variantDetails VoI", roiname))
         ## print faceted line plot of fitted values plus point plot of measured AF for all VoIs
         plantFullData %>% filter(variant %in% VoI) %>% ggplot()  + geom_line(data = subset(plantFittedData, variant %in% VoI), alpha = 0.6, size = 2, aes(x = as.Date(sample_date), y = value, col = variant)) + geom_jitter(aes(x = as.Date(sample_date), y = singlevalue), alpha = 0.33, size = 1.5, width = 0.33, height = 0) + geom_vline(xintercept = as.Date(latestSample$latest), linetype = "dotdash", color = "grey", size =  0.5) + facet_wrap(~variant)  + scale_color_manual(values = ColorBaseData$col, breaks = ColorBaseData$variant, name = "") + scale_y_continuous(labels=scales::percent) + theme_bw() + theme(legend.position="bottom", strip.background = element_rect(fill="grey97"), axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) + scale_x_date(date_breaks = "2 month", date_labels =  "%b %y", limits = c(as.Date(NA), as.Date(latestSample$latest))) + ylab(paste0("Variantenanteil [1/1]") ) + xlab("") -> p1
 
@@ -837,7 +844,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
       }
 
       if(dim(plantFullData)[1] >= 1){
-        print(paste("     PROGRESS: plotting variant Details", roiname))
+        print(paste("PROGRESS: plotting variant Details", roiname))
         ## print faceted line plot of fitted values plus point plot of measured AF for all lineages
         plantFullData %>% ggplot() +  geom_line(data = plantFittedData, alpha = 0.6, size = 2, aes(x = as.Date(sample_date), y = value, col = variant)) + geom_jitter(aes(x = as.Date(sample_date), y = singlevalue), alpha = 0.33, size = 1.5, width = 0.33, height = 0) + geom_vline(xintercept = as.Date(latestSample$latest), linetype = "dotdash", color = "grey", size =  0.5) + facet_wrap(~variant) + scale_color_manual(values = ColorBaseData$col, breaks = ColorBaseData$variant, name = "") + scale_y_continuous(labels=scales::percent) + theme_bw() + theme(legend.position="bottom", strip.background = element_rect(fill="grey97"), axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) + scale_x_date(date_breaks = "3 month", date_labels =  "%b", limits = c(as.Date(NA), as.Date(latestSample$latest))) + ylab(paste0("Variantenanteil [1/1]") ) + xlab("") + guides(color = guide_legend(title = "", ncol = 7)) -> p2
 
@@ -875,7 +882,7 @@ print(paste("PROGRESS: start plotting overviews"))
 
 if (dim(globalFittedData)[1] >= tpLimitToPlot){
 
-  print(paste("     PROGRESS: plotting aggregated stack plot"))
+  print(paste("PROGRESS: plotting aggregated stack plot"))
 
   globalFittedData$sample_date <- as.Date(globalFittedData$sample_date)
   metaDT$sample_date <- as.Date(metaDT$sample_date)
@@ -935,7 +942,7 @@ if (dim(globalFittedData)[1] >= tpLimitToPlot){
 
 
 if(dim(globalFittedData)[1] > 0){
-    print(paste("     PROGRESS: plotting overview Sankey plot + Detection Plot"))
+    print(paste("PROGRESS: plotting overview Sankey plot + Detection Plot"))
 
     ## make complete plot
     globalFittedData %>% filter( (as.Date(format(Sys.time(), "%Y-%m-%d")) - recentEnought) < sample_date) %>% group_by(LocationID) %>% mutate(latest = max(sample_date, na.rm = TRUE)) %>% filter(sample_date == latest) %>% summarize(variant = variant, freq = value, .groups = "keep") -> sankey_all.dt
@@ -951,13 +958,17 @@ if(dim(globalFittedData)[1] > 0){
 
         left_join(x = sankey_all.dt, y = (metaDT %>% dplyr::select(LocationID, connected_people) %>% distinct()), by = "LocationID", multiple = "all") %>% group_by(variant) %>% summarize(freq = weighted.mean(freq, w = connected_people, na.rm = TRUE), .groups = "keep") %>% filter(freq > 0) -> sankey.dt
 
-        #sankey.dt  %>% ungroup() %>% mutate(freq = freq/sum(freq)) -> sankey.dt
+        sankey.dt  %>% rowwise() %>% mutate(freq = ifelse(freq<0, 0, freq)) -> sankey.dt
+        sankey.dt  %>% rowwise() %>% mutate(freq = ifelse(freq>1, 1, freq)) -> sankey.dt
+        if(sum(sankey.dt$freq)>1){
+          sankey.dt  %>% ungroup() %>% mutate(freq = freq/sum(freq)) -> sankey.dt
+        }
         sankey.dt  %>% ungroup() -> sankey.dt
         sankey.dt -> occurence.freq
         sankey.dt %>% group_by(variant = "B") %>% summarize(freq = 1-sum(freq), .groups = "keep") -> sankey.dt0
 
         rbind(sankey.dt, sankey.dt0) -> sankey.dt
-        sankey.dt %>% filter(freq > zeroo/10 | variant == "B") -> sankey.dt
+        sankey.dt %>% rowwise() %>% filter(freq > zeroo/10 | variant == "B") -> sankey.dt
 
         sankey.dt$variant_dealias <- unlist(lapply(as.list(sankey.dt$variant), dealias))
         for ( baseForColor in baseForColorsVariants ){
@@ -981,7 +992,17 @@ if(dim(globalFittedData)[1] > 0){
 
         sankey.dtt %>% rowwise() %>% mutate(node = ifelse(is.na(node), node, dealias(node))) %>% mutate(next_node = ifelse(is.na(next_node), next_node, dealias(next_node))) -> sankey.dtt
 
-        ggplot(sankey.dtt, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = label)) + geom_sankey(flow.alpha = .6, node.color = "gray30", type ='alluvial') + geom_sankey_label(size = 3, color = "white", fill = "gray40", position = position_nudge(x = 0.05, y = 0), na.rm = TRUE, type ='alluvial', hjust = 0) + theme_sankey(base_size = 16) + labs(x = NULL) + ggtitle("Gewichtetes Mittel: Österreich", subtitle = paste( sankey_date$earliest , "bis", sankey_date$latest)) + theme(legend.position = "none", axis.text.x = element_blank(), plot.title = element_text(hjust = 0), plot.subtitle=element_text(hjust = 0)) + scale_fill_manual(values = col2var, breaks = var2col) + scale_x_discrete(expand = expansion(mult = c(0, .1), add = c(.1, .5))) -> pp
+        sankey.dtt %>% rowwise() %>% mutate(label = ifelse((node == "B" & level>0), gsub("B", "unclassified", label), label)) -> sankey.dtt
+
+        ggplot(sankey.dtt, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = label)) +
+              geom_sankey(flow.alpha = .6, node.color = "gray30", type ='alluvial') +
+              geom_sankey_label(size = 3, color = "white", fill = "gray40", position = position_nudge(x = 0.05, y = 0), na.rm = TRUE, type ='alluvial', hjust = 0) +
+              theme_sankey(base_size = 16) +
+              labs(x = NULL) +
+              ggtitle("Gewichtetes Mittel: Österreich", subtitle = paste( sankey_date$earliest , "bis", sankey_date$latest)) +
+              theme(legend.position = "none", axis.text.x = element_blank(), plot.title = element_text(hjust = 0), plot.subtitle=element_text(hjust = 0)) +
+              scale_fill_manual(values = col2var, breaks = var2col) +
+              scale_x_discrete(expand = expansion(mult = c(0, .1), add = c(.1, .8))) -> pp
 
         filename <- paste0(outdir, "/figs/sankey/Overview_",  opt$country, ".pdf")
         ggsave(filename = filename, plot = pp, width = 6, height = 6)
@@ -989,7 +1010,7 @@ if(dim(globalFittedData)[1] > 0){
         rm(pp, filename, sankey.dt, sankey.dtt)
 
 
-        print(paste("     PROGRESS: plotting WWTP detection plot"))
+        print(paste("PROGRESS: plotting WWTP detection plot"))
 
         left_join(x = sankey_all.dt, y = (metaDT %>% dplyr::select(LocationID, connected_people) %>% distinct()), multiple = "all") %>% group_by(variant) %>% summarize(freq = weighted.mean(freq, w = connected_people, na.rm = TRUE), .groups = "keep") %>% filter(freq > 0) -> depicted_in_sankey
         sankey_all.dt %>% ungroup() %>% filter(variant %in% depicted_in_sankey$variant) %>% mutate(N = length(unique(LocationID)))  %>% filter(freq > 0) %>% group_by(variant) %>% summarize(N = unique(N), d = length(unique(LocationID)), .groups = "keep") %>% mutate(nd = N - d) %>% dplyr::select(-"N") -> occurence.dt
@@ -1013,7 +1034,7 @@ if(dim(globalFittedData)[1] > 0){
         ggsave(filename = filename1, plot = dpl, width = plotWidth, height = plotHeight)
         fwrite(as.list(c("detection", "Overview", opt$country, filename1)), file = summaryDataFile, append = TRUE, sep = "\t")
 
-        print(paste("     PROGRESS: generating WWTP detection table"))
+        print(paste("PROGRESS: generating WWTP detection table"))
 
         left_join(x = occurence.rate, y = occurence.freq, by = "variant", multiple = "all") -> synopsis.dt
         synopsis.dt %>% mutate(freq = signif(freq, digits = 2)) -> synopsis.dt
@@ -1027,7 +1048,7 @@ if(dim(globalFittedData)[1] > 0){
     }
 
     ## make plot per state
-    if(any(colnames(metaDT) == "state")){
+    if(dim(sankey_all.dt)[1] > 0 & any(colnames(metaDT) == "state")){
       left_join(x = sankey_all.dt, y = metaDT, by = "LocationID", multiple = "all") %>% dplyr::select(LocationID, variant, freq, state) %>% distinct() -> sankey_allState.dt
       sankey_state_plot_list <- list()
       for (stateoi in unique(sankey_allState.dt$state)){
@@ -1038,12 +1059,16 @@ if(dim(globalFittedData)[1] > 0){
 
             left_join(x = sankey_state.dt, y = (metaDT %>% dplyr::select(LocationID, connected_people) %>% distinct() %>% rowwise() %>% mutate(connected_people = ifelse(connected_people < 1, 1, connected_people))), multiple = "all", by = "LocationID") %>% group_by(variant) %>% summarize(freq = weighted.mean(freq, w = connected_people, na.rm = TRUE), .groups = "keep") %>% filter(freq > 0) -> sankey.dt
 
-            #sankey.dt %>% ungroup() %>% mutate(freq = freq/sum(freq)) -> sankey.dt
+            sankey.dt  %>% rowwise() %>% mutate(freq = ifelse(freq<0, 0, freq)) -> sankey.dt
+            sankey.dt  %>% rowwise() %>% mutate(freq = ifelse(freq>1, 1, freq)) -> sankey.dt
+            if(sum(sankey.dt$freq)>1){
+              sankey.dt  %>% ungroup() %>% mutate(freq = freq/sum(freq)) -> sankey.dt
+            }
             sankey.dt %>% ungroup() -> sankey.dt
             sankey.dt %>% group_by(variant = "B") %>% summarize(freq = 1-sum(freq), .groups = "keep") -> sankey.dt0
 
             rbind(sankey.dt, sankey.dt0) -> sankey.dt
-            sankey.dt %>% filter(freq > zeroo/10 | variant == "B") -> sankey.dt
+            sankey.dt %>% rowwise() %>% filter(freq > zeroo/10 | variant == "B") -> sankey.dt
 
             sankey.dt$variant_dealias <- unlist(lapply(as.list(sankey.dt$variant), dealias))
             for ( baseForColor in baseForColorsVariants ){
@@ -1067,7 +1092,15 @@ if(dim(globalFittedData)[1] > 0){
 
             sankey.dtt %>% rowwise() %>% mutate(node = ifelse(is.na(node), node, dealias(node))) %>% mutate(next_node = ifelse(is.na(next_node), next_node, dealias(next_node))) -> sankey.dtt
 
-            ggplot(sankey.dtt, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = label)) + geom_sankey(flow.alpha = .6, node.color = "gray30", type ='alluvial') + geom_sankey_label(size = 3, color = "white", fill = "gray40", position = position_nudge(x = 0.05, y = 0), na.rm = TRUE, type ='alluvial', hjust = 0) + theme_sankey(base_size = 16) + labs(x = NULL) + ggtitle(paste0("Gewichtetes Mittel: ", stateoi), subtitle = paste( sankey_date$earliest , "bis", sankey_date$latest)) + theme(legend.position = "none", axis.text.x = element_blank(), plot.title = element_text(hjust = 0), plot.subtitle=element_text(hjust = 0)) + scale_fill_manual(values = col2var, breaks = var2col) + scale_x_discrete(expand = expansion(mult = c(0, .1), add = c(.1, .5))) -> pp
+            sankey.dtt %>% rowwise() %>% mutate(label = ifelse((node == "B" & level>0), gsub("B", "unclassified", label), label)) -> sankey.dtt
+
+            ggplot(sankey.dtt, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = label)) +
+                geom_sankey(flow.alpha = .6, node.color = "gray30", type ='alluvial') +
+                geom_sankey_label(size = 3, color = "white", fill = "gray40", position = position_nudge(x = 0.05, y = 0), na.rm = TRUE, type ='alluvial', hjust = 0) +
+                theme_sankey(base_size = 16) + labs(x = NULL) + ggtitle(paste0("Gewichtetes Mittel: ", stateoi), subtitle = paste( sankey_date$earliest , "bis", sankey_date$latest)) +
+                theme(legend.position = "none", axis.text.x = element_blank(), plot.title = element_text(hjust = 0), plot.subtitle=element_text(hjust = 0)) +
+                scale_fill_manual(values = col2var, breaks = var2col) +
+                scale_x_discrete(expand = expansion(mult = c(0, .1), add = c(.1, .8))) -> pp
             sankey_state_plot_list[[length(sankey_state_plot_list)+1]] <- pp
 
             filename <- paste0(outdir, "/figs/sankey/Overview_",  gsub(" ", "_", stateoi), ".pdf")
@@ -1090,7 +1123,7 @@ if(dim(globalFittedData)[1] > 0){
 
 globalFittedData %>% group_by(LocationID) %>% mutate(n = length(unique(sample_date))) %>% filter(n > tpLimitToPlot*2) %>% filter(variant %in% VoI) %>% ungroup() %>% group_by(LocationID, LocationName, sample_date, variant) %>% summarize(value = mean(value), .groups = "drop") -> globalFittedData2
 if (dim(globalFittedData2)[1] >= tpLimitToPlot){
-  print(paste("     PROGRESS: plotting overview VoI"))
+  print(paste("PROGRESS: plotting overview VoI"))
   ggplot(data = globalFittedData2, aes(x = as.Date(sample_date), y = value, fill = variant)) + geom_area(position = "stack", alpha = 0.7)  + facet_wrap(~LocationName) + scale_fill_viridis_d(alpha = 0.6, begin = .05, end = .95, option = "H", direction = +1, name="") + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1)) + theme_minimal() + theme(legend.position="bottom", strip.text.x = element_text(size = 4.5), panel.grid.minor = element_blank(), panel.spacing.y = unit(0, "lines"), legend.direction="horizontal") + guides(fill = guide_legend(title = "", ncol = 10)) + scale_x_date(date_breaks = "2 month", date_labels =  "%b") + ylab(paste0("Variantenanteil [1/1]") ) + xlab("") -> r2
   filename <- paste0(outdir, '/figs/fullview', paste('/wwtp', "VoI", sep="_"), ".pdf")
   #ggsave(filename = filename, plot = r2, width = plotWidth*1.5, height = plotHeight*1.5)
@@ -1105,7 +1138,7 @@ globalFittedData %>% dplyr::select(variant) %>% distinct() %>% rowwise() %>% mut
 globalFittedData$variant <- factor(globalFittedData$variant, levels = variant_order)
 globalFittedData %>% group_by(LocationID) %>% mutate(n = length(unique(sample_date))) %>% filter(n > tpLimitToPlot*2) %>% ungroup() %>% group_by(LocationID, LocationName, sample_date, variant) %>% summarize(value = mean(value), .groups = "drop") -> globalFittedData2
 if (dim(globalFittedData2)[1] >= tpLimitToPlot){
-  print(paste("     PROGRESS: plotting overview"))
+  print(paste("PROGRESS: plotting overview"))
   r1 <- ggplot(data = globalFittedData2, aes(x = as.Date(sample_date), y = value, fill = variant))
   r1 <- r1 + geom_area(position = "stack", alpha = 0.7)
   r1 <- r1 + facet_wrap(~LocationName)
@@ -1129,7 +1162,7 @@ rm(globalFittedData2)
 
 print(paste("PROGRESS: start plotting maps"))
 for (voi in VoI){
-  print(paste("     PROGRESS: considering", voi))
+  print(paste("  PROGRESS: considering", voi))
 
   globalFittedData %>% filter(variant == voi) %>% filter(! is.na(sample_id) ) -> mapdata
   if(all(dim(mapdata) > 0)){
@@ -1142,7 +1175,7 @@ for (voi in VoI){
       mapdata %>% filter(value > 0) -> mapdata
 
       if (length(mapdata$value) > 0 ){
-        print(paste("     PROGRESS: plotting map for", voi))
+        print(paste("  PROGRESS: plotting map for", voi))
         print(data.frame(location=mapdata$LocationName, dates = mapdata$sample_date, values = mapdata$value))
 
         s <- ggplot()
