@@ -481,6 +481,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
           for (t in timeStart:length(timePoints)) {
             timepoint <- timePoints[t]
             timepoint_classic <- timePoints_classic[t]
+            ref_timepoint_classic <- timepoint_classic
             timepoint_day <- decimalDate(timepoint_classic,0)
             T <- which(timePoints_classic == timepoint_classic)
             timepoint <- timePoints[T]
@@ -668,6 +669,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
             }
 
           }
+    }
     print(paste0("PROGRESS: finished variant quantifiaction for all timePoints "))
 
     # remove variants which are never observed
