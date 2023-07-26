@@ -87,7 +87,6 @@ option_list = list(
               help="List of variants which should be plotted at the bottom axis. List separated by semicolon [default %default]", metavar="character"),
   make_option(c("--colorBase"), type="character", default="B.1.617.2,BA.1,BA.2,BA.4,BA.5",
               help="List of variants whos decendences should be grouped by color in plots. Maximal 5 variants. List separated by semicolon [default %default]", metavar="character"),
-
   make_option(c("--debug"), type="logical", default="FALSE",
               help="Toggle to use run with provided example data [default %default]", metavar="character")
 );
@@ -216,7 +215,7 @@ colorSets <- c("Blues", "Greens", "Oranges", "Purples", "Reds", "Greys")
 
 ## define global variables to fill
 globalFittedData <- data.table(variant = character(), LocationID = character(), LocationName  = character(), sample_id = character(), sample_date = character(), value = numeric() )
-globalFullData <- data.table(variant = character(), LocationID = character(), LocationName  = character(), sample_date = character(), value = numeric(), marker = character(), singlevalue = numeric() )
+globalFullData <- data.table(variant = character(), all_variants = character(), LocationID = character(), LocationName  = character(), sample_date = character(), value = numeric(), marker = character(), singlevalue = numeric() )
 globalFullSoiData <- data.table(variant = character(), LocationID = character(), LocationName  = character(), sample_date = character(), marker = character(), value = numeric())
 
 
@@ -226,6 +225,7 @@ moi <- fread(file = markermutationFile)
 unite(moi, NUC, c(4,3,5), ALT, sep = "", remove = FALSE) -> moi
 moi %>% mutate(Variants = gsub("other;?", "", Variants)) %>% mutate(Variants = gsub(";;", ";", Variants)) -> moi   ### just there to fix GISAID issue with BQ.1.1 vs BQ.1
 moi %>% dplyr::select("Variants") %>% mutate(Variants = strsplit(as.character(Variants), ";")) %>% unnest(cols = c(Variants)) %>% group_by(Variants) %>% summarize(n = n(), .groups = "keep") -> moi_marker_count
+moi %>% dplyr::select("Variants") %>% group_by(Variants) %>% summarize(n = n(), .groups = "keep")  -> moi_markerCombination_count
 moi %>% filter(!grepl(";", Variants)) %>% dplyr::select("Variants") %>% mutate(Variants = strsplit(as.character(Variants), ";")) %>% unnest(cols = c(Variants)) %>% group_by(Variants) %>% summarize(n = n(), .groups = "keep") -> moi_uniq_marker_count
 
 ## read special mutations of interest from file
@@ -451,11 +451,11 @@ timestamp()
 for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
     roi = unique(sewage_samps.dt$LocationID)[r]
     roiname = sewage_samps.dt %>% filter(LocationID == roi ) %>% pull(LocationName) %>% unique()
-    print(paste("PROGRESS:", r, roiname, roi))
+    print(paste("PROGRESS: start processing", r, roiname, roi))
 
     ### define data collector
     plantFittedData <- data.table(variant = character(), LocationID = character(), LocationName  = character(), sample_id = character(), sample_date = character(), value = numeric() )
-    plantFullData <- data.table(variant = character(), LocationID = character(), LocationName  = character(), sample_date = character(), value = numeric(), marker = character(), singlevalue = numeric() )
+    plantFullData <- data.table(variant = character(), all_variants = character(), LocationID = character(), LocationName  = character(), sample_date = character(), value = numeric(), marker = character(), singlevalue = numeric() )
     plantFullSoiData <- data.table(variant = character(), LocationID = character(), LocationName  = character(), sample_date = character(), marker = character(), value = numeric())
 
     ### filter data set for current location
@@ -509,7 +509,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
             # check if current timepoint is squeezed between two timepoint
             # detect lineage in neighboring timepoints
             # add lineages detected in both to specifiedLineages
-            # or if last time point, check which lineages are detecten in both previous two timePoints
+            # or if last time point, check which lineages are detecten in both previous two timePoints or in the newest timePoints
             # add them
             prev_timepoints <- allTimepoints[allTimepoints < timepoint]
             aft_timepoints <- allTimepoints[allTimepoints > timepoint]
@@ -518,11 +518,12 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
               prev_specifiedLineages <- detect_lineages(DT_ = ssdt, timepoint_ = max(prev_timepoints))
               aft_specifiedLineages <- detect_lineages(DT_ = ssdt, timepoint_ = min(aft_timepoints))
               specifiedLineages <- unique(c(specifiedLineages, prev_specifiedLineages[prev_specifiedLineages %in% aft_specifiedLineages]))
-            } else if(timepoint == max(timePoints) & length(prev_timepoints)>=2){
+            } else if(timepoint == max(timePoints) & length(prev_timepoints)>=1){
               print("LOG: augment variant detection be the two previous time points")
               precursor_specifiedLineages <- detect_lineages(DT_ = ssdt, timepoint_ = sort(prev_timepoints, decreasing=TRUE)[1])
-              preprecursor_specifiedLineages <- detect_lineages(DT_ = ssdt, timepoint_ = sort(prev_timepoints, decreasing=TRUE)[2])
-              specifiedLineages <- unique(c(specifiedLineages, precursor_specifiedLineages[precursor_specifiedLineages %in% preprecursor_specifiedLineages]))
+              specifiedLineages <- unique(c(specifiedLineages, precursor_specifiedLineages))
+              #preprecursor_specifiedLineages <- detect_lineages(DT_ = ssdt, timepoint_ = sort(prev_timepoints, decreasing=TRUE)[2])
+              #specifiedLineages <- unique(c(specifiedLineages, precursor_specifiedLineages, preprecursor_specifiedLineages[preprecursor_specifiedLineages %in% precursor_specifiedLineages]))
             }
 
 
@@ -651,8 +652,8 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
               print(paste("  LOG: fitted value corrected for >1: T =", unique(ssdtFit$T), "; method used =", method))
               }
 
-              ssdt %>% ungroup() %>% filter(Variants %in% specifiedLineagesTimecourse) %>% mutate(T = unique(ssdtFit$T)) %>% mutate(fit2 = ifelse(T > 1, fit1/T, fit1)) %>% filter(sample_date_decimal == timePoints[t]) -> ssdt2
-              plantFullData <- rbind(plantFullData, data.table(variant = ssdt2$Variants, LocationID =  rep(roi, length(ssdt2$fit1)), LocationName  =  rep(roiname, length(ssdt2$fit1)), sample_date = as.character(ssdt2$sample_date), value = ssdt2$fit2, marker = ssdt2$NUC, singlevalue = ssdt2$value.freq ))
+              ssdt %>% ungroup() %>% mutate(all_Variants = Variants) %>% mutate(Variants = strsplit(as.character(Variants), ";")) %>% unnest(Variants) %>% filter(Variants %in% specifiedLineages) %>% mutate(T = unique(ssdtFit$T)) %>% mutate(fit2 = ifelse(T > 1, fit1/T, fit1)) %>% filter(sample_date_decimal == timePoints[t]) -> ssdt2
+              plantFullData <- rbind(plantFullData, data.table(variant = ssdt2$Variants, all_variants = ssdt2$all_Variants, LocationID =  rep(roi, length(ssdt2$fit1)), LocationName  =  rep(roiname, length(ssdt2$fit1)), sample_date = as.character(ssdt2$sample_date), value = ssdt2$fit2, marker = ssdt2$NUC, singlevalue = ssdt2$value.freq ))
 
               ## save norm.fitted values into global DF; set all untested variants to 0
               for (j in specifiedLineagesTimecourse){
@@ -836,7 +837,19 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
       if(dim(filter(plantFullData, variant %in% VoI))[1] >= 1){
         print(paste("PROGRESS: plotting variantDetails VoI", roiname))
         ## print faceted line plot of fitted values plus point plot of measured AF for all VoIs
-        plantFullData %>% filter(variant %in% VoI) %>% ggplot()  + geom_line(data = subset(plantFittedData, variant %in% VoI), alpha = 0.6, size = 2, aes(x = as.Date(sample_date), y = value, col = variant)) + geom_jitter(aes(x = as.Date(sample_date), y = singlevalue), alpha = 0.33, size = 1.5, width = 0.33, height = 0) + geom_vline(xintercept = as.Date(latestSample$latest), linetype = "dotdash", color = "grey", size =  0.5) + facet_wrap(~variant)  + scale_color_manual(values = ColorBaseData$col, breaks = ColorBaseData$variant, name = "") + scale_y_continuous(labels=scales::percent) + theme_bw() + theme(legend.position="bottom", strip.background = element_rect(fill="grey97"), axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) + scale_x_date(date_breaks = "2 month", date_labels =  "%b %y", limits = c(as.Date(NA), as.Date(latestSample$latest))) + ylab(paste0("Variantenanteil [1/1]") ) + xlab("") -> p1
+        plantFullData %>% filter(all_variants %in% VoI) %>%
+              ggplot() +
+              geom_line(data = subset(plantFittedData, variant %in% VoI), alpha = 0.6, size = 2, aes(x = as.Date(sample_date), y = value, col = variant)) +
+              geom_jitter(aes(x = as.Date(sample_date), y = singlevalue), alpha = 0.33, size = 1.5, width = 0.33, height = 0) +
+              geom_vline(xintercept = as.Date(latestSample$latest), linetype = "dotdash", color = "grey", size =  0.5) +
+              facet_wrap(~variant)  +
+              scale_color_manual(values = ColorBaseData$col, breaks = ColorBaseData$variant, name = "") +
+              scale_y_continuous(labels=scales::percent) +
+              theme_bw() +
+              theme(legend.position="bottom", strip.background = element_rect(fill="grey97"), axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+              scale_x_date(date_breaks = "2 month", date_labels =  "%b %y", limits = c(as.Date(NA), as.Date(latestSample$latest))) +
+              ylab(paste0("Variantenanteil [1/1]") ) +
+              xlab("") -> p1
 
         filename <- paste0(outdir, '/figs/detail', paste('/wwtp', roi, "VoI", sep="_"), ".pdf")
         ggsave(filename = filename, plot = p1, width = plotWidth, height = plotHeight)
@@ -848,7 +861,19 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
       if(dim(plantFullData)[1] >= 1){
         print(paste("PROGRESS: plotting variant Details", roiname))
         ## print faceted line plot of fitted values plus point plot of measured AF for all lineages
-        plantFullData %>% ggplot() +  geom_line(data = plantFittedData, alpha = 0.6, size = 2, aes(x = as.Date(sample_date), y = value, col = variant)) + geom_jitter(aes(x = as.Date(sample_date), y = singlevalue), alpha = 0.33, size = 1.5, width = 0.33, height = 0) + geom_vline(xintercept = as.Date(latestSample$latest), linetype = "dotdash", color = "grey", size =  0.5) + facet_wrap(~variant) + scale_color_manual(values = ColorBaseData$col, breaks = ColorBaseData$variant, name = "") + scale_y_continuous(labels=scales::percent) + theme_bw() + theme(legend.position="bottom", strip.background = element_rect(fill="grey97"), axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) + scale_x_date(date_breaks = "3 month", date_labels =  "%b", limits = c(as.Date(NA), as.Date(latestSample$latest))) + ylab(paste0("Variantenanteil [1/1]") ) + xlab("") + guides(color = guide_legend(title = "", ncol = 7)) -> p2
+        plantFullData %>% filter(!grepl(";", all_variants)) %>%
+              ggplot() +
+              geom_line(data = plantFittedData, alpha = 0.6, size = 2, aes(x = as.Date(sample_date), y = value, col = variant)) +
+              geom_jitter(aes(x = as.Date(sample_date), y = singlevalue), alpha = 0.33, size = 1.5, width = 0.33, height = 0) +
+              geom_vline(xintercept = as.Date(latestSample$latest), linetype = "dotdash", color = "grey", size =  0.5) +
+              facet_wrap(~variant) +
+              scale_color_manual(values = ColorBaseData$col, breaks = ColorBaseData$variant, name = "") +
+              scale_y_continuous(labels=scales::percent) +
+              theme_bw() + theme(legend.position="bottom", strip.background = element_rect(fill="grey97"), axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+              scale_x_date(date_breaks = "3 month", date_labels =  "%b", limits = c(as.Date(NA), as.Date(latestSample$latest))) +
+              ylab(paste0("Variantenanteil [1/1]") ) +
+              xlab("") +
+              guides(color = guide_legend(title = "", ncol = 7)) -> p2
 
         filename <- paste0(outdir, '/figs/detail', paste('/wwtp', roi, "all", sep="_"), ".pdf")
         ggsave(filename = filename, plot = p2, width = plotWidth, height = plotHeight*1.6)
@@ -871,8 +896,8 @@ globalFullData %>% distinct() -> globalFullData
 globalFullSoiData %>% distinct() -> globalFullSoiData
 
 fwrite(globalFittedData , file = paste0(outdir, "/globalFittedData.csv"), sep = "\t")
-fwrite(globalFullData, file = paste0(outdir, "/globalFullData.csv"), sep = "\t")
-fwrite(globalFullSoiData, file = paste0(outdir, "/globalSpecialmutData.csv"), sep = "\t")
+fwrite(globalFullData, file = paste0(outdir, "/globalFullData.csv.gz"), sep = "\t")
+fwrite(globalFullSoiData, file = paste0(outdir, "/globalSpecialmutData.csv.gz"), sep = "\t")
 
 ## print overview of all VoI and all plants
 print(paste("PROGRESS: start plotting overviews"))
