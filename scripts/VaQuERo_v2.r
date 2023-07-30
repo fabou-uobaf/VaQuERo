@@ -87,7 +87,7 @@ option_list = list(
               help="List of variants which should be plotted at the bottom axis. List separated by semicolon [default %default]", metavar="character"),
   make_option(c("--colorBase"), type="character", default="B.1.617.2,BA.1,BA.2,BA.4,BA.5",
               help="List of variants whos decendences should be grouped by color in plots. Maximal 5 variants. List separated by semicolon [default %default]", metavar="character"),
-  make_option(c("--debug"), type="logical", default="FALSE",
+  make_option(c("--debug"), type="logical", default="FALSE", action = "store_true",
               help="Toggle to use run with provided example data [default %default]", metavar="character")
 );
 opt_parser = OptionParser(option_list=option_list);
@@ -99,8 +99,8 @@ opt = parse_args(opt_parser);
 ####  parameter setting for interactive debugging
 if(opt$debug){
     opt$dir = "dev_output"
-    opt$metadata = "data/metaData_general_short.csv"
-    opt$data="data/mutationData_DB_NationMonitoringSites.tsv.gz"
+    opt$metadata = "VaQuERo/data/metaDataSub.tsv"
+    opt$data="VaQuERo/data/mutationDataSub.tsv.gz"
     opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2023-05-23_Austria.csv"
     opt$pmarker="VaQuERo/resources/mutations_problematic_vss1_v3.csv"
     opt$smarker="VaQuERo/resources/mutations_special_2022-12-21.csv"
@@ -112,19 +112,45 @@ if(opt$debug){
     opt$minmarkfrac=0.5
     opt$smoothingsamples=2
     opt$smoothingtime=22
-    opt$voi="XBB.1.16,XBB.2.3"
-    opt$highlight="XBB.1.5,XBB.1.9,XBB.1.16,XBB.2.3"
-    opt$colorBase="XBB,BA.1,BA.2,BA.5"
-    opt$recent <- 21
+    opt$voi="B.1.1.7,B.1.617.2,P.1"
+    opt$highlight="B.1.1.7,B.1.617.2"
+    opt$colorBase="B.1.1.7,B.1.617.2,BA.1,BA.2,BA.5"
+    opt$recent <- 9999
     print("Warning: command line option overwritten")
 }
 #####################################################
 
 ## define functions
 options(warn=-1)
-source("VaQuERo/scripts/VaQueR_functions.r")
 
+## loading external fucntion library, expected to be in same dir as execution script
+sourceFileBase = "VaQueR_functions.r"
+sourceDir <- function() {
+        cmdArgs <- commandArgs(trailingOnly = FALSE)
+        needle <- "--file="
+        match <- grep(needle, cmdArgs)
+        if (length(match) > 0) {
+                # Rscript
+                return(dirname(normalizePath(sub(needle, "", cmdArgs[match]))))
+        } else {
+                # 'source'd via R console
+                return(dirname(normalizePath(sys.frames()[[1]]$ofile)))
+        }
+}
+sourceFile <- list.files(
+  sourceDir(),
+  pattern = sourceFileBase,
+  recursive = TRUE,
+  full.names = TRUE
+)
 
+if(length(sourceFile) == 1 && file.exists(sourceFile)){
+  print(paste("LOG: loading function source file", sourceFile))
+  opt$source = sourceFile
+  source(sourceFile)
+} else{
+  print(paste("ERROR: source file", sourceFileBase, "not found. Please double check if it is in the same directory as the analysis script VaQuERo_v2.R"))
+}
 ## print parameter to Log
 
 print("##~LOG~PARAMETERS~####################")
