@@ -1,9 +1,10 @@
-## installs the dependancies w/ respect to R packages for VaQuERo
+## installs the dependancies w/ respect to R packages for VaQuERo and VaQera
 
 inst_packages <-  installed.packages()
 
-need_packages <- c("tidyr", "ggplot2", "reshape2", "dplyr", "data.table", "gamlss", "ggmap", "tmaptools", "ggrepel", "scales", "betareg", "ggspatial", "sf", "rnaturalearth", "rnaturalearthdata", "optparse", "stringr", "lubridate", "rjson", "RColorBrewer", "ggsankey", "cowplot", "viridis", "devtools", "patchwork", "ggpubr", "ComplexHeatmap", "dendextend", "circlize", "NbClust", "gslnls")
+need_packages <- c("tidyr", "ggplot2", "reshape2", "dplyr", "data.table", "gamlss", "ggmap", "tmaptools", "ggrepel", "scales", "betareg", "ggspatial", "sf", "rnaturalearth", "rnaturalearthdata", "optparse", "stringr", "lubridate", "rjson", "RColorBrewer", "ggsankey", "cowplot", "viridis", "devtools", "patchwork", "ggpubr", "dendextend", "circlize", "NbClust", "gslnls")
 need_dev_packages <- c("davidsjoberg/ggsankey")
+need_bioc_packages <- c("ComplexHeatmap")
 
 counter = 0
 
@@ -23,5 +24,16 @@ for (maybe_need_to_install_dev_package in  need_dev_packages){
     counter <- counter+1
   }
 }
+
+need_to_install_bioc_packages <- need_bioc_packages[!need_bioc_packages %in% inst_packages]
+for (need_to_install_bioc_package in  need_to_install_bioc_packages){
+  print(paste("installing", need_to_install_bioc_package, "from BiocManager"))
+  if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+  BiocManager::install(need_to_install_bioc_package)
+  counter <- counter+1
+}
+
 
 print(paste("LOG: all set;", counter, "packages installed"))
