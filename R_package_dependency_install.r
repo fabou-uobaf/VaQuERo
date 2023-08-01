@@ -2,7 +2,7 @@
 
 inst_packages <-  installed.packages()
 
-need_packages <- c("tidyr", "ggplot2", "reshape2", "dplyr", "data.table", "gamlss", "ggmap", "tmaptools", "ggrepel", "scales", "betareg", "ggspatial", "sf", "rnaturalearth", "rnaturalearthdata", "optparse", "stringr", "lubridate", "rjson", "RColorBrewer", "ggsankey", "cowplot", "viridis", "devtools")
+need_packages <- c("tidyr", "ggplot2", "reshape2", "dplyr", "data.table", "gamlss", "ggmap", "tmaptools", "ggrepel", "scales", "betareg", "ggspatial", "sf", "rnaturalearth", "rnaturalearthdata", "optparse", "stringr", "lubridate", "rjson", "RColorBrewer", "ggsankey", "cowplot", "viridis", "devtools", "patchwork", "ggpubr", "ComplexHeatmap", "dendextend", "circlize", "NbClust", "gslnls")
 need_dev_packages <- c("davidsjoberg/ggsankey")
 
 counter = 0
