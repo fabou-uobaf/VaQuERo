@@ -123,7 +123,7 @@ if(opt$debug){
 ## define functions
 options(warn=-1)
 
-## loading external fucntion library, expected to be in same dir as execution script
+## loading external function library, expected to be in same dir as execution script
 sourceFileBase = "VaQueR_functions.r"
 sourceDir <- function() {
         cmdArgs <- commandArgs(trailingOnly = FALSE)
@@ -137,20 +137,37 @@ sourceDir <- function() {
                 return(dirname(normalizePath(sys.frames()[[1]]$ofile)))
         }
 }
-sourceFile <- list.files(
-  sourceDir(),
-  pattern = sourceFileBase,
-  recursive = TRUE,
-  full.names = TRUE
-)
+if(!interactive()){
+  sourceFile <- list.files(
+    sourceDir(),
+    pattern = sourceFileBase,
+    recursive = TRUE,
+    full.names = TRUE
+  )
+} else{
+  sourceFile <- c()
+}
 
 if(length(sourceFile) == 1 && file.exists(sourceFile)){
   print(paste("LOG: loading function source file", sourceFile))
   opt$source = sourceFile
   source(sourceFile)
 } else{
-  print(paste("ERROR: source file", sourceFileBase, "not found. Please double check if it is in the same directory as the analysis script VaQuERo_v2.R"))
+  sourceFile <- list.files(
+    ".",
+    pattern = sourceFileBase,
+    recursive = TRUE,
+    full.names = TRUE
+  )
+  if(length(sourceFile) == 1 && file.exists(sourceFile)){
+    print(paste("LOG: loading function source file", sourceFile))
+    opt$source = sourceFile
+    source(sourceFile)
+  } else{
+    print(paste("ERROR: source file", sourceFileBase, "not found. Please double check if it is in the same directory as the analysis script VaQuERo_v2.R"))
+  }
 }
+
 ## print parameter to Log
 
 print("##~LOG~PARAMETERS~####################")
