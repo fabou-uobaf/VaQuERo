@@ -1381,7 +1381,7 @@ if(length(unique(overviewPlot.dt.clust$label)) > 0){
     # take mean if more than two samples in one week
     overviewPlot.dt.clust %>% group_by(ANN.GENE, ANN.AA, NUC, label, kw, LocationID) %>% summarize(value.freq = mean(value.freq), .groups="keep") -> overviewPlot.dt.clust
 
-    ## sort each per location, per kw entry descending accorrding their af
+    ## sort each per location, per kw entry descending according to their af
     ## disrupting the time course per wwtp info but generating a weighted histogram like plot
     sort(apply(expand.grid(letters, letters), 1, paste, collapse="")) -> LetterCombs
     overviewPlot.dt.clust %>% group_by(label, kw) %>% arrange(desc(value.freq))  %>% mutate(plotlevel = LetterCombs[1:n()]) -> overviewPlot.dt.clust
@@ -1403,7 +1403,12 @@ if(length(unique(overviewPlot.dt.clust$label)) > 0){
 
     legendTxt <- paste0("Mutationen die geographisch geclustert oder in mehr als ", num_th, " Kläranlagen sig. überrepresentiert sind (d.h., nicht durch detektierte Varianten erklärt werden können) und ein wöchentliches Wachstum größer ", opt$growthlimit, " zeigen.")
     filename <- paste0(outdir, "/figs/growing_excessmutations/overview/",  paste('/overview_kinetics_excessmutations_filtered', sep="_"), ".tex")
-    overviewPlot.dt.clust %>% group_by(ANN.GENE, ANN.AA, NUC, label, LocationID) %>% filter(kw == max(kw)) %>% group_by(label) %>% summarize(.groups = "keep", min_AF = signif(min(value.freq), digits = 2), median_AF = signif(median(value.freq), digits = 2), max_AF = signif(max(value.freq), digits = 2), Anzahl_Klaeranlagen = length(unique(plotlevel)), Mutation = covspectrumLinkSimple(NUC)) -> overviewTable.dt
+    overviewPlot.dt.clust %>%
+        group_by(ANN.GENE, ANN.AA, NUC, label, LocationID) %>%
+        filter(kw == max(kw)) %>%
+        group_by(label) %>%
+        inner_join(y = all_mutations_excess_growing, by = c("LocationID", "NUC" = "nuc_mutation")) %>%
+        summarize(.groups = "keep", min_AF = signif(min(value.freq), digits = 2), median_AF = signif(median(value.freq), digits = 2), max_AF = signif(max(value.freq), digits = 2), Anzahl_Klaeranlagen = length(unique(plotlevel)), Mutation = covspectrumLinkSimple(NUC)) -> overviewTable.dt
     makeTexTab(filename, overviewTable.dt, legendTxt)
     fwrite(as.list(c("growing_excessmutations", "overview", "table", "filtered", filename)), file = summaryDataFile, append = TRUE, sep = "\t")
 
