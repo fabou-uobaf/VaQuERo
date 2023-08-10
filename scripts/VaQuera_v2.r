@@ -106,9 +106,9 @@ if(opt$debug){
   opt$metadata = "data_recent/metaData_general.csv"
   opt$data="data_recent/mutationData_DB_NationMonitoringSites.tsv.gz"
   opt$inputformat = "tidy"
-  opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2023-03-10_Europe.csv"
-  opt$mutstats  = "VaQuERo/resources/mutations_stats_pango_codonPhased_2023-03-10.csv.gz"
-  opt$group2var = "VaQuERo/resources/groupMembers_pango_codonPhased_2023-03-10_Europe.csv"
+  opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2023-07-31_Austria.csv"
+  opt$mutstats  = "VaQuERo/resources/mutations_stats_pango_codonPhased_2023-07-31.csv.gz"
+  opt$group2var = "VaQuERo/resources/groupMembers_pango_codonPhased_2023-07-31_Austria.csv"
   opt$pmarker="VaQuERo/resources/mutations_problematic_vss1_v3.csv"
   opt$detectmode = "umm"
   opt$ninconsens = 0.2
@@ -1128,6 +1128,13 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
     ## complete cases (fill with zero)
     ## take care of mean function here (same data same location issue!!!!)
     data.table::dcast(data = dt, formula = sample_date~NUC, value.var = "value.freq", fill = 0, fun.aggregate = mean)  -> dt
+
+    ## ignore if less than l=3 time points considered
+    l = 3
+    if(dim(dt)[1] < l){
+      print(paste0("LOG: too little timepoints to analyse in <", roiname, "> (<", roi, ">)"))
+      next;
+    }
 
     ## keep only mutations with AF = 0 in the first OR last l=3 timepoints
     dim(dt)
