@@ -24,7 +24,6 @@ decimalDate <- function(x, d){
 ## dealias variants
 dealias <- function(x){
   ll <- strsplit(x, split="\\.")
-  print(ll)
   if(length(ll) >= 1 & length(ll[[1]]) >= 1){
     base <- strsplit(x, split="\\.")[[1]][1]
 
