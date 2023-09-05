@@ -877,7 +877,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
         rm(q1, filename, spemut_draw1)
       }
 
-      if(dim(filter(plantFullData, variant %in% VoI))[1] >= 1){
+      if(dim(filter(plantFullData, all_variants %in% VoI))[1] >= 1){
         print(paste("PROGRESS: plotting variantDetails VoI", roiname))
         ## print faceted line plot of fitted values plus point plot of measured AF for all VoIs
         plantFullData %>% filter(all_variants %in% VoI) %>%
