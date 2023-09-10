@@ -18,6 +18,7 @@ my $mutations_fh      = "VaQuERo/resources/mutations_list_grouped_pango_codonPha
 my $smutations_fh     = "VaQuERo/resources/mutations_special_2022-12-21.csv";
 my $groups_fh         = "VaQuERo/resources/groupMembers_pango_codonPhased_2023-03-10_Europe.csv";
 my $fig_fh            = "Mutations_of_Interest.pdf";
+my @fig               = ();
 my $fig               = "Kinetik ausgewählter Mutationen im Spike RBD-Bereich.";
 my $tab_fh            = "growthrate_per_mutation_pois.csv";
 my $tab               = "RBD Mutationen mit Wachstum in mehr als 2 Kläranlagen.";
@@ -37,15 +38,16 @@ GetOptions(
   "t:s"       => \$resulttable_fh,
   "g:s"       => \$groups_fh,
   "f:s"       => \$fig_fh,
-  "v:s"       => \$fig,
-  "ta:s"       => \$tab_fh,
-  "tat:s"      => \$tab
+  "v=s{1,}"   => \@fig,
+  "ta:s"      => \$tab_fh,
+  "tat:s"     => \$tab
 );
 
 print STDERR "LOG: input variants  == $in_var_fh \n";
 print STDERR "LOG: input mutation  == $in_mut_fh \n";
 print STDERR "LOG: date   == $date \n";
-
+$fig = join " ",@fig;
+print STDERR $fig."\n";
 
 my %data = ();
 my %data_m = ();
@@ -235,6 +237,14 @@ else{
   print STDERR "Warning: no overview map\n";
 }
 
+if(-f "$fig_fh"){
+  &printFig($fig_fh, $fig);
+  print STDERR "Log: use plot <$fig_fh> as special Figure\n";
+}
+else{
+  print STDERR "Warning: no plot found by name $fig_fh\n";
+}
+
 # print subsections for growing excess mutation overview
 if (defined($data_m{growing_excessmutations}->{overview}->{plot}) && defined($data_m{growing_excessmutations}->{overview}->{map})) {
     my $path_plot = $data_m{growing_excessmutations}->{overview}->{plot}->{filtered};
@@ -398,7 +408,7 @@ sub printFig{
 my $fh = shift;
 my $lbl = shift;
 my $txt='
-\section{Einzel Mutationen Kinetik}
+\section{Kinetik ausgewählter Mutationen}
 \label{Fig}
 
 \begin{figure}[htpb]
