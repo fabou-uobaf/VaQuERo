@@ -24,20 +24,24 @@ decimalDate <- function(x, d){
 ## dealias variants
 dealias <- function(x){
   ll <- strsplit(x, split="\\.")
-  if(length(ll) >= 1 & length(ll[[1]]) >= 1){
-    base <- strsplit(x, split="\\.")[[1]][1]
+  if(length(ll) >= 1){
+    if(length(ll[[1]]) >= 1){
+        base <- strsplit(x, split="\\.")[[1]][1]
 
-    if(!any(names(aliases) == base)){
-      y <- base
-    } else if(nchar(aliases[names(aliases) == base]) == 0){
-      y <- base
-    } else if(grepl("^X", base)){
-      y <- base
-    } else {
-      y <- aliases[names(aliases) == base]
+        if(!any(names(aliases) == base)){
+          y <- base
+        } else if(nchar(aliases[names(aliases) == base]) == 0){
+          y <- base
+        } else if(grepl("^X", base)){
+          y <- base
+        } else {
+          y <- aliases[names(aliases) == base]
+        }
+        dealiased <- gsub(base, y, x)
+        return(dealiased)
+    } else{
+      return(NA)
     }
-    dealiased <- gsub(base, y, x)
-    return(dealiased)
   } else{
     return(NA)
   }
