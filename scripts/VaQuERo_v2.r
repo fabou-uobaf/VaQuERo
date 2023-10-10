@@ -1082,8 +1082,15 @@ if(dim(globalFittedData)[1] > 0){
 
         print(paste("PROGRESS: plotting WWTP detection plot"))
 
-        left_join(x = sankey_all.dt, y = (metaDT %>% dplyr::select(LocationID, connected_people) %>% distinct()), multiple = "all") %>% group_by(variant) %>% summarize(freq = weighted.mean(freq, w = connected_people, na.rm = TRUE), .groups = "keep") %>% filter(freq > 0) -> depicted_in_sankey
-        sankey_all.dt %>% ungroup() %>% filter(variant %in% depicted_in_sankey$variant) %>% mutate(N = length(unique(LocationID)))  %>% filter(freq > 0) %>% group_by(variant) %>% summarize(N = unique(N), d = length(unique(LocationID)), .groups = "keep") %>% mutate(nd = N - d) %>% dplyr::select(-"N") -> occurence.dt
+        left_join(x = sankey_all.dt, y = (metaDT %>% dplyr::select(LocationID, connected_people) %>% distinct()), multiple = "all") %>%
+            group_by(variant) %>% summarize(freq = weighted.mean(freq, w = connected_people, na.rm = TRUE), .groups = "keep") %>%
+            filter(freq > zeroo/10) -> depicted_in_sankey
+        sankey_all.dt %>%
+            ungroup() %>% filter(variant %in% depicted_in_sankey$variant) %>%
+            mutate(N = length(unique(LocationID))) %>%
+            filter(freq > zeroo/10) %>%
+            group_by(variant) %>% summarize(N = unique(N), d = length(unique(LocationID)), .groups = "keep") %>%
+            mutate(nd = N - d) %>% dplyr::select(-"N") -> occurence.dt
         occurence.dt %>% mutate(r = paste0(sprintf("%.0f", 100*d/(d+nd)), "%")) -> occurence.rate
         melt(occurence.dt)  -> occurence.dt
 
