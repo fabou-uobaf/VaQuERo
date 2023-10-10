@@ -1114,7 +1114,7 @@ if(dim(globalFittedData)[1] > 0){
         print(paste("PROGRESS: generating WWTP detection table"))
 
         left_join(x = occurence.rate, y = occurence.freq, by = "variant", multiple = "all") -> synopsis.dt
-        synopsis.dt %>% mutate(freq = signif(freq, digits = 2)) -> synopsis.dt
+        synopsis.dt %>% filter(freq > zeroo/10) %>% mutate(freq = signif(freq, digits = 2)) -> synopsis.dt
         colnames(synopsis.dt) <- c("Variante", "Detektiert", "Nicht detektiert", "Prozent", "Gew. Mittel")
         filename2 <- paste0(opt$dir, "/synopsis.tex")
         legendTxt <- paste("Für jede Virus Variente die Österreich in Proben von", sankey_date$earliest , "bis", sankey_date$latest ,"detektiert wurden, jeweils das gewichtete Mittel der relativen Häufigkeit und die Anzahl der Kläranlagen in denen die Variante detektiert wurde")
