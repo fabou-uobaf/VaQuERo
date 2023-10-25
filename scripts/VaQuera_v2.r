@@ -1346,7 +1346,7 @@ overviewPlot.dt %>%  left_join(y = nuc2label, by = c("NUC" = "NUC")) -> overview
 # filter mutations which are growing and in excess and geographically clustered
 
 pval_th <- 0.01
-num_th  <- 5
+num_th  <- 6
 labelsToUse <- c()
 labelsToUse_geocluster <- c()
 labelsToUse_abundance <- c()
