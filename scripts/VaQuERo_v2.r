@@ -825,7 +825,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
         q3 <- q3 + scale_x_date(date_breaks = "2 month", date_labels =  "%b %y", limits = c(as.Date(NA), as.Date(latestSample$latest)+14))
         q3 <- q3 + ylab(paste0("Variantenanteil [1/1]") )
         q3 <- q3 + xlab("Kalender Woche")
-        q3 <- q3 + geom_text_repel(data=stacker.labels, aes(x=as.Date(kw), y=agg_value, label=variant), position = position_stack(), min.segment.length = .01, direction = "y", alpha = 0.6, xlim = c(max(as.Date(stacker.labels$kw)), Inf), size = 2.5)
+        q3 <- q3 + geom_text_repel(data=plottng_labels, aes(x=as.Date(sample_date), y=value, label=variant), position = position_stack(), min.segment.length = .01, direction = "y", alpha = 0.6, xlim = c(max(as.Date(plottng_labels$sample_date)), Inf), size = 2.5)
 
         ggplot(data = plottng_data, aes(x = as.Date(sample_date), y = value, fill = variant, color = variant)) -> q3s
         q3s <- q3s + geom_area(alpha = 0.8)
