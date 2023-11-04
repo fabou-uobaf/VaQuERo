@@ -101,7 +101,7 @@ if(opt$debug){
     opt$dir = "dev_output"
     opt$metadata = "VaQuERo/data/metaDataSub.tsv"
     opt$data="VaQuERo/data/mutationDataSub.tsv.gz"
-    opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2023-05-23_Austria.csv"
+    opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2023-10-31_Europe.csv"
     opt$pmarker="VaQuERo/resources/mutations_problematic_vss1_v3.csv"
     opt$smarker="VaQuERo/resources/mutations_special_2022-12-21.csv"
     opt$zero=0.01
@@ -109,11 +109,11 @@ if(opt$debug){
     opt$minuniqmark=1
     opt$minuniqmarkfrac=0.5
     opt$minqmark=5
-    opt$minmarkfrac=0.5
+    opt$minmarkfrac=0.7
     opt$smoothingsamples=2
-    opt$smoothingtime=22
-    opt$voi="B.1.1.7,B.1.617.2,P.1"
-    opt$highlight="B.1.1.7,B.1.617.2"
+    opt$smoothingtime=21
+    opt$voi="B.1.1.7,B.1.617.2,P.1,BA.2.86"
+    opt$highlight="B.1.1.7,B.1.617.2,BA.2.86"
     opt$colorBase="B.1.1.7,B.1.617.2,BA.1,BA.2,BA.5"
     opt$recent <- 9999
     print("Warning: command line option overwritten")
@@ -816,19 +816,34 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
         ggplot(data = plottng_data, aes(x = as.Date(sample_date), y = value, fill = variant, color = variant)) -> q3
         q3 <- q3 + geom_area(position = "stack", alpha = 0.6)
         q3 <- q3 + geom_vline(xintercept = as.Date(latestSample$latest), linetype = "dotdash", color = "grey", size =  0.5)
-        q3 <- q3 + facet_wrap(~LocationName, ncol = 4)
         q3 <- q3 + scale_fill_manual(values = ColorBaseData$col, breaks = ColorBaseData$variant, name = "")
         q3 <- q3 + scale_color_manual(values = ColorBaseData$col, breaks = ColorBaseData$variant, name = "")
-	      q3 <- q3 + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1))
-        q3 <- q3 + theme_bw() + theme(legend.position="bottom", strip.text.x = element_text(size = 10), panel.grid.minor = element_blank(), panel.spacing.y = unit(0, "lines"),  strip.background = element_rect(fill="grey97"), axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
-        q3 <- q3 + scale_x_date(date_breaks = "2 month", date_labels =  "%b %y", limits = c(as.Date(NA), as.Date(latestSample$latest)+14))
-        q3 <- q3 + ylab(paste0("Variantenanteil [1/1]") ) + xlab("")
+        q3 <- q3 + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1))
+        q3 <- q3 + theme_minimal()
+        q3 <- q3 + theme(legend.position="none", strip.text.x = element_text(size = 4.5), panel.grid.minor = element_blank(), panel.spacing.y = unit(0, "lines"), legend.direction="horizontal")
         q3 <- q3 + guides(fill = guide_legend(title = "", ncol = 7, override.aes = aes(label = "")), color = guide_legend(title = "", ncol = 7, override.aes = aes(label = "")))
-        q3 <- q3 + geom_text_repel(data=plottng_labels, aes(x=as.Date(sample_date), y=value, label=variant), position = position_stack(), min.segment.length = .01, direction = "y", alpha = 0.6, xlim = c(max(as.Date(plottng_labels$sample_date)), Inf), size = 2)
+        q3 <- q3 + scale_x_date(date_breaks = "2 month", date_labels =  "%b %y", limits = c(as.Date(NA), as.Date(latestSample$latest)+14))
+        q3 <- q3 + ylab(paste0("Variantenanteil [1/1]") )
+        q3 <- q3 + xlab("Kalender Woche")
+        q3 <- q3 + geom_text_repel(data=stacker.labels, aes(x=as.Date(kw), y=agg_value, label=variant), position = position_stack(), min.segment.length = .01, direction = "y", alpha = 0.6, xlim = c(max(as.Date(stacker.labels$kw)), Inf), size = 2.5)
+
+        ggplot(data = plottng_data, aes(x = as.Date(sample_date), y = value, fill = variant, color = variant)) -> q3s
+        q3s <- q3s + geom_area(alpha = 0.8)
+        q3s <- q3s + geom_vline(xintercept = as.Date(latestSample$latest), linetype = "dotdash", color = "grey", size =  0.5)
+        q3s <- q3s + facet_wrap(~variant, ncol = 5, scales = "free_y")
+        q3s <- q3s + scale_fill_manual(values = ColorBaseData$col, breaks = ColorBaseData$variant, name = "")
+        q3s <- q3s + scale_color_manual(values = ColorBaseData$col, breaks = ColorBaseData$variant, name = "")
+        q3s <- q3s + scale_y_continuous(labels=scales::percent, n.breaks = 3)
+        q3s <- q3s + theme_minimal()
+        q3s <- q3s + theme(legend.position="none", axis.text.y = element_text(size = 7), axis.text.x = element_text(size = 6), strip.text.x = element_text(size = 5), panel.grid.minor = element_blank(), panel.spacing.y = unit(0, "lines"), legend.direction="horizontal")
+        q3s <- q3s + guides(fill = guide_legend(title = "", ncol = 7, override.aes = aes(label = "")), color = guide_legend(title = "", ncol = 7, override.aes = aes(label = "")))
+        q3s <- q3s + scale_x_date(date_breaks = "4 month", date_labels =  "%b %y", limits = c(as.Date(NA), as.Date(latestSample$latest)+14))
+        q3s <- q3s + ylab(paste0("Variantenanteil [1/1]") )
+        q3s <- q3s + xlab("")
 
 
         filename <- paste0(outdir, '/figs/stackview', paste('/wwtp', roi, "all", sep="_"), ".pdf")
-        ggsave(filename = filename, plot = q3, width = plotWidth, height = plotHeight)
+        ggsave(filename = filename, plot = plot_grid(q3, q3s, ncol = 1, rel_heights = c(2,3)), width = plotWidth, height = 1.4*plotHeight)
         fwrite(as.list(c("stackOverview", c( ifelse(dim(count_last_BSF_run_id)[1] > 0, "current", "old"), roiname, "all", filename))), file = summaryDataFile, append = TRUE, sep = "\t")
 
         rm(q3, filename, plantFittedData2, FillIdx, LabelTxt, GrpIdx, g, plottng_labels)
@@ -994,17 +1009,31 @@ if (dim(globalFittedData)[1] >= tpLimitToPlot){
   ap <- ap + scale_color_manual(values = ColorBaseData$col, breaks = ColorBaseData$variant, name = "")
   ap <- ap + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1))
   ap <- ap + theme_minimal()
-  ap <- ap + theme(legend.position="bottom", strip.text.x = element_text(size = 4.5), panel.grid.minor = element_blank(), panel.spacing.y = unit(0, "lines"), legend.direction="horizontal")
+  ap <- ap + theme(legend.position="none", strip.text.x = element_text(size = 4.5), panel.grid.minor = element_blank(), panel.spacing.y = unit(0, "lines"), legend.direction="horizontal")
   ap <- ap + guides(fill = guide_legend(title = "", ncol = 7, override.aes = aes(label = "")), color = guide_legend(title = "", ncol = 7, override.aes = aes(label = "")))
   ap <- ap + scale_x_date(date_breaks = "2 month", date_labels =  "%b %y", limits = c(as.Date(NA), as.Date(latestSample$latest)+14))
   ap <- ap + ylab(paste0("Variantenanteil [1/1]") )
   ap <- ap + xlab("Kalender Woche")
   ap <- ap + ggtitle("Gewichtetes Mittel: Österreich")
-  ap <- ap + geom_text_repel(data=stacker.labels, aes(x=as.Date(kw), y=agg_value, label=variant), position = position_stack(), min.segment.length = .01, direction = "y", alpha = 0.6, xlim = c(max(as.Date(stacker.labels$kw)), Inf), size = 3)
+  ap <- ap + geom_text_repel(data=stacker.labels, aes(x=as.Date(kw), y=agg_value, label=variant), position = position_stack(), min.segment.length = .01, direction = "y", alpha = 0.6, xlim = c(max(as.Date(stacker.labels$kw)), Inf), size = 2.5)
+
+  aps <- ggplot(data = stacker.dtt, aes(x = as.Date(kw), y = agg_value, fill = variant, color = variant))
+  aps <- aps + geom_area(alpha = 0.8)
+  aps <- aps + geom_vline(xintercept = as.Date(latestSample$latest), linetype = "dotdash", color = "grey", size =  0.5)
+  aps <- aps + facet_wrap(~variant, ncol = 5, scales = "free_y")
+  aps <- aps + scale_fill_manual(values = ColorBaseData$col, breaks = ColorBaseData$variant, name = "")
+  aps <- aps + scale_color_manual(values = ColorBaseData$col, breaks = ColorBaseData$variant, name = "")
+  aps <- aps + scale_y_continuous(labels=scales::percent, n.breaks = 3)
+  aps <- aps + theme_minimal()
+  aps <- aps + theme(legend.position="none", axis.text.y = element_text(size = 7), axis.text.x = element_text(size = 6), strip.text.x = element_text(size = 5), panel.grid.minor = element_blank(), panel.spacing.y = unit(0, "lines"), legend.direction="horizontal")
+  aps <- aps + guides(fill = guide_legend(title = "", ncol = 7, override.aes = aes(label = "")), color = guide_legend(title = "", ncol = 7, override.aes = aes(label = "")))
+  aps <- aps + scale_x_date(date_breaks = "4 month", date_labels =  "%b %y", limits = c(as.Date(NA), as.Date(latestSample$latest)+14))
+  aps <- aps + ylab(paste0("Variantenanteil [1/1]") )
+  aps <- aps + xlab("")
 
 
   filename <- paste0(outdir, '/figs/stackview', '/', paste(opt$country, "all", sep="_"), ".pdf")
-  ggsave(filename = filename, plot = ap, width = plotWidth, height = 1.2*plotHeight)
+  ggsave(filename = filename, plot = plot_grid(ap, aps, ncol = 1, rel_heights = c(2,3)), width = plotWidth, height = 1.4*plotHeight)
   fwrite(as.list(c("stacked", "Overview", opt$country, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
 
   rm(ap,filename, ColorBaseData, stacker.dt, stacker.dtt)
