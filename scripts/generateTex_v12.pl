@@ -390,7 +390,7 @@ my $fh = shift;
 my $lbl = shift;
 my $txt='
 \FloatBarrier
-{\bf {\large Überblick aller detektierten Varianten in der aktuellen Probe}}
+{\bf Überblick aller detektierten Varianten in der aktuellen Probe}
 
 \begin{figure}[htpb]
   \begin{center}
@@ -681,7 +681,7 @@ sub printDetailPlot{
 
 my $txt = '
 \FloatBarrier
-{\bf {\large Detailansicht ausgewählter Varianten}}
+{\bf Detailansicht ausgewählter Varianten}
 
 \begin{figure}[htpb]
   \begin{center}
@@ -710,7 +710,7 @@ sub prinExcessGrowPlot{
 
 my $txt = '
 \FloatBarrier
-{\bf {\large Überschuss Mutationen}}
+{\bf Überschuss Mutationen}
 
 '."$table_content".'
 ';
@@ -724,7 +724,7 @@ sub printSpecialMutPlot{
 
 my $txt = '
 \FloatBarrier
-{\bf {\large Detailansicht ausgewählter Spezial-Mutationen}}
+{\bf Detailansicht ausgewählter Spezial-Mutationen}
 
 \begin{figure}[htpb]
   \begin{center}
@@ -744,7 +744,7 @@ sub printStackPlot{
 my $txt = '
 \FloatBarrier
 \newpage
-{\bf {\large Überblick aller detektierten Varianten}}
+{\bf Überblick aller detektierten Varianten}
 
 \begin{figure}[htpb]
   \begin{center}
