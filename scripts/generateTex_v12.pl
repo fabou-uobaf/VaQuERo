@@ -279,10 +279,10 @@ if (defined($data{variantDetail}->{current}) && defined($data{stackOverview}->{c
       &printStackPlot($wwplant_tidy, $path1);
     }
 
-    if ( defined($data{variantDetail}->{current}->{$wwplant}->{all}) ){
-      my $path2 = $data{variantDetail}->{current}->{$wwplant}->{all};
-      &printDetailPlot($wwplant_tidy, $path2);
-    }
+    #if ( defined($data{variantDetail}->{current}->{$wwplant}->{all}) ){
+    #  my $path2 = $data{variantDetail}->{current}->{$wwplant}->{all};
+    #  &printDetailPlot($wwplant_tidy, $path2);
+    #}
 
     if( defined($data_m{excessmutation}->{plot}->{$wwplant}) ){
       my $path1 = $data_m{excessmutation}->{plot}->{$wwplant};
@@ -375,7 +375,7 @@ my $txt='
 
 \begin{figure}[htpb]
   \begin{center}
-    \includegraphics[width=0.66\textwidth]{'."$fh".'}
+    \includegraphics[width=0.95\textwidth]{'."$fh".'}
     \caption{'."$lbl".'}
   \end{center}
 \end{figure}
@@ -408,6 +408,7 @@ sub printFig{
 my $fh = shift;
 my $lbl = shift;
 my $txt='
+\newpage
 \section{Kinetik ausgewählter Mutationen}
 \label{Fig}
 
@@ -712,12 +713,6 @@ my $txt = '
 {\bf {\large Überschuss Mutationen}}
 
 '."$table_content".'
-\begin{figure}[htpb]
-  \begin{center}
-    \includegraphics[width=0.66\textwidth]{'."$pathp".'}
-    \caption{Überschuß-Mutationen für das Klärwerk '."$location".', d.h., Mutationen die nicht durch detektierte Varianten erklärt werden können und ein wöchentliches Wachstum größer 0.02 zeigen.}
-  \end{center}
-\end{figure}
 ';
 print $txt;
 }
@@ -748,11 +743,12 @@ sub printStackPlot{
 
 my $txt = '
 \FloatBarrier
+\newpage
 {\bf {\large Überblick aller detektierten Varianten}}
 
 \begin{figure}[htpb]
   \begin{center}
-    \includegraphics[width=0.66\textwidth]{'."$path".'}
+    \includegraphics[width=0.95\textwidth]{'."$path".'}
     \caption{Relative Häufigkeit aller detektierten Variante(n) für die gesamte Messzeitreihe für das Klärwerk '."$location".'.}
   \end{center}
 \end{figure}
@@ -766,13 +762,12 @@ sub printStatusMap{
   my $path    = shift;
 
 my $txt = '
-\clearpage
 \subsection{Übersicht '."Sequenzierstatus".'}
 \label{map'."status".'}
 
 \begin{figure}[htpb]
   \begin{center}
-    \includegraphics[width=0.5\textwidth]{'."$path".'}
+    \includegraphics[width=0.41\textwidth]{'."$path".'}
     \caption{Zusammenfassung des Sequenziererfolgs aller Proben aus der letzten Sequenziertranche. Wenn mindestens 40\% des Genomes erfolgreich rekonstruiert werden konnte, gilt die Probe als erfolgreich sequenziert und wird im Weiteren auch analysiert. Wenn weniger als 40\% aber mehr als 5\% des Genomes rekonstuiert werden konnte, wird die Probe mit "Virus detektiert" makiert, aber nicht versucht verschiedene Varianten zu quantifizieren. Darunter gilt die Probe als fehlgeschlagen. Da manche Kläranlagen mehrfach pro Woche beprobt werden, können auch fehlgeschlagene und erfolgreiche Beprobungen für die selbe Anlage in einer Sequenziertranche vorkommen. .}
   \end{center}
 \end{figure}
@@ -790,6 +785,7 @@ sub printMutationOverview{
     $table_content.=$_;
   };
   close OT;
+#    \includegraphics[width=0.66\textwidth]{'."$plot".'}
 
 my $txt = '
 \clearpage
@@ -798,7 +794,6 @@ my $txt = '
 
 \begin{figure}[htpb]
   \begin{center}
-    \includegraphics[width=0.66\textwidth]{'."$plot".'}
     \includegraphics[width=0.66\textwidth]{'."$map".'}
     \caption{Mutation die geographisch geclustert oder in mehr als 5 Kläranlagen sig. überrepresentiert sind (d.h., nicht durch detektierte Varianten erklärt werden können) und ein wöchentliches Wachstum größer 0.02 zeigen.}
   \end{center}
@@ -814,13 +809,12 @@ sub printMapPerVariant{
   my $path    = shift;
 
 my $txt = '
-\clearpage
 \subsection{Übersicht '."$variant".'}
 \label{map'."$variant".'}
 
 \begin{figure}[htpb]
   \begin{center}
-    \includegraphics[width=0.5\textwidth]{'."$path".'}
+    \includegraphics[width=0.41\textwidth]{'."$path".'}
     \caption{Der Farbton zeigt den relativen Anteil, falls größer Null, der Variante '."$variant".' zum Zeitpunkt der letzten Probennahme. Stellen mit einem Anteil von Null werden nicht gezeichnet.}
   \end{center}
 \end{figure}
@@ -922,6 +916,8 @@ my $txt1 = '
   \end{tabular}
 \end{center}
 \newpage
+\tableofcontents
+\clearpage
 
 %----------------------------------------------------------------------------------------
 %	SECTION 1
@@ -937,8 +933,7 @@ my $txt2 = join("", @txt2);
 my $txt3 = '
 
 
-\tableofcontents
-\clearpage
+
 
 %----------------------------------------------------------------------------------------
 %	SECTION 2
@@ -951,6 +946,7 @@ print $txt1;
 print $txt2;
 # print graphical synapsis
 if (defined($data{sankey}->{Overview}->{Austria}) || defined($data{sankey}->{allStates}->{Austria})){
+    print '\newpage'."\n";
     print '\subsection{Graphische Synopsis}'."\n";
     print '\label{graphsyn}'."\n";
 
