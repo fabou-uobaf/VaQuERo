@@ -14,9 +14,9 @@ sub iso8601_date {
 my $in_var_fh         = "summary.csv";
 my $in_mut_fh         = "summary.csv";
 my $syn_fh            = "synopsis.tex";
-my $mutations_fh      = "VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2023-03-10_Europe.csv";
+my $mutations_fh      = "VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2023-11-11_Europe.csv";
 my $smutations_fh     = "VaQuERo/resources/mutations_special_2022-12-21.csv";
-my $groups_fh         = "VaQuERo/resources/groupMembers_pango_codonPhased_2023-03-10_Europe.csv";
+my $groups_fh         = "VaQuERo/resources/groupMembers_pango_codonPhased_2023-11-11_Europe.csv";
 my $fig_fh            = "Mutations_of_Interest.pdf";
 my @fig               = ();
 my $fig               = "Kinetik ausgewählter Mutationen im Spike RBD-Bereich.";

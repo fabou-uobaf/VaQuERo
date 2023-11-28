@@ -26,7 +26,11 @@ dealias <- function(x){
   ll <- strsplit(x, split="\\.")
   if(length(ll) >= 1){
     if(length(ll[[1]]) >= 1){
+<<<<<<< HEAD
         base <- strsplit(x, split="\\.")[[1]][1]
+=======
+  base <- strsplit(x, split="\\.")[[1]][1]
+>>>>>>> cb221fb (clean up and vaquera v2 role-out)
 
         if(!any(names(aliases) == base)){
           y <- base
@@ -45,6 +49,17 @@ dealias <- function(x){
   } else{
     return(NA)
   }
+<<<<<<< HEAD
+=======
+  dealiased <- gsub(base, y, x)
+  return(dealiased)
+    } else{
+      return(NA)
+    }
+  } else{
+    return(NA)
+  }
+>>>>>>> cb221fb (clean up and vaquera v2 role-out)
 }
 objfnct <- function(data, par) {
   varN <- length(par)
@@ -153,11 +168,10 @@ makeObs <- function(x, n, ll, p){
   return(res)
 }
 # function to generate TeX table from data.frame
-
 makeTexTab <- function(filename, TAB, legendTxt){
-    tabheaddef = paste0("\\begin{longtable}{", paste(rep(paste0("p{", 0.8/length(colnames(TAB)), "\\textwidth}"), length(colnames(TAB))), collapse = " | "), "}")
+    tabheaddef = paste0("\\begin{longtable}{", paste(rep(paste0("p{", 0.90/length(colnames(TAB)), "\\textwidth}"), length(colnames(TAB))), collapse = " | "), "}")
     tabhead    = paste(paste(colnames(TAB), collapse = " & "), "\\\\")
-    legend     = paste0("\\caption{", legendTxt, "}\\\\")
+    legend     = paste0("\\caption{", legendTxt, "}")
 
     tabheaddef = gsub("%", "\\%", tabheaddef, fixed = TRUE)
     tabheaddef = gsub("_", "\\_", tabheaddef, fixed = TRUE)
@@ -166,9 +180,9 @@ makeTexTab <- function(filename, TAB, legendTxt){
     legend = gsub("%", "\\%", legend, fixed = TRUE)
     legend = gsub("_", "\\_", legend, fixed = TRUE)
 
-    write("\\begin{footnotesize}", file = filename, append = TRUE)
+    write("\\begin{footnotesize}", file = filename, append = FALSE)
     write(tabheaddef, file = filename, append = TRUE)
-    write(legend, file = filename, append = TRUE)
+    write("\\captionsetup{font=normalsize}", file = filename, append = TRUE)
     write("\\hline", file = filename, append = TRUE)
     write(tabhead, file = filename, append = TRUE)
     write("\\hline", file = filename, append = TRUE)
@@ -179,13 +193,13 @@ makeTexTab <- function(filename, TAB, legendTxt){
       write(line, file = filename, append = TRUE)
     }
     write("\\hline", file = filename, append = TRUE)
-
+    write(legend, file = filename, append = TRUE)
     write("\\end{longtable}", file = filename, append = TRUE)
     write("\\label{tab:synopsis}", file = filename, append = TRUE)
     write("\\end{footnotesize}", file = filename, append = TRUE)
 }
 
-# function to calculate shape2 pamerged_samplerameter of a betadistribution, given shape1 and expected value
+# function to calculate shape2 parameter of a betadistribution, given shape1 and expected value
 betaParamFromMean <- function(mean, shape1){
     shape2 <- (shape1 - mean*shape1)/mean
     return(shape2)
@@ -432,7 +446,6 @@ detect_lineages <- function(DT_, timepoint_){
 
     # call variant detected if AF of enough marker shared with a already detected variant Z can not be
     # explained by Z using a beta distribution
-    beta_shape1 <- 2.2
     pval_th <- 0.05
 
     c = 1
@@ -451,7 +464,7 @@ detect_lineages <- function(DT_, timepoint_){
             filter(!grepl(";", rest)) %>%
             dplyr::select(Variants, overhang, rest, value.freq, NUC) %>%
             left_join(y = expected_value_uniqSupported_lineages, by = c("overhang" = "Variants")) %>%
-            mutate(pval = pbeta(value.freq, beta_shape1, betaParamFromMean(mean_overhang, beta_shape1), ncp = 0, lower.tail = FALSE, log.p = FALSE)) %>%
+            mutate(pval = pbeta(value.freq, alphaprime, betaParamFromMean(mean_overhang, alphaprime), ncp = 0, lower.tail = FALSE, log.p = FALSE)) %>%
             filter(pval <= pval_th) -> iteratively.added
         if(dim(iteratively.added)[1] > 0){
                 print(paste("LOG: lineages [rest] detected due to mutations [NUC] observed in excess [value.freq] to uniquely detected lineages [overhang]. only overhang would explain mean_overhang of AF"))
@@ -529,4 +542,92 @@ get_LCA <- function(z){
       }
     }
     return(lcas)
+}
+
+
+
+# generate cov-spectrum query link for list of mutations
+covspectrumLinkAdvanced <- function(x){
+  x <- unlist(lapply(unique(x), dephaseNuc))
+  s <- paste(unique(x), collapse = ", ")
+  l <- length(x)
+  s <- paste0("[", ceiling(l/2), "-of: ", s, "]")
+  return(s)
+}
+covspectrumLinkSimple <- function(x){
+  x <- unlist(lapply(unique(x), dephaseNuc))
+  s <- paste(unique(x), collapse = "%2C")
+  l <- length(x)
+  s <- paste0("\\href{https://cov-spectrum.org/explore/Europe/AllSamples/Past6M/variants?nucMutations=", s, "&}{", paste(x, collapse = " ", sep = " "),"}")
+  return(s)
+}
+dephaseNuc <- function(x){
+  y <- strsplit(x, split = "")[[1]]
+  p <- as.numeric(paste0(y[grep("\\d", y)], collapse = ""))
+  ref <- grep("\\D", y[1:(ceiling(length(y)/2))], value = TRUE)
+  alt <- grep("\\D", y[(ceiling(length(y)/2)):length(y)], value = TRUE)
+  r <- c()
+  for (c in seq_along(ref)){
+    paste(ref[c], p+c-1, ifelse(is.na(alt[c]), "-", alt[c]), sep = "")
+    r <- append(r, paste(ref[c], p+c-1, ifelse(is.na(alt[c]), "-", alt[c]), sep = ""))
+  }
+  return(r)
+}
+
+# z-score normalisation function
+zscore_norm <- function(x) {
+    (x-mean(x))/sd(x)
+}
+
+n_topest <- function(x, n, descending = TRUE) {
+  #Sort the wages in descending (default) order
+  x1 <- sort(x, decreasing = descending)
+  return(x1[n])
+}
+
+resetfunction <- function(data, window, step){
+  total <- length(data)
+  spots <- seq(from=1, to=(total-window), by=step)
+  result <- vector(length = length(spots))
+  for(i in 1:length(spots)){
+    result[i] <- mean(data[spots[i]:(spots[i]+window)])
+  }
+  return(result)
+}
+
+# function which takes a date and returns the date of wednesday of that week
+date2weekwednesdaydate <- function(d){
+  wwd = as.Date(d, tryFormats = c("%Y-%m-%d")) + 3 - as.numeric(strftime(as.Date(d, tryFormats = c("%Y-%m-%d")), format = "%u"))
+  return(wwd)
+}
+
+# function to get median-min of selected wwtp
+fun_median_min <- function(M){
+    dist(M %>% dplyr::select(dcpLatitude, dcpLongitude)) -> distm
+    # get for each wwtp the smallest non-zero value
+    # get the mean across all wwtp of above value
+    vdist <- median(apply(as.matrix(distm), 1,  function(x) n_topest(x[x>0], 1, FALSE)))
+    return(vdist)
+}
+
+# function to get observed median-min distance for set of wwtp
+fun_observed_distance <- function(l, XXX){
+    locations <- unlist(str_split(l, pattern=";"))
+    XXX %>% filter(LocationID %in% locations) -> YYY
+    vdist <- fun_median_min(YYY)
+    return(vdist)
+}
+
+# function to get expected median-min distance distriubtion between NNN random wwtp
+fun_expected_distance_distro <- function(NNN, XXX, KKK){
+    expected_distance_distro <- rep(NA, KKK)
+    for (kkk in seq_along(expected_distance_distro)){
+       YYY <- XXX
+       random_assignment <- sample(c(rep(1, NNN), rep(0, dim(YYY)[1]-NNN)))
+       YYY$selection <- random_assignment
+       YYY %>% filter(selection == 1) -> YYY
+       vdist <- fun_median_min(YYY)
+       expected_distance_distro[kkk] <- vdist
+    }
+    return(expected_distance_distro)
 }
