@@ -115,19 +115,11 @@ if(opt$debug){
   opt$metadata = "data/metaData_general.csv"
   opt$data="data/mutationData_DB_NationMonitoringSites.tsv.gz"
   opt$inputformat = "tidy"
-<<<<<<< HEAD
-  opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2023-07-31_Austria.csv"
-  opt$mutstats  = "VaQuERo/resources/mutations_stats_pango_codonPhased_2023-07-31.csv.gz"
-  opt$group2var = "VaQuERo/resources/groupMembers_pango_codonPhased_2023-07-31_Austria.csv"
-  opt$pmarker="VaQuERo/resources/mutations_problematic_vss1_v3.csv"
-  opt$detectmode = "umm"
-=======
   opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2023-11-11_Europe.csv"
   opt$mutstats  = "VaQuERo/resources/mutations_stats_pango_codonPhased_2023-11-11.csv.gz"
   opt$group2var = "VaQuERo/resources/groupMembers_pango_codonPhased_2023-11-11_Europe.csv"
   opt$pmarker="VaQuERo/resources/mutations_problematic_2023-11-23.csv"
   opt$precomp = "output-variants/globalFittedData.csv"
->>>>>>> cb221fb (clean up and vaquera v2 role-out)
   opt$ninconsens = 0.2
   opt$zero=0.01
   opt$depth=50
@@ -807,62 +799,6 @@ for (periodend in as.character(seq( from = min(globalAFdata_m$midweek_date) + op
               xlab("") +
               theme(legend.position="bottom")
 
-<<<<<<< HEAD
-    ## ignore if less than l=3 time points considered
-    l = 3
-    if(dim(dt)[1] < l){
-      print(paste0("LOG: too little timepoints to analyse in <", roiname, "> (<", roi, ">)"))
-      next;
-    }
-
-    ## keep only mutations with AF = 0 in the first OR last l=3 timepoints
-    dim(dt)
-    l = 3
-    as.vector(c(TRUE, colSums(dt[1:l,2:dim(dt)[2]]) != 0)) -> selected_columns_first
-    as.vector(c(TRUE, colSums(dt[(dim(dt)[1]-l+1):(dim(dt)[1]),2:dim(dt)[2]]) != 0)) -> selected_columns_last
-    selected_columns_first | selected_columns_last -> selected_columns
-    as.data.table(dt) -> dt
-    dt[,..selected_columns] -> dt
-    dim(dt)
-
-    ## keep only mutations with >1 timepoints with AF>0
-    colSums(dt > 0) > 1 -> selected_columns
-    dt[,..selected_columns] -> dt
-    dim(dt)
-
-
-    print(paste0("PROGRESS: test each excess mutation individual for growth in <", roiname, "> (<", roi, ">)"))
-    for (moiidx in seq(from = 2, to = length(colnames(dt)))){
-        dtoi <- dt
-        mname <- colnames(dtoi)[moiidx]
-        colnames(dtoi)[moiidx] <- "y"
-        colnames(dtoi)[1] <- "t"
-        subset(dtoi, select = c("t", "y")) -> dtoi
-
-        #### remove zeros assuming dropouts
-        if(FALSE){
-          print("WARNING: zeros are removed to anticipate drop-outs!")
-          dtoi[dtoi$y > 0] -> dtoi
-        }
-
-        #### ~nls: fixed asymptote to 1
-        dtoi$d <- as.numeric(as.Date(dtoi$t)-as.Date(dtoi$t[1]))
-        a <- 1
-        fo <- y ~ a / (1 + exp(-b * (d-c)))
-        #model <- tryCatch(nls(fo, start = list(b = 0.05, c = 2*max(dtoi$d)/3), data = dtoi),error=function(e) NA, warning=function(w) NA)
-        model <- tryCatch(gsl_nls(fo, start = list(b = 0.05, c = 2*max(dtoi$d)/3), data = dtoi),error=function(e) NA, warning=function(w) NA)
-
-        # if nls rergession did not converge try different starting parameters
-        if(1){
-            if(identical(NA, model)){
-              model <- tryCatch(nls(fo, start = list(b = 0.2, c = max(dtoi$d)/2), data = dtoi),error=function(e) NA, warning=function(w) NA)
-            }
-            if(identical(NA, model)){
-              model <- tryCatch(gsl_nls(fo, start = list(b = -0.05, c = 2*max(dtoi$d)/3), data = dtoi),error=function(e) NA, warning=function(w) NA)
-            }
-            if(identical(NA, model)){
-              model <- tryCatch(gsl_nls(fo, start = list(b = -0.2, c = max(dtoi$d)/2), data = dtoi),error=function(e) NA, warning=function(w) NA)
-=======
             filename <- paste0(outdir, "/figs/",  paste('/kineticPlot', as.character(latestSample$latest), sep="_"), ".", opt$graph)
             plot.width <- 5 + 1.2*ceiling(sqrt(length(unique(dt_filtered$nuc_mutation))))
             plot.height <- 5 + ceiling(length(unique(dt_filtered$nuc_mutation))/ceiling(sqrt(length(unique(dt_filtered$nuc_mutation)))))
@@ -871,7 +807,6 @@ for (periodend in as.character(seq( from = min(globalAFdata_m$midweek_date) + op
             ggsave(filename = filename, plot = kineticPlot, width = plot.width, height = plot.height)
             if( abs(periodend - max(globalAFdata_m$midweek_date)) < 7 ){
               fwrite(as.list(c("excessmutations", "kineticPlot", as.character(periodend), filename)), file = summaryDataFile, append = TRUE, sep = "\t")
->>>>>>> cb221fb (clean up and vaquera v2 role-out)
             }
         }
 
@@ -1017,18 +952,10 @@ mstat %>% filter(nucc %in% consecutive_mutation_to_use) -> mstatf
 mstatf %>% mutate(label = paste0(nucc, " [", AA_change, "]")) -> mstatf
 mstatf %>% mutate(label = toupper(label)) -> mstatf
 
-<<<<<<< HEAD
-pval_th <- 0.01
-num_th  <- 6
-labelsToUse <- c()
-labelsToUse_geocluster <- c()
-labelsToUse_abundance <- c()
-=======
 ## identify mutations which are seen in timecourseMutationSet but not in mstatf
 timecourseMutationSet %>% mutate(label = toupper(label)) -> timecourseMutationSet
 considered_mutations <- timecourseMutationSet %>% dplyr::select(nuc_mutation,  label) %>% distinct()
 missed_in_mstatf <- considered_mutations %>% filter(!nuc_mutation %in% mstatf$nucc)
->>>>>>> cb221fb (clean up and vaquera v2 role-out)
 
 ## dcast-complete and timecourseMutationSet-complete mstatf
 data.table::melt(mstatf, measure.vars = c("sensitivity"), value.name = "AF.freq") -> outbreak.dt
@@ -1040,92 +967,7 @@ if(dim(missed_in_mstatf)[1] > 0){
       outbreak.dt[,(dim(outbreak.dt)[2]+1)] <- rep(0, dim(outbreak.dt)[1])
       colnames(outbreak.dt)[dim(outbreak.dt)[2]] <- i
     }
-<<<<<<< HEAD
-}
-all_mutations_excess_growing %>% filter(n_wwtp >= num_th) %>% pull(nuc_mutation) %>% unique() -> labelsToUse_abundance
-labelsToUse <- unique(c(labelsToUse_geocluster, labelsToUse_abundance))
-
-overviewPlot.dt %>% filter(NUC %in% labelsToUse) -> overviewPlot.dt.clust
-#length(unique(overviewPlot.dt$label))
-#length(unique(overviewPlot.dt.clust$label))
-
-if(length(unique(overviewPlot.dt.clust$label)) > 0){
-
-    # adapt sample_date to wednesday of that week (kw)
-    # use kw for plotting
-    overviewPlot.dt.clust %>% rowwise() %>% mutate(kw = date2weekwednesdaydate(sample_date)) -> overviewPlot.dt.clust
-
-    # take mean if more than two samples in one week
-    overviewPlot.dt.clust %>% group_by(ANN.GENE, ANN.AA, NUC, label, kw, LocationID) %>% summarize(value.freq = mean(value.freq), .groups="keep") -> overviewPlot.dt.clust
-
-    ## sort each per location, per kw entry descending according to their af
-    ## disrupting the time course per wwtp info but generating a weighted histogram like plot
-    sort(apply(expand.grid(letters, letters), 1, paste, collapse="")) -> LetterCombs
-    overviewPlot.dt.clust %>% group_by(label, kw) %>% arrange(desc(value.freq))  %>% mutate(plotlevel = LetterCombs[1:n()]) -> overviewPlot.dt.clust
-    ggplot(data = overviewPlot.dt.clust, aes(x = kw, y = plotlevel)) + geom_raster(aes(fill = value.freq, color = value.freq), width = 7, height = 1) + facet_grid(label~., switch = "y") + theme_minimal() + theme(strip.text.y.left = element_text(angle = 0)) + scale_fill_viridis(name = "Allele\nfrequency", trans = "sqrt", option = "A", begin = 0.1, end = 0.9, direction = 1)  + scale_color_viridis(name = "Allele\nfrequency", trans = "sqrt", option = "A", begin = 0.1, end = 0.9, direction = 1) + xlab("") + ylab("") + theme(legend.position="right", legend.direction="vertical", panel.spacing.y=unit(0.1, "lines"), panel.grid.minor.y = element_blank(), panel.grid.major.y = element_blank(), panel.border = element_rect(color = "grey33", fill = NA), axis.ticks = element_line(color = "grey50"), axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) + ggtitle("Growing, excess mutations") + scale_x_date(breaks = "1 weeks") + scale_y_discrete(position = "right", labels = c(match(max(overviewPlot.dt.clust$plotlevel), LetterCombs)), breaks=c(max(overviewPlot.dt.clust$plotlevel))) -> overviewPlot
-
-
-    plot.height <- 1.4+length(unique(overviewPlot.dt.clust$label))/2
-    plot.height <- min(plot.height, 28)
-    filename <- paste0(outdir, "/figs/growing_excessmutations/overview/",  paste('/overview_kinetics_excessmutations_filtered', sep="_"), ".", opt$graph)
-    ggsave(filename = filename, plot = overviewPlot, width = 8, height = plot.height)
-    fwrite(as.list(c("growing_excessmutations", "overview", "plot", "filtered", filename)), file = summaryDataFile, append = TRUE, sep = "\t")
-
-
-
-    #functional_mutation_annotation <- fread("VaQuERo/resources/mutations_functional_annotation.csv")
-    #functional_mutation_annotation %>% mutate(AA = paste(gene, aa_position, sep = ":")) -> functional_mutation_annotation
-    #overviewPlot.dt.clust %>% rowwise() %>% mutate(AA = paste(ANN.GENE, gsub("\\D", "", ANN.AA), sep=":")) %>% left_join(y = functional_mutation_annotation, by = "AA") -> overviewPlot.dt.clust
-    #overviewPlot.dt.clust %>% group_by(ANN.GENE, ANN.AA, NUC, label, LocationID) %>% filter(kw == max(kw)) %>% group_by(label, significance, reference) %>% summarize(.groups = "keep", min_AF = signif(min(value.freq), digits = 2), median_AF = signif(median(value.freq), digits = 2), max_AF = signif(max(value.freq), digits = 2), Anzahl_Klaeranlagen = length(unique(plotlevel)), Mutation = covspectrumLinkSimple(NUC), effect = ifelse(is.na(significance), "no reported effect", paste0("\\href{", reference, "}{", significance, "}")) ) -> overviewPlot.dt.clust
-
-    legendTxt <- paste0("Mutationen die geographisch geclustert oder in mehr als ", num_th, " Kläranlagen sig. überrepresentiert sind (d.h., nicht durch detektierte Varianten erklärt werden können) und ein wöchentliches Wachstum größer ", opt$growthlimit, " zeigen.")
-    filename <- paste0(outdir, "/figs/growing_excessmutations/overview/",  paste('/overview_kinetics_excessmutations_filtered', sep="_"), ".tex")
-    overviewPlot.dt.clust %>%
-        group_by(ANN.GENE, ANN.AA, NUC, label, LocationID) %>%
-        filter(kw == max(kw)) %>%
-        group_by(label) %>%
-        inner_join(y = all_mutations_excess_growing, by = c("LocationID", "NUC" = "nuc_mutation")) %>%
-        summarize(.groups = "keep", min_AF = signif(min(value.freq), digits = 2), median_AF = signif(median(value.freq), digits = 2), max_AF = signif(max(value.freq), digits = 2), Anzahl_Klaeranlagen = length(unique(plotlevel)), Mutation = covspectrumLinkSimple(NUC)) -> overviewTable.dt
-    makeTexTab(filename, overviewTable.dt, legendTxt)
-    fwrite(as.list(c("growing_excessmutations", "overview", "table", "filtered", filename)), file = summaryDataFile, append = TRUE, sep = "\t")
-
-    ## generate  map
-    print(paste0("PROGRESS: print mutation map"))
-
-    mapCountry  <- "Austria"
-    mapMargines <- c(46.38, 9.53, 49.01, 17.15)
-
-    World <- ne_countries(scale = "medium", returnclass = "sf")
-    Country <- subset(World, name_sort == mapCountry)
-    all_mutations_excess_growing %>% filter(nuc_mutation %in% labelsToUse) %>% distinct() %>% rowwise() %>% left_join(y = metaDT, by = c("LocationID")) %>% dplyr::select(nuc_mutation, LocationID, LocationName, state, connected_people, dcpLatitude, dcpLongitude) %>% distinct() -> map.dt
-
-    left_join(x = map.dt, y = nuc2label, by = c("nuc_mutation" = "NUC")) -> map.dt
-
-    map.width  <- round(sqrt(length(labelsToUse)))
-    map.height <- ceiling(length(labelsToUse)/map.width)
-
-    s <- ggplot()
-    s <- s + geom_sf(data = World, fill = "grey95")
-    s <- s + geom_sf(data = Country, fill = "antiquewhite")
-    s <- s + theme_minimal()
-    s <- s + coord_sf(ylim = mapMargines[c(1,3)], xlim = mapMargines[c(2,4)], expand = FALSE)
-    s <- s + theme(axis.text = element_blank(), legend.direction = "vertical", legend.box = "horizontal", legend.position = "bottom")
-    s <- s + geom_point(data=map.dt, aes(y=dcpLatitude, x=dcpLongitude))
-    s <- s + scale_color_brewer(palette = "Set2")
-    s <- s + guides(color = guide_legend(title = "Mutation", nrow = 2))
-    s <- s + xlab("") + ylab("")
-    s <- s + facet_wrap(~label, ncol = round(sqrt(length(labelsToUse))))
-    filename <- paste0(outdir, "/figs/growing_excessmutations/overview/",  paste('/map', sep="_"), ".", opt$graph)
-
-    map.width <- 1+2*map.width
-    map.height <- 1+1.5*map.height
-
-    ggsave(filename = filename, plot = s, height = map.height, width = map.width)
-    fwrite(as.list(c("growing_excessmutations", "overview", "map", "filtered", filename)), file = summaryDataFile, append = TRUE, sep = "\t")
-    rm(s, filename, map.dt)
-=======
   }
->>>>>>> cb221fb (clean up and vaquera v2 role-out)
 }
 
 ## define similarity between mutation in mstatf

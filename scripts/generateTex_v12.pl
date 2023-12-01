@@ -18,7 +18,6 @@ my $mutations_fh      = "VaQuERo/resources/mutations_list_grouped_pango_codonPha
 my $smutations_fh     = "VaQuERo/resources/mutations_special_2022-12-21.csv";
 my $groups_fh         = "VaQuERo/resources/groupMembers_pango_codonPhased_2023-11-11_Europe.csv";
 my $fig_fh            = "Mutations_of_Interest.pdf";
-my @fig               = ();
 my $fig               = "Kinetik ausgewählter Mutationen im Spike RBD-Bereich.";
 my $tab_fh            = "growthrate_per_mutation_pois.csv";
 my $tab               = "RBD Mutationen mit Wachstum in mehr als 2 Kläranlagen.";
@@ -38,16 +37,15 @@ GetOptions(
   "t:s"       => \$resulttable_fh,
   "g:s"       => \$groups_fh,
   "f:s"       => \$fig_fh,
-  "v=s{1,}"   => \@fig,
-  "ta:s"      => \$tab_fh,
-  "tat:s"     => \$tab
+  "v:s"       => \$fig,
+  "ta:s"       => \$tab_fh,
+  "tat:s"      => \$tab
 );
 
 print STDERR "LOG: input variants  == $in_var_fh \n";
 print STDERR "LOG: input mutation  == $in_mut_fh \n";
 print STDERR "LOG: date   == $date \n";
-$fig = join " ",@fig;
-print STDERR $fig."\n";
+
 
 my %data = ();
 my %data_m = ();
@@ -237,14 +235,6 @@ else{
   print STDERR "Warning: no overview map\n";
 }
 
-if(-f "$fig_fh"){
-  &printFig($fig_fh, $fig);
-  print STDERR "Log: use plot <$fig_fh> as special Figure\n";
-}
-else{
-  print STDERR "Warning: no plot found by name $fig_fh\n";
-}
-
 # print subsections for growing excess mutation overview
 if (defined($data_m{growing_excessmutations}->{overview}->{plot}) && defined($data_m{growing_excessmutations}->{overview}->{map})) {
     my $path_plot = $data_m{growing_excessmutations}->{overview}->{plot}->{filtered};
@@ -279,10 +269,10 @@ if (defined($data{variantDetail}->{current}) && defined($data{stackOverview}->{c
       &printStackPlot($wwplant_tidy, $path1);
     }
 
-    #if ( defined($data{variantDetail}->{current}->{$wwplant}->{all}) ){
-    #  my $path2 = $data{variantDetail}->{current}->{$wwplant}->{all};
-    #  &printDetailPlot($wwplant_tidy, $path2);
-    #}
+    if ( defined($data{variantDetail}->{current}->{$wwplant}->{all}) ){
+      my $path2 = $data{variantDetail}->{current}->{$wwplant}->{all};
+      &printDetailPlot($wwplant_tidy, $path2);
+    }
 
     if( defined($data_m{excessmutation}->{plot}->{$wwplant}) ){
       my $path1 = $data_m{excessmutation}->{plot}->{$wwplant};
@@ -375,7 +365,7 @@ my $txt='
 
 \begin{figure}[htpb]
   \begin{center}
-    \includegraphics[width=0.95\textwidth]{'."$fh".'}
+    \includegraphics[width=0.66\textwidth]{'."$fh".'}
     \caption{'."$lbl".'}
   \end{center}
 \end{figure}
@@ -390,7 +380,7 @@ my $fh = shift;
 my $lbl = shift;
 my $txt='
 \FloatBarrier
-{\bf Überblick aller detektierten Varianten in der aktuellen Probe}
+{\bf {\large Überblick aller detektierten Varianten in der aktuellen Probe}}
 
 \begin{figure}[htpb]
   \begin{center}
@@ -408,8 +398,7 @@ sub printFig{
 my $fh = shift;
 my $lbl = shift;
 my $txt='
-\newpage
-\section{Kinetik ausgewählter Mutationen}
+\section{Einzel Mutationen Kinetik}
 \label{Fig}
 
 \begin{figure}[htpb]
@@ -681,7 +670,7 @@ sub printDetailPlot{
 
 my $txt = '
 \FloatBarrier
-{\bf Detailansicht ausgewählter Varianten}
+{\bf {\large Detailansicht ausgewählter Varianten}}
 
 \begin{figure}[htpb]
   \begin{center}
@@ -710,9 +699,15 @@ sub prinExcessGrowPlot{
 
 my $txt = '
 \FloatBarrier
-{\bf Überschuss Mutationen}
+{\bf {\large Überschuss Mutationen}}
 
 '."$table_content".'
+\begin{figure}[htpb]
+  \begin{center}
+    \includegraphics[width=0.66\textwidth]{'."$pathp".'}
+    \caption{Überschuß-Mutationen für das Klärwerk '."$location".', d.h., Mutationen die nicht durch detektierte Varianten erklärt werden können und ein wöchentliches Wachstum größer 0.02 zeigen.}
+  \end{center}
+\end{figure}
 ';
 print $txt;
 }
@@ -724,7 +719,7 @@ sub printSpecialMutPlot{
 
 my $txt = '
 \FloatBarrier
-{\bf Detailansicht ausgewählter Spezial-Mutationen}
+{\bf {\large Detailansicht ausgewählter Spezial-Mutationen}}
 
 \begin{figure}[htpb]
   \begin{center}
@@ -743,12 +738,11 @@ sub printStackPlot{
 
 my $txt = '
 \FloatBarrier
-\newpage
-{\bf Überblick aller detektierten Varianten}
+{\bf {\large Überblick aller detektierten Varianten}}
 
 \begin{figure}[htpb]
   \begin{center}
-    \includegraphics[width=0.95\textwidth]{'."$path".'}
+    \includegraphics[width=0.66\textwidth]{'."$path".'}
     \caption{Relative Häufigkeit aller detektierten Variante(n) für die gesamte Messzeitreihe für das Klärwerk '."$location".'.}
   \end{center}
 \end{figure}
@@ -762,12 +756,13 @@ sub printStatusMap{
   my $path    = shift;
 
 my $txt = '
+\clearpage
 \subsection{Übersicht '."Sequenzierstatus".'}
 \label{map'."status".'}
 
 \begin{figure}[htpb]
   \begin{center}
-    \includegraphics[width=0.41\textwidth]{'."$path".'}
+    \includegraphics[width=0.5\textwidth]{'."$path".'}
     \caption{Zusammenfassung des Sequenziererfolgs aller Proben aus der letzten Sequenziertranche. Wenn mindestens 40\% des Genomes erfolgreich rekonstruiert werden konnte, gilt die Probe als erfolgreich sequenziert und wird im Weiteren auch analysiert. Wenn weniger als 40\% aber mehr als 5\% des Genomes rekonstuiert werden konnte, wird die Probe mit "Virus detektiert" makiert, aber nicht versucht verschiedene Varianten zu quantifizieren. Darunter gilt die Probe als fehlgeschlagen. Da manche Kläranlagen mehrfach pro Woche beprobt werden, können auch fehlgeschlagene und erfolgreiche Beprobungen für die selbe Anlage in einer Sequenziertranche vorkommen. .}
   \end{center}
 \end{figure}
@@ -785,7 +780,6 @@ sub printMutationOverview{
     $table_content.=$_;
   };
   close OT;
-#    \includegraphics[width=0.66\textwidth]{'."$plot".'}
 
 my $txt = '
 \clearpage
@@ -794,6 +788,7 @@ my $txt = '
 
 \begin{figure}[htpb]
   \begin{center}
+    \includegraphics[width=0.66\textwidth]{'."$plot".'}
     \includegraphics[width=0.66\textwidth]{'."$map".'}
     \caption{Mutation die geographisch geclustert oder in mehr als 5 Kläranlagen sig. überrepresentiert sind (d.h., nicht durch detektierte Varianten erklärt werden können) und ein wöchentliches Wachstum größer 0.02 zeigen.}
   \end{center}
@@ -809,12 +804,13 @@ sub printMapPerVariant{
   my $path    = shift;
 
 my $txt = '
+\clearpage
 \subsection{Übersicht '."$variant".'}
 \label{map'."$variant".'}
 
 \begin{figure}[htpb]
   \begin{center}
-    \includegraphics[width=0.41\textwidth]{'."$path".'}
+    \includegraphics[width=0.5\textwidth]{'."$path".'}
     \caption{Der Farbton zeigt den relativen Anteil, falls größer Null, der Variante '."$variant".' zum Zeitpunkt der letzten Probennahme. Stellen mit einem Anteil von Null werden nicht gezeichnet.}
   \end{center}
 \end{figure}
@@ -916,8 +912,6 @@ my $txt1 = '
   \end{tabular}
 \end{center}
 \newpage
-\tableofcontents
-\clearpage
 
 %----------------------------------------------------------------------------------------
 %	SECTION 1
@@ -933,7 +927,8 @@ my $txt2 = join("", @txt2);
 my $txt3 = '
 
 
-
+\tableofcontents
+\clearpage
 
 %----------------------------------------------------------------------------------------
 %	SECTION 2
@@ -946,7 +941,6 @@ print $txt1;
 print $txt2;
 # print graphical synapsis
 if (defined($data{sankey}->{Overview}->{Austria}) || defined($data{sankey}->{allStates}->{Austria})){
-    print '\newpage'."\n";
     print '\subsection{Graphische Synopsis}'."\n";
     print '\label{graphsyn}'."\n";
 
