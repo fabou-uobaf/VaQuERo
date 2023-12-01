@@ -772,7 +772,7 @@ my $txt = '
 
 \begin{figure}[htpb]
   \begin{center}
-    \includegraphics[width=0.66\textwidth]{'."$plot_cuadrilla".'}
+    \includegraphics[width=0.95\textwidth]{'."$plot_cuadrilla".'}
     \caption{Mutationen und deren potentielle assoziierten Varianten, die im betrachteten Zeitraum zumindest in zwei aufeinander folgenden Wochen österreichweit zunehmende geographische Ausbreitung und zunehmende relative Häufigkeit zeigen.}
   \end{center}
 \end{figure}
@@ -883,7 +883,7 @@ my $txt1 = '
     Auswahlkriterium Varianten: & Berücksichtigte Varianten aus drei Quellen \\\\
                                 & \\\\
                                 & Alle \emph{Variants~of~concern}, \emph{of~interest}, und \emph{under~monitoring}. \\\\
-                                & Definition folgt der Angabe von \href{https://www.ecdc.europa.eu/en/covid-19/variants-concern}{ECDC} (Stand 04. Juli, 2023)\\\\
+                                & Definition folgt der Angabe von \href{https://www.ecdc.europa.eu/en/covid-19/variants-concern}{ECDC} (Stand 11. Nov, 2023)\\\\
                                 & \\\\
                                 & Alle Varianten die laut \href{https://gisaid.org/}{GISaid} Daten in Österreich in zumindest\\\\
                                 & einem Monat eine relative Häufigkeit $>$20\% aufwiesen. \\\\
