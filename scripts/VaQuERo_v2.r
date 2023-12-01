@@ -111,10 +111,7 @@ if(opt$debug){
     opt$minuniqmark=1
     opt$minuniqmarkfrac=0.5
     opt$minqmark=5
-<<<<<<< HEAD
-=======
     opt$alphaprime=3.2
->>>>>>> cb221fb (clean up and vaquera v2 role-out)
     opt$minmarkfrac=0.7
     opt$smoothingsamples=2
     opt$smoothingtime=21
@@ -129,50 +126,6 @@ if(opt$debug){
 ## define functions
 options(warn=-1)
 
-## loading external function library, expected to be in same dir as execution script
-sourceFileBase = "VaQueR_functions.r"
-sourceDir <- function() {
-        cmdArgs <- commandArgs(trailingOnly = FALSE)
-        needle <- "--file="
-        match <- grep(needle, cmdArgs)
-        if (length(match) > 0) {
-                # Rscript
-                return(dirname(normalizePath(sub(needle, "", cmdArgs[match]))))
-        } else {
-                # 'source'd via R console
-                return(dirname(normalizePath(sys.frames()[[1]]$ofile)))
-        }
-}
-if(!interactive()){
-  sourceFile <- list.files(
-    sourceDir(),
-    pattern = sourceFileBase,
-    recursive = TRUE,
-    full.names = TRUE
-  )
-} else{
-  sourceFile <- c()
-}
-
-if(length(sourceFile) == 1 && file.exists(sourceFile)){
-  print(paste("LOG: loading function source file", sourceFile))
-  opt$source = sourceFile
-  source(sourceFile)
-} else{
-  sourceFile <- list.files(
-    ".",
-    pattern = sourceFileBase,
-    recursive = TRUE,
-    full.names = TRUE
-  )
-  if(length(sourceFile) == 1 && file.exists(sourceFile)){
-    print(paste("LOG: loading function source file", sourceFile))
-    opt$source = sourceFile
-    source(sourceFile)
-  } else{
-    print(paste("ERROR: source file", sourceFileBase, "not found. Please double check if it is in the same directory as the analysis script VaQuERo_v2.R"))
-  }
-}
 
 ## loading external function library, expected to be in same dir as execution script
 sourceFileBase = "VaQueR_functions.r"
@@ -870,11 +823,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
         q3 <- q3 + geom_vline(xintercept = as.Date(latestSample$latest), linetype = "dotdash", color = "grey", size =  0.5)
         q3 <- q3 + scale_fill_manual(values = ColorBaseData$col, breaks = ColorBaseData$variant, name = "")
         q3 <- q3 + scale_color_manual(values = ColorBaseData$col, breaks = ColorBaseData$variant, name = "")
-<<<<<<< HEAD
-        q3 <- q3 + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1))
-=======
 	q3 <- q3 + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1))
->>>>>>> cb221fb (clean up and vaquera v2 role-out)
         q3 <- q3 + theme_minimal()
         q3 <- q3 + theme(legend.position="none", strip.text.x = element_text(size = 4.5), panel.grid.minor = element_blank(), panel.spacing.y = unit(0, "lines"), legend.direction="horizontal")
         q3 <- q3 + guides(fill = guide_legend(title = "", ncol = 7, override.aes = aes(label = "")), color = guide_legend(title = "", ncol = 7, override.aes = aes(label = "")))
@@ -949,11 +898,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
       }
 
       if(dim(filter(plantFullData, all_variants %in% VoI))[1] >= 1){
-<<<<<<< HEAD
-        print(paste("PROGRESS: plotting variantDetails VoI", roiname))
-=======
         writeLines(paste("PROGRESS: plotting variantDetails VoI", roiname))
->>>>>>> cb221fb (clean up and vaquera v2 role-out)
         ## print faceted line plot of fitted values plus point plot of measured AF for all VoIs
         plantFullData %>% filter(all_variants %in% VoI) %>%
               ggplot() +

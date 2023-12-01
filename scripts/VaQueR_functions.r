@@ -26,31 +26,17 @@ dealias <- function(x){
   ll <- strsplit(x, split="\\.")
   if(length(ll) >= 1){
     if(length(ll[[1]]) >= 1){
-<<<<<<< HEAD
-        base <- strsplit(x, split="\\.")[[1]][1]
-=======
   base <- strsplit(x, split="\\.")[[1]][1]
->>>>>>> cb221fb (clean up and vaquera v2 role-out)
 
-        if(!any(names(aliases) == base)){
-          y <- base
-        } else if(nchar(aliases[names(aliases) == base]) == 0){
-          y <- base
-        } else if(grepl("^X", base)){
-          y <- base
-        } else {
-          y <- aliases[names(aliases) == base]
-        }
-        dealiased <- gsub(base, y, x)
-        return(dealiased)
-    } else{
-      return(NA)
-    }
-  } else{
-    return(NA)
+  if(!any(names(aliases) == base)){
+    y <- base
+  } else if(nchar(aliases[names(aliases) == base]) == 0){
+    y <- base
+  } else if(grepl("^X", base)){
+    y <- base
+  } else {
+    y <- aliases[names(aliases) == base]
   }
-<<<<<<< HEAD
-=======
   dealiased <- gsub(base, y, x)
   return(dealiased)
     } else{
@@ -59,7 +45,6 @@ dealias <- function(x){
   } else{
     return(NA)
   }
->>>>>>> cb221fb (clean up and vaquera v2 role-out)
 }
 objfnct <- function(data, par) {
   varN <- length(par)
@@ -104,7 +89,7 @@ realias <- function(x){
       if ( any(names(dealiases) == trunc) ){
         alias <- dealiases[names(dealiases) == trunc]
         realiased <- gsub(trunc, alias, x)
-                  #print(paste("realiased:", x, " <=> ", realiased))
+                  #writeLines(paste("realiased:", x, " <=> ", realiased))
         break
       }
     }
@@ -305,7 +290,7 @@ detect_lineages <- function(DT_, timepoint_){
         mothers_variants_passed_markerCombinationCount_filter <- get_LCA(mothers_variants_passed_markerCombinationCount_filter)
         mothers_variants_passed_markerCombinationCount_filter <- mothers_variants_passed_markerCombinationCount_filter[mothers_variants_passed_markerCombinationCount_filter %in% moi_marker_count$Variants]
     }
-    print(paste("LOG: variants detected based on lca marker combinations as following:"))
+    writeLines(paste("LOG: variants detected based on lca marker combinations as following:"))
     print(mothers_variants_passed_markerCombinationCount_filter)
 
 
@@ -325,7 +310,7 @@ detect_lineages <- function(DT_, timepoint_){
           ungroup() %>% dplyr::select(Variants, NUCS) %>%
           pull(Variants) %>% unique() -> variants_passed_uniqMarkerCount_filter
 
-    print(paste("LOG: variants detected based on unique markers as following:"))
+    writeLines(paste("LOG: variants detected based on unique markers as following:"))
     print(variants_passed_uniqMarkerCount_filter)
 
     # detect variants with enough uniq marker mutations
@@ -363,7 +348,7 @@ detect_lineages <- function(DT_, timepoint_){
           pull(Variants) %>% unique() -> variants_passed_uniqMarkerCount_iterative_filter
     all_could_be_but_not_have_been_detected_based_on_uniqMarkers <- unique(c(all_could_be_but_not_have_been_detected_based_on_uniqMarkers, could_be_but_not_have_been_detected_based_on_uniqMarkers))
 
-    print(paste("LOG: variants detected based on iterative unique markers as following (1):"))
+    writeLines(paste("LOG: variants detected based on iterative unique markers as following (1):"))
     print(variants_passed_uniqMarkerCount_iterative_filter)
 
     # merge above detected lineages
@@ -393,7 +378,7 @@ detect_lineages <- function(DT_, timepoint_){
             summarize(NUCS = paste(NUC, collapse = "; "), .groups = "drop_last") %>%
             ungroup() %>% dplyr::select(Variants, NUCS) %>% distinct() -> variants_passed_uniqMarkerCount_filter
 
-        print(paste("LOG: [", c, "] variants detected based on unique markers after excluding detectable-but-not-detected lineages as following:"))
+        writeLines(paste("LOG: [", c, "] variants detected based on unique markers after excluding detectable-but-not-detected lineages as following:"))
         print(variants_passed_uniqMarkerCount_filter %>% filter(Variants %notin% variants_passed_uniqMarkerCount_filter))
 
         variants_passed_uniqMarkerCount_filter %>%
@@ -438,7 +423,7 @@ detect_lineages <- function(DT_, timepoint_){
         }
     }
 
-    print(paste0("LOG: variants detected based on iterative unique markers as following (2-",c, "):"))
+    writeLines(paste0("LOG: variants detected based on iterative unique markers as following (2-",c, "):"))
     print(variants_passed_uniqMarkerCount_iterative_filter)
 
     detectedLineages <- unique(c(detectedLineages, mothers_variants_passed_markerCombinationCount_filter, unique(unlist(variants_passed_uniqMarkerCount_filter.iterative))[unique(unlist(variants_passed_uniqMarkerCount_filter.iterative)) %in% variants_passed_markerCount_filter]))
@@ -467,7 +452,7 @@ detect_lineages <- function(DT_, timepoint_){
             mutate(pval = pbeta(value.freq, alphaprime, betaParamFromMean(mean_overhang, alphaprime), ncp = 0, lower.tail = FALSE, log.p = FALSE)) %>%
             filter(pval <= pval_th) -> iteratively.added
         if(dim(iteratively.added)[1] > 0){
-                print(paste("LOG: lineages [rest] detected due to mutations [NUC] observed in excess [value.freq] to uniquely detected lineages [overhang]. only overhang would explain mean_overhang of AF"))
+                writeLines(paste("LOG: lineages [rest] detected due to mutations [NUC] observed in excess [value.freq] to uniquely detected lineages [overhang]. only overhang would explain mean_overhang of AF"))
                 print(iteratively.added %>% dplyr::select(rest, overhang, NUC, value.freq, mean_overhang, pval))
         }
         iteratively.added %>% pull(rest) %>% unique() -> iteratively.overhang.added.lineages
@@ -488,7 +473,7 @@ detect_lineages <- function(DT_, timepoint_){
     # remove overhang.added.lineages if they could have been detected by uniq markers
     overhang.added.lineages <- overhang.added.lineages[overhang.added.lineages %notin% all_could_be_but_not_have_been_detected_based_on_uniqMarkers]
 
-    print(paste0("LOG: variants detected based on iterative overhang mutations as following (1-",c, "):"))
+    writeLines(paste0("LOG: variants detected based on iterative overhang mutations as following (1-",c, "):"))
     print(overhang.added.lineages)
 
 
