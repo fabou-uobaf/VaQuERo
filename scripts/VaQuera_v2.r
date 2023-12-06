@@ -135,11 +135,11 @@ if(opt$debug){
   opt$TimecoursePlot="all"
   opt$geogrowthlimit = 0.05
   opt$wmefgrowthlimit = 0.02
-  opt$alphaprime = 3.2
+  opt$alphaprime = 2.2
   opt$minweeksample = 10
   opt$filstrat = "and"
-  opt$start = "2023-05-20"
-  opt$end = "2023-11-20"
+  opt$start = "2023-05-06"
+  opt$end = "2023-12-06"
   opt$nw   = 2
   writeLines("Warning: command line option overwritten")
 }
@@ -504,6 +504,12 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 globalAFdata <- rbindlist(globalAFdataList)
 
 writeLines(paste("PROGRESS: loop over WWTP finished"))
+
+
+if(dim(globalAFdata)[1] == 0){
+    writeLines(paste("WARNING: no mutation data found in excess. Program ends here!"))
+    quit(save="no")
+}
 
 ####################
 ## add meta data and consistend midweek data to globalAFdata
