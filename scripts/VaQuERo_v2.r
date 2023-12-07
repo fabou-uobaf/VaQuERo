@@ -107,11 +107,12 @@ if(opt$debug){
     opt$pmarker="VaQuERo/resources/mutations_problematic_vss1_v3.csv"
     opt$smarker="VaQuERo/resources/mutations_special_2022-12-21.csv"
     opt$zero=0.01
+    opt$ninconsens=0.2
     opt$depth=50
     opt$minuniqmark=1
     opt$minuniqmarkfrac=0.5
     opt$minqmark=5
-    opt$alphaprime=3.2
+    opt$alphaprime=2.2
     opt$minmarkfrac=0.7
     opt$smoothingsamples=2
     opt$smoothingtime=21
@@ -983,6 +984,7 @@ if (dim(globalFittedData)[1] >= tpLimitToPlot){
   metaDT$sample_date <- as.Date(metaDT$sample_date)
 
   left_join(x = globalFittedData, y = (metaDT %>% dplyr::select(LocationID, connected_people)), by = "LocationID", multiple = "all") %>% distinct()  -> stacker.dt
+  if(any(stacker.dt$connected_people > 0)){
   stacker.dt %>% rowwise() %>% mutate(kw = as.Date(sample_date, tryFormats = c("%Y-%m-%d")) + 6 - as.numeric(strftime(as.Date(sample_date, tryFormats = c("%Y-%m-%d")), format = "%u"))) %>% group_by(variant, kw) %>% summarize(agg_value = weighted.mean(value, connected_people), .groups = "keep") -> stacker.dt
 
   stacker.dt %>% group_by(variant) %>% mutate(max = max(agg_value)) %>% filter(max > 0) -> stacker.dt
@@ -1049,6 +1051,7 @@ if (dim(globalFittedData)[1] >= tpLimitToPlot){
   rm(ap,filename, ColorBaseData, stacker.dt, stacker.dtt)
 }
 
+}
 
 if(dim(globalFittedData)[1] > 0){
     writeLines(paste("PROGRESS: plotting overview Sankey plot + Detection Plot"))
@@ -1067,6 +1070,7 @@ if(dim(globalFittedData)[1] > 0){
 
         left_join(x = sankey_all.dt, y = (metaDT %>% dplyr::select(LocationID, connected_people) %>% distinct()), by = "LocationID", multiple = "all") %>% group_by(variant) %>% summarize(freq = weighted.mean(freq, w = connected_people, na.rm = TRUE), .groups = "keep") %>% filter(freq > 0) -> sankey.dt
 
+        if(dim(sankey.dt)[1] > 0){
         sankey.dt  %>% rowwise() %>% mutate(freq = ifelse(freq<0, 0, freq)) -> sankey.dt
         sankey.dt  %>% rowwise() %>% mutate(freq = ifelse(freq>1, 1, freq)) -> sankey.dt
         if(sum(sankey.dt$freq)>1){
@@ -1102,6 +1106,12 @@ if(dim(globalFittedData)[1] > 0){
         sankey.dtt %>% rowwise() %>% mutate(node = ifelse(is.na(node), node, dealias(node))) %>% mutate(next_node = ifelse(is.na(next_node), next_node, dealias(next_node))) -> sankey.dtt
 
         sankey.dtt %>% rowwise() %>% mutate(label = ifelse((node == "B" & level>0), gsub("B", "unclassified", label), label)) -> sankey.dtt
+
+        unique(sankey.dtt$node) -> var2col
+        if("B" %notin% var2col){c("B", var2col) -> var2col}
+        unlist(lapply(as.list(var2col), dealias)) -> dealiasvar2col
+        sort(dealiasvar2col) -> var2col
+        viridis_pal(alpha = 1, begin = 0.025, end = .975, direction = 1, option = "D")(length(var2col)) -> col2var
 
         ggplot(sankey.dtt, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = label)) +
               geom_sankey(flow.alpha = .6, node.color = "gray30", type ='alluvial') +
@@ -1161,6 +1171,7 @@ if(dim(globalFittedData)[1] > 0){
         makeTexTab(filename2, synopsis.dt, legendTxt)
         rm(dpl, filename1, filename2, occurence.dt, synopsis.dt, legendTxt)
 
+        }
     }
 
     ## make plot per state
@@ -1209,6 +1220,12 @@ if(dim(globalFittedData)[1] > 0){
             sankey.dtt %>% rowwise() %>% mutate(node = ifelse(is.na(node), node, dealias(node))) %>% mutate(next_node = ifelse(is.na(next_node), next_node, dealias(next_node))) -> sankey.dtt
 
             sankey.dtt %>% rowwise() %>% mutate(label = ifelse((node == "B" & level>0), gsub("B", "unclassified", label), label)) -> sankey.dtt
+
+            unique(sankey.dtt$node) -> var2col
+            if("B" %notin% var2col){c("B", var2col) -> var2col}
+            unlist(lapply(as.list(var2col), dealias)) -> dealiasvar2col
+            sort(dealiasvar2col) -> var2col
+            viridis_pal(alpha = 1, begin = 0.025, end = .975, direction = 1, option = "D")(length(var2col)) -> col2var
 
             ggplot(sankey.dtt, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = label)) +
                 geom_sankey(flow.alpha = .6, node.color = "gray30", type ='alluvial') +
