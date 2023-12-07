@@ -72,7 +72,7 @@ include_in_rep = strsplit(opt$include_in_report,",",fixed = TRUE)[[1]]
 include_query = {}
 if("NA" %in% include_in_rep){ include_query = c(include_query,"INCLUDE_IN_REPORT is null") }
 if("TRUE" %in% include_in_rep){ include_query = c(include_query,"INCLUDE_IN_REPORT = 1 ") }
-if("FALSE" %in% include_in_rep){ include_query = c(include_query,"INCLUDE_IN_REPORT = 2 ") }
+if("FALSE" %in% include_in_rep){ include_query = c(include_query,"INCLUDE_IN_REPORT = 0 ") }
 if (length(include_query) > 0){
   include_query = paste("(", paste(include_query,collapse = " OR "),") AND ")
 }
