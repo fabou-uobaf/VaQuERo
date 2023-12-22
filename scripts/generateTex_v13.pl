@@ -18,7 +18,10 @@ my $mutations_fh      = "VaQuERo/resources/mutations_list_grouped_pango_codonPha
 my $smutations_fh     = "VaQuERo/resources/mutations_special_2022-12-21.csv";
 my $groups_fh         = "VaQuERo/resources/groupMembers_pango_codonPhased_2023-11-11_Europe.csv";
 my $fig_fh            = "Mutations_of_Interest.pdf";
-my $fig               = "Kinetik ausgewählter Mutationen im Spike RBD-Bereich.";
+my @fig               = ();
+my $fig               = "";
+my @fig_head          = ();
+my $fig_head          = "";
 my $tab_fh            = "growthrate_per_mutation_pois.csv";
 my $tab               = "RBD Mutationen mit Wachstum in mehr als 2 Kläranlagen.";
 my $resulttable_fh    = "output-general/globalFittedData.csv";
@@ -37,15 +40,15 @@ GetOptions(
   "t:s"       => \$resulttable_fh,
   "g:s"       => \$groups_fh,
   "f:s"       => \$fig_fh,
-  "v:s"       => \$fig,
-  "ta:s"       => \$tab_fh,
-  "tat:s"      => \$tab
+  "h=s{1,}"   => \@fig_head,
+  "v=s{1,}"   => \@fig,
+  "ta:s"      => \$tab_fh,
+  "tat:s"     => \$tab
 );
 
 print STDERR "LOG: input variants  == $in_var_fh \n";
 print STDERR "LOG: input mutation  == $in_mut_fh \n";
 print STDERR "LOG: date   == $date \n";
-
 
 my %data = ();
 my %data_m = ();
@@ -220,6 +223,19 @@ else{
   print STDERR "Warning: no overview map\n";
 }
 
+if(-f "$fig_fh"){
+  $fig = join " ",@fig;
+  $fig_head = join " ", @fig_head;
+
+  &printFig($fig_fh, $fig, $fig_head);
+  print STDERR "Log: use plot <$fig_fh> as special Figure\n";
+  print STDERR "Log: use section heading <$fig_head> for special Figure\n";
+  print STDERR "Log: use caption <$fig> for special Figure\n";
+}
+else{
+  print STDERR "Warning: no plot found by name $fig_fh\n";
+}
+
 # print subsections for growing excess mutation overview
 if (defined($data_m{excessmutations}->{kineticPlot}) && defined($data_m{excessmutations}->{outbreakInfoPlot}) && defined($data_m{excessmutations}->{table}) && defined($data_m{cuadrilla}->{plot})) {
     my $path_plot = $data_m{excessmutations}->{kineticPlot};
@@ -371,9 +387,12 @@ print $txt;
 sub printFig{
 my $fh = shift;
 my $lbl = shift;
+my $head = shift;
 my $txt='
-\section{Einzel Mutationen Kinetik}
-\label{Fig}
+\clearpage
+\section{Fokus Analyse}
+\subsection{'."$head".'}
+\label{Fokus}
 
 \begin{figure}[htpb]
   \begin{center}
@@ -758,7 +777,7 @@ sub printMutationOverview{
 
 my $txt = '
 \clearpage
-\subsection{Übersicht wachsende Überschuss-Mutationen}
+\section{Übersicht wachsende Überschuss-Mutationen}
 \label{excess_growth_overview}
 
 \begin{figure}[htpb]
