@@ -99,6 +99,8 @@ option_list = list(
               help="Duration of analysis perid in days [default %default]", metavar="character"),
   make_option(c("--graph"), type="character", default="pdf",
               help="Fileformate of produced graphics. Select from pdf, png [default %default]", metavar="character"),
+  make_option(c("--ignoreregion"), type="character", default="0-0",
+              help="Regions to be ignored from analysis. Useful if certain amplicons are producing unreliable AF. Specify in the a format like <100-120|21955-23288> to specify two regions. [default %default]", metavar="character"),
   make_option(c("--debug"), type="logical", default="FALSE",
               help="Toggle to use run with provided example data [default %default]", metavar="character"),
   make_option(c("--verbose"), type="logical", default="FALSE",
@@ -141,6 +143,7 @@ if(opt$debug){
   opt$start = "2023-05-06"
   opt$end = "2023-12-06"
   opt$nw   = 2
+  opt$ignoreregion = "21955-23288"
   writeLines("Warning: command line option overwritten")
 }
 #####################################################
@@ -227,6 +230,26 @@ minpossamp_th <- opt$minpositivesample
 pval_th <- opt$pval
 wmef_th <- opt$minexcessfreq
 r_th <- opt$mingeospread
+ignoreregionstart <- c()
+ignoreregionend <- c()
+
+if (opt$ignoreregion != "0-0"){
+  ignoreregions <- unlist(strsplit(opt$ignoreregion, "\\|"))
+  for (ir in ignoreregions){
+    if(grepl("^\\d+-\\d+$", ir, perl = TRUE)){
+        irp <- unlist(strsplit(ir, "-"))
+        ignoreregionstart <- c(ignoreregionstart, irp[1])
+        ignoreregionend <- c(ignoreregionend, irp[2])
+    } else{
+      writeLines("Warning: comand line defined regions to be ignored <ir> does not fit format like <start-stop>; region will not be ignored. please double check.")
+    }
+  }
+  writeLines("LOG: mutations in following regions will not be considered for analysis:")
+  for (i in 1:length(ignoreregionstart)){
+    writeLines(paste(ignoreregionstart[i], "-", ignoreregionend[i]))
+  }
+   writeLines("")
+}
 
 
 
@@ -352,6 +375,17 @@ if (removeLongIndels > 0){
   sewage_samps.dt %>% filter(nchar(ALT) <= removeLongIndels & nchar(REF) <= removeLongIndels) -> sewage_samps.dt
   afi <- length(unique(sewage_samps.dt$NUC))
   writeLines(paste0("LOG: indels of length greater than or equal to ",removeLongIndels, " nt are removed; in total ", befi-afi, " mutations were ignored; set --removeLongIndels 0 if undesired."))
+}
+
+
+# remove regions specified via --ignoreregion
+if(length(ignoreregionend) > 0){
+    mnb <- length(unique(sewage_samps.dt$NUC))
+    for (ir in (1:length(ignoreregionend))){
+      sewage_samps.dt <- sewage_samps.dt %>% filter(POS < ignoreregionstart[ir] | POS > ignoreregionend[ir])
+    }
+    mna <- length(unique(sewage_samps.dt$NUC))
+    writeLines(paste("LOG: a total of", mnb-mna, "(out of", mnb, ") were removed since they overlapped with a region as specified with the --ignoreregion parameter"))
 }
 
 ## add location to sewage_samps.dt
