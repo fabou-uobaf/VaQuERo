@@ -863,6 +863,9 @@ for (periodend in as.character(seq( from = min(globalAFdata_m$midweek_date) + op
           outbreak.selection <- outbreak.selection %>% group_by(nuc_mutation) %>% summarize(aa_mutation = unique(aa_mutation), expected = mean(expected), observed = mean(observed), excess = mean(excess), pvalue = mean(pvalue), label = unique(label), .groups = "keep")
           data.table::melt(outbreak.selection, id.vars = c("label"), measure.vars = c("expected", "observed")) -> outbreak.freqs
           mstat %>% filter(nucc %in% outbreak.selection$nuc_mutation) -> outbreak.dt
+          if(dim(outbreak.dt)[1]==0){
+            next;
+          }
           left_join(x = outbreak.dt, y = nuc2label, by = c("nucc" = "NUC")) %>% data.table::dcast(formula = ID ~ label, value.var = "sensitivity", fill = 0) -> outbreak.dt
           data.table::melt(outbreak.dt, variable.name = "label", value.name = "AF.freq") -> outbreak.dt
           outbreak.dt %>% group_by(ID) %>% mutate(max = max(AF.freq, na.rm = TRUE)) %>% filter(max >= min(max(outbreak.dt$AF.freq), .9)) %>% dplyr::select(-"max") -> outbreak.dt
