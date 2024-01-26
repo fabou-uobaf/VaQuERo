@@ -887,7 +887,7 @@ my $txt1 = '
 
 \title{Österreichischer Abwasser Sars-CoV-2 Varianten Bericht} % Title
 
-\author{Fabian \textsc{Amman} \and Lukas \textsc{Endler} \and Anna \textsc{Schedl} \and Matthew \textsc{Thornton} \and Bethany \textsc{Dearlove} \and Andreas \textsc{Bergthaler}} % Author name
+\author{Fabian \textsc{Amman} \and Lukas \textsc{Endler} \and Anna \textsc{Schedl} \and Matthew \textsc{Thornton} \and Anastasiia \textsc{Antielieieva} \and Bethany \textsc{Dearlove} \and Andreas \textsc{Bergthaler}} % Author name
 
 \date{\today} % Date for the report
 
@@ -902,10 +902,11 @@ my $txt1 = '
     Auswahlkriterium Varianten: & Berücksichtigte Varianten aus drei Quellen \\\\
                                 & \\\\
                                 & Alle \emph{Variants~of~concern}, \emph{of~interest}, und \emph{under~monitoring}. \\\\
-                                & Definition folgt der Angabe von \href{https://www.ecdc.europa.eu/en/covid-19/variants-concern}{ECDC} (Stand 11. Nov, 2023)\\\\
+                                & Definition folgt der Angabe von \href{https://www.ecdc.europa.eu/en/covid-19/variants-concern}{ECDC} (Stand 10. Jan, 2024)\\\\
                                 & \\\\
-                                & Alle Varianten die laut \href{https://gisaid.org/}{GISaid} Daten in Österreich in zumindest\\\\
-                                & einem Monat eine relative Häufigkeit $>$20\% aufwiesen. \\\\
+                                & Alle Varianten die laut \href{https://gisaid.org/}{GISaid} Daten in Europa in zumindest\\\\
+                                & einem Land und einem Monat eine relative Häufigkeit $>$60\% aufwiesen, oder\\\\
+                                & einem Land und einem Monat eine relative Häufigkeit $>$10\% seit Nov 2023 aufwiesen, \\\\
 %                               & \\\\
 %                               & Alle Varianten die aktuell laut \href{https://cov-spectrum.org/collections/24}{CoV-spectrum Collection 24}\\\\
 %                               & ein Wachstumsvorteil $>$50\% (lower CI) zeigen. Detailgrad der \\\\
