@@ -273,7 +273,7 @@ if (defined($data{variantDetail}->{current}) && defined($data{stackOverview}->{c
 
     if ( defined($data{variantDetail}->{current}->{$wwplant}->{all}) ){
       my $path2 = $data{variantDetail}->{current}->{$wwplant}->{all};
-      &printDetailPlot($wwplant_tidy, $path2);
+      #&printDetailPlot($wwplant_tidy, $path2);
     }
   }
 }
@@ -297,7 +297,7 @@ if(0){
       if ( defined($data{variantDetail}->{old}->{$wwplant}->{VoI}) ){
         my $path2 = $data{variantDetail}->{old}->{$wwplant}->{VoI};
 
-        &printDetailPlot($wwplant_tidy, $path2);
+        #&printDetailPlot($wwplant_tidy, $path2);
       }
       if ( defined($data{specialMutations}->{old}->{$wwplant}->{VoI}) ){
         my $path3 = $data{specialMutations}->{old}->{$wwplant}->{VoI};
