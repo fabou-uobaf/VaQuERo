@@ -14,7 +14,7 @@ sub iso8601_date {
 my $in_var_fh         = "summary.csv";
 my $in_mut_fh         = "summary.csv";
 my $syn_fh            = "synopsis.tex";
-my $mutations_fh      = "VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2023-11-11_Europe.csv";
+my $mutations_fh      = "VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2024-02-22_Europe_adapted.csv";
 my $smutations_fh     = "VaQuERo/resources/mutations_special_2022-12-21.csv";
 my $groups_fh         = "VaQuERo/resources/groupMembers_pango_codonPhased_2023-11-11_Europe.csv";
 my $fig_fh            = "Mutations_of_Interest.pdf";
@@ -902,14 +902,14 @@ my $txt1 = '
     Auswahlkriterium Varianten: & Berücksichtigte Varianten aus drei Quellen \\\\
                                 & \\\\
                                 & Alle \emph{Variants~of~concern}, \emph{of~interest}, und \emph{under~monitoring}. \\\\
-                                & Definition folgt der Angabe von \href{https://www.ecdc.europa.eu/en/covid-19/variants-concern}{ECDC} (Stand 10. Jan, 2024)\\\\
+                                & Definition folgt der Angabe von \href{https://www.ecdc.europa.eu/en/covid-19/variants-concern}{ECDC} (Stand 22. Feb., 2024)\\\\
                                 & \\\\
                                 & Alle Varianten die laut \href{https://gisaid.org/}{GISaid} Daten in Europa in zumindest\\\\
                                 & einem Land und einem Monat eine relative Häufigkeit $>$60\% aufwiesen, oder\\\\
-                                & einem Land und einem Monat eine relative Häufigkeit $>$10\% seit Nov 2023 aufwiesen, \\\\
+                                & einem Land und einem Monat eine relative Häufigkeit $>$10\% seit Dez. 2023 aufwiesen, \\\\
 %                               & \\\\
 %                               & Alle Varianten die aktuell laut \href{https://cov-spectrum.org/collections/24}{CoV-spectrum Collection 24}\\\\
-%                               & ein Wachstumsvorteil $>$50\% (lower CI) zeigen. Detailgrad der \\\\
+%                               & ein Wachstumsvorteil $>$30\% (lower CI) zeigen. Detailgrad der \\\\
 % 			                        & Untervarianten nach individueller Einschätzung angepasst. \\\\
                                 & \\\\
                                 & Siehe Varianten Liste im Appendix~\ref{appendix:Varianten} auf Seite~\pageref{appendix:Varianten} für \\\\
