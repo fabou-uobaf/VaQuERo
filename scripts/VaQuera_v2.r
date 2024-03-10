@@ -390,6 +390,13 @@ if(length(ignoreregionend) > 0){
 
 ## add location to sewage_samps.dt
 sewage_samps.dt %>% mutate(RNA_ID_int = gsub("_S\\d+$","", ID)) -> sewage_samps.dt
+sewage_samps.dt %>% mutate(RNA_ID_int = gsub("_\\d$","", RNA_ID_int))  -> sewage_samps.dt
+
+if(any(is.na(sewage_samps.dt$LocationID))){
+  writeLines(paste("WARNING: samples without assigned location were found and removed."))
+  sewage_samps.dt %>% filter(!is.na(LocationID)) -> sewage_samps.dt
+}
+
 metaDT %>% filter(! is.na(LocationID) ) %>% dplyr::select("RNA_ID_int", "LocationID", "LocationName") -> sample_location
 left_join(x = sewage_samps.dt, y = sample_location, by = "RNA_ID_int") -> sewage_samps.dt
 

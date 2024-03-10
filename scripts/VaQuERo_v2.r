@@ -467,6 +467,13 @@ if(opt$inputformat == "sparse"){
 
 ## add location to sewage_samps.dt
 sewage_samps.dt %>% mutate(RNA_ID_int = gsub("_S\\d+$","", ID)) -> sewage_samps.dt
+sewage_samps.dt %>% mutate(RNA_ID_int = gsub("_\\d$","", RNA_ID_int))  -> sewage_samps.dt
+
+if(any(is.na(sewage_samps.dt$LocationID))){
+  writeLines(paste("WARNING: samples without assigned location were found and removed."))
+  sewage_samps.dt %>% filter(!is.na(LocationID)) -> sewage_samps.dt
+}
+
 metaDT %>% filter(! is.na(LocationID) ) %>% dplyr::select("RNA_ID_int", "LocationID", "LocationName") -> sample_location
 left_join(x = sewage_samps.dt, y = sample_location, by = "RNA_ID_int", multiple = "all") -> sewage_samps.dt
 
@@ -819,12 +826,16 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 
         plottng_data %>% filter(sample_date == max(sample_date, na.rm = TRUE)) %>% filter(value > 0) -> plottng_labels
 
+        plottng_data$variant_dealiased <- unlist(lapply(as.list(as.character(plottng_data$variant)), dealias))
+        stackorder <- plottng_data %>% ungroup() %>%  dplyr::select(variant, variant_dealiased) %>% distinct() %>% arrange(variant_dealiased)
+        plottng_data$variant <- factor(plottng_data$variant, levels = stackorder$variant)
+
         ggplot(data = plottng_data, aes(x = as.Date(sample_date), y = value, fill = variant, color = variant)) -> q3
         q3 <- q3 + geom_area(position = "stack", alpha = 0.6)
         q3 <- q3 + geom_vline(xintercept = as.Date(latestSample$latest), linetype = "dotdash", color = "grey", size =  0.5)
         q3 <- q3 + scale_fill_manual(values = ColorBaseData$col, breaks = ColorBaseData$variant, name = "")
         q3 <- q3 + scale_color_manual(values = ColorBaseData$col, breaks = ColorBaseData$variant, name = "")
-	q3 <- q3 + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1))
+	      q3 <- q3 + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1))
         q3 <- q3 + theme_minimal()
         q3 <- q3 + theme(legend.position="none", strip.text.x = element_text(size = 4.5), panel.grid.minor = element_blank(), panel.spacing.y = unit(0, "lines"), legend.direction="horizontal")
         q3 <- q3 + guides(fill = guide_legend(title = "", ncol = 7, override.aes = aes(label = "")), color = guide_legend(title = "", ncol = 7, override.aes = aes(label = "")))
@@ -1012,6 +1023,10 @@ if (dim(globalFittedData)[1] >= tpLimitToPlot){
   ColorBaseData %>% group_by(id) %>% mutate(i = row_number()) %>% rowwise() %>% mutate(col = getColor(n, id, i)) -> ColorBaseData
 
   stacker.dtt %>% ungroup() %>% filter(kw == max(kw)) %>% filter(agg_value > 0) -> stacker.labels
+
+  stacker.dtt$variant_dealiased <- unlist(lapply(as.list(as.character(stacker.dtt$variant)), dealias))
+  stackorder <- stacker.dtt %>% ungroup() %>%  dplyr::select(variant, variant_dealiased) %>% distinct() %>% arrange(variant_dealiased)
+  stacker.dtt$variant <- factor(stacker.dtt$variant, levels = stackorder$variant)
 
 
   ap <- ggplot(data = stacker.dtt, aes(x = as.Date(kw), y = agg_value, fill = variant, color = variant))
