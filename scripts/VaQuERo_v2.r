@@ -101,9 +101,9 @@ opt = parse_args(opt_parser);
 ####  parameter setting for interactive debugging
 if(opt$debug){
     opt$dir = "dev_output"
-    opt$metadata = "data/metaData_general_shorten.csv"
+    opt$metadata = "data/metaData_general.csv"
     opt$data="data/mutationData_DB_NationMonitoringSites.tsv.gz"
-    opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2024-03-29_Europe_full.csv"
+    opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2024-03-29_Europe.csv"
     opt$pmarker="VaQuERo/resources/mutations_problematic_vss1_v3.csv"
     opt$smarker="VaQuERo/resources/mutations_special_2022-12-21.csv"
     opt$zero=0.01
@@ -119,7 +119,7 @@ if(opt$debug){
     opt$voi="B.1.1.7,B.1.617.2,P.1,BA.2.86"
     opt$highlight="B.1.617.2,BA.1,BA.2,BA.5,BA.2.86"
     opt$colorBase="B.1.617.2,BA.1,BA.2,BA.5,BA.2.86"
-    opt$recent <- 99
+    opt$recent <- 999
     print("Warning: command line option overwritten")
 }
 #####################################################
@@ -1108,17 +1108,26 @@ if(dim(globalFittedData)[1] > 0){
     }
 
     ## make complete plot
-    globalFittedData %>% filter( (as.Date(format(Sys.time(), "%Y-%m-%d")) - recentEnought) < sample_date) %>% group_by(LocationID) %>% mutate(latest = max(sample_date, na.rm = TRUE)) %>% filter(sample_date == latest) %>% summarize(variant = variant, freq = value, .groups = "keep") -> sankey_all.dt
-    unique(sankey_all.dt$variant) -> var2col
-    if("0" %notin% var2col){c("0", var2col) -> var2col}
-    unlist(lapply(as.list(var2col), dealias)) -> dealiasvar2col
-    sort(dealiasvar2col) -> var2col
-    viridis_pal(alpha = 1, begin = 0.025, end = .975, direction = 1, option = "D")(length(var2col)) -> col2var
+    globalFittedData %>% filter( (as.Date(format(Sys.time(), "%Y-%m-%d")) - recentEnought) < sample_date) %>%
+        group_by(LocationID) %>%
+        mutate(latest = max(sample_date, na.rm = TRUE)) %>%
+        filter(sample_date == latest) %>%
+        summarize(variant = variant, freq = value, .groups = "keep") -> sankey_all.dt
+
 
     if(dim(sankey_all.dt)[1] > 0){
 
-        globalFittedData %>% filter( (as.Date(format(Sys.time(), "%Y-%m-%d")) - recentEnought) < sample_date) %>% group_by(LocationID) %>% mutate(latest = max(sample_date, na.rm = TRUE)) %>% filter(sample_date == latest) %>% ungroup() %>% summarize(earliest = min(sample_date, na.rm = TRUE), latest = max(sample_date, na.rm = TRUE), .groups = "keep") -> sankey_date
-        left_join(x = sankey_all.dt, y = (metaDT %>% dplyr::select(LocationID, connected_people) %>% distinct()), by = "LocationID", multiple = "all") %>% group_by(variant) %>% summarize(freq = weighted.mean(freq, w = connected_people, na.rm = TRUE), .groups = "keep") %>% filter(freq > 0) -> sankey.dt
+        globalFittedData %>% filter( (as.Date(format(Sys.time(), "%Y-%m-%d")) - recentEnought) < sample_date) %>%
+            group_by(LocationID) %>%
+            mutate(latest = max(sample_date, na.rm = TRUE)) %>%
+            filter(sample_date == latest) %>%
+            ungroup() %>%
+            summarize(earliest = min(sample_date, na.rm = TRUE), latest = max(sample_date, na.rm = TRUE), .groups = "keep") -> sankey_date
+
+        left_join(x = sankey_all.dt, y = (metaDT %>% dplyr::select(LocationID, connected_people) %>%
+            distinct()), by = "LocationID", multiple = "all") %>%
+            group_by(variant) %>%
+            summarize(freq = weighted.mean(freq, w = connected_people, na.rm = TRUE), .groups = "keep") -> sankey.dt
 
         if(dim(sankey.dt)[1] > 0){
           sankey.dt  %>% rowwise() %>% mutate(freq = ifelse(freq<0, 0, freq)) -> sankey.dt
@@ -1128,10 +1137,10 @@ if(dim(globalFittedData)[1] > 0){
           }
           sankey.dt  %>% ungroup() -> sankey.dt
           sankey.dt -> occurence.freq
-          sankey.dt %>% group_by(variant = "0") %>% summarize(freq = 1-sum(freq), .groups = "keep") -> sankey.dt0
 
+          sankey.dt %>% group_by(variant = "0") %>% summarize(freq = 1-sum(freq), .groups = "keep") -> sankey.dt0
           rbind(sankey.dt, sankey.dt0) -> sankey.dt
-          sankey.dt %>% rowwise() %>% filter(freq > zeroo/10 | variant == "0") -> sankey.dt
+          sankey.dt %>% rowwise() %>% filter(freq > zeroo/10) -> sankey.dt
 
           sankey.dt$variant_dealias <- unlist(lapply(as.list(sankey.dt$variant), dealias))
           for ( baseForColor in baseForColorsVariants ){
@@ -1146,9 +1155,11 @@ if(dim(globalFittedData)[1] > 0){
           sankey.dt %>% rowwise() %>% mutate(long_variant = expandVar(variant_dealias, maxLev$maxLev)) -> sankey.dt
           ancestor <- getTree(sankey.dt)
           Nlevels <- max(unlist(lapply(ancestor, length)))
+
           sankey.dt <- makeObs(sankey.dt, Nlevels, ancestor, sankeyPrecision)
 
           sankey.dt %>% make_long(names(sankey.dt)) -> sankey.dtt
+
           sankey.dtt %>% filter(!is.na(node)) -> sankey.dtt
           max(as.numeric(gsub("level", "", sankey.dtt$next_x)), na.rm = TRUE) -> maxLev
           sankey.dtt %>% group_by(x, node) %>% mutate(n = paste0("[", 100*n()/sankeyPrecision, "%]")) %>% rowwise() %>% mutate(level = as.numeric(gsub("level", "", x))) %>% mutate(label = ifelse(level == maxLev, paste(node, n), node)) -> sankey.dtt
@@ -1160,8 +1171,8 @@ if(dim(globalFittedData)[1] > 0){
           unique(sankey.dtt$node) -> var2col
           if("0" %notin% var2col){c("0", var2col) -> var2col}
           unlist(lapply(as.list(var2col), dealias)) -> dealiasvar2col
-          sort(dealiasvar2col) -> var2col
-          viridis_pal(alpha = 1, begin = 0.025, end = .975, direction = 1, option = "D")(length(var2col)) -> col2var
+          sort(dealiasvar2col) -> dealiasvar2col
+          viridis_pal(alpha = 1, begin = 0.025, end = .975, direction = 1, option = "D")(length(dealiasvar2col)) -> var2col
 
           ggplot(sankey.dtt, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = label)) +
                 geom_sankey(flow.alpha = .6, node.color = "gray30", type ='alluvial') +
@@ -1170,7 +1181,7 @@ if(dim(globalFittedData)[1] > 0){
                 labs(x = NULL) +
                 ggtitle("Gewichtetes Mittel: Österreich", subtitle = paste( sankey_date$earliest , "bis", sankey_date$latest)) +
                 theme(legend.position = "none", axis.text.x = element_blank(), plot.title = element_text(hjust = 0), plot.subtitle=element_text(hjust = 0)) +
-                scale_fill_manual(values = col2var, breaks = var2col) +
+                scale_fill_manual(values = var2col, breaks = dealiasvar2col) +
                 scale_x_discrete(expand = expansion(mult = c(0, .1), add = c(.1, .8))) -> pp
 
           filename <- paste0(outdir, "/figs/sankey/Overview_",  opt$country, ".pdf")
@@ -1232,20 +1243,31 @@ if(dim(globalFittedData)[1] > 0){
         sankey_allState.dt %>% filter(state == stateoi) -> sankey_state.dt
         if(dim(sankey_state.dt)[1] > 0){
 
-            globalFittedData %>% filter( (as.Date(format(Sys.time(), "%Y-%m-%d")) - recentEnought) < sample_date) %>% filter(LocationID %in% unique(sankey_state.dt$LocationID)) %>% group_by(LocationID) %>% mutate(latest = max(sample_date, na.rm = TRUE)) %>% filter(sample_date == latest) %>% ungroup() %>% summarize(earliest = min(sample_date, na.rm = TRUE), latest = max(sample_date, na.rm = TRUE), .groups = "keep") -> sankey_date
+            globalFittedData %>% filter( (as.Date(format(Sys.time(), "%Y-%m-%d")) - recentEnought) < sample_date) %>%
+                filter(LocationID %in% unique(sankey_state.dt$LocationID)) %>%
+                group_by(LocationID) %>%
+                mutate(latest = max(sample_date, na.rm = TRUE)) %>%
+                filter(sample_date == latest) %>% ungroup() %>%
+                summarize(earliest = min(sample_date, na.rm = TRUE), latest = max(sample_date, na.rm = TRUE), .groups = "keep") -> sankey_date
 
-            left_join(x = sankey_state.dt, y = (metaDT %>% dplyr::select(LocationID, connected_people) %>% distinct() %>% rowwise() %>% mutate(connected_people = ifelse(connected_people < 1, 1, connected_people))), multiple = "all", by = "LocationID") %>% group_by(variant) %>% summarize(freq = weighted.mean(freq, w = connected_people, na.rm = TRUE), .groups = "keep") %>% filter(freq > 0) -> sankey.dt
+            left_join(x = sankey_state.dt, y = (metaDT %>% dplyr::select(LocationID, connected_people) %>%
+                distinct() %>% rowwise() %>%
+                mutate(connected_people = ifelse(connected_people < 1, 1, connected_people))), multiple = "all", by = "LocationID") %>%
+                group_by(variant) %>%
+                summarize(freq = weighted.mean(freq, w = connected_people, na.rm = TRUE), .groups = "keep") -> sankey.dt
 
             sankey.dt  %>% rowwise() %>% mutate(freq = ifelse(freq<0, 0, freq)) -> sankey.dt
             sankey.dt  %>% rowwise() %>% mutate(freq = ifelse(freq>1, 1, freq)) -> sankey.dt
+
             if(sum(sankey.dt$freq)>1){
               sankey.dt  %>% ungroup() %>% mutate(freq = freq/sum(freq)) -> sankey.dt
             }
             sankey.dt %>% ungroup() -> sankey.dt
-            sankey.dt %>% group_by(variant = "0") %>% summarize(freq = 1-sum(freq), .groups = "keep") -> sankey.dt0
+            sankey.dt -> occurence.freq
 
+            sankey.dt %>% group_by(variant = "0") %>% summarize(freq = 1-sum(freq), .groups = "keep") -> sankey.dt0
             rbind(sankey.dt, sankey.dt0) -> sankey.dt
-            sankey.dt %>% rowwise() %>% filter(freq > zeroo/10 | variant == "0") -> sankey.dt
+            sankey.dt %>% rowwise() %>% filter(freq > zeroo/10) -> sankey.dt
 
             sankey.dt$variant_dealias <- unlist(lapply(as.list(sankey.dt$variant), dealias))
             for ( baseForColor in baseForColorsVariants ){
@@ -1260,9 +1282,11 @@ if(dim(globalFittedData)[1] > 0){
             sankey.dt %>% rowwise() %>% mutate(long_variant = expandVar(variant_dealias, maxLev$maxLev)) -> sankey.dt
             ancestor <- getTree(sankey.dt)
             Nlevels <- max(unlist(lapply(ancestor, length)))
+
             sankey.dt <- makeObs(sankey.dt, Nlevels, ancestor, sankeyPrecision)
 
             sankey.dt %>% make_long(names(sankey.dt)) -> sankey.dtt
+
             sankey.dtt %>% filter(!is.na(node)) -> sankey.dtt
             max(as.numeric(gsub("level", "", sankey.dtt$next_x)), na.rm = TRUE) -> maxLev
             sankey.dtt %>% group_by(x, node) %>% mutate(n = paste0("[", 100*n()/sankeyPrecision, "%]")) %>% rowwise() %>% mutate(level = as.numeric(gsub("level", "", x))) %>% mutate(label = ifelse(level == maxLev, paste(node, n), node)) -> sankey.dtt
@@ -1274,15 +1298,15 @@ if(dim(globalFittedData)[1] > 0){
             unique(sankey.dtt$node) -> var2col
             if("0" %notin% var2col){c("0", var2col) -> var2col}
             unlist(lapply(as.list(var2col), dealias)) -> dealiasvar2col
-            sort(dealiasvar2col) -> var2col
-            viridis_pal(alpha = 1, begin = 0.025, end = .975, direction = 1, option = "D")(length(var2col)) -> col2var
+            sort(dealiasvar2col) -> dealiasvar2col
+            viridis_pal(alpha = 1, begin = 0.025, end = .975, direction = 1, option = "D")(length(dealiasvar2col)) -> var2col
 
             ggplot(sankey.dtt, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = label)) +
                 geom_sankey(flow.alpha = .6, node.color = "gray30", type ='alluvial') +
                 geom_sankey_label(size = 3, color = "white", fill = "gray40", position = position_nudge(x = 0.05, y = 0), na.rm = TRUE, type ='alluvial', hjust = 0) +
                 theme_sankey(base_size = 16) + labs(x = NULL) + ggtitle(paste0("Gewichtetes Mittel: ", stateoi), subtitle = paste( sankey_date$earliest , "bis", sankey_date$latest)) +
                 theme(legend.position = "none", axis.text.x = element_blank(), plot.title = element_text(hjust = 0), plot.subtitle=element_text(hjust = 0)) +
-                scale_fill_manual(values = col2var, breaks = var2col) +
+                scale_fill_manual(values = var2col, breaks = dealiasvar2col) +
                 scale_x_discrete(expand = expansion(mult = c(0, .1), add = c(.1, .8))) -> pp
             sankey_state_plot_list[[length(sankey_state_plot_list)+1]] <- pp
 
