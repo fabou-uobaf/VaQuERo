@@ -117,12 +117,15 @@ getTree <- function(x){
   x$long_variant -> long_var
   list() -> ll
   for ( i in seq_along(vars)){
-    ancestor <- c()
-    if(grepl("^B", vars[i]) & "B" %notin% vars) {
-      ancestor <- c("B")
+    ancestor <- c("0")
+    if(grepl("^B\\.", vars[i]) & "A" %notin% vars) {
+      ancestor <- c(ancestor, "B")
+    }
+    if(grepl("^A\\.", vars[i]) & "A" %notin% vars) {
+      ancestor <- c(ancestor, "A")
     }
     for ( j in seq_along(vars)){
-      if(grepl(vars[j], long_var[i], fixed = TRUE) & (vars[i] != vars[j])){
+      if(grepl(paste0(vars[j],"."), long_var[i], fixed = TRUE) & (vars[i] != vars[j])){
         ancestor <- c(ancestor, vars[j])
       }
     }
@@ -237,6 +240,12 @@ detect_lineages <- function(DT_, timepoint_){
     detectedLineages <- c()
     all_could_be_but_not_have_been_detected_based_on_uniqMarkers <- c()
 
+    # collapse timepoints if several are specified
+    DT_ %>% filter(sample_date_decimal %in% timepoint_) %>%
+        group_by(Variants, LocationID, LocationName, NUC) %>%
+        summarize(ID = DT_$ID[1], sample_date = DT_$sample_date[1], sample_date_decimal = timepoint_[1], value.freq = mean(value.freq, na.rm=TRUE), value.depth = mean(value.depth, na.rm = TRUE)) -> DT_
+
+
     # detect variants with enough marker mutations
     # this is a necessary but not sufficient condition
     DT_ %>% filter(sample_date_decimal %in% timepoint_) %>%
@@ -348,8 +357,8 @@ detect_lineages <- function(DT_, timepoint_){
           pull(Variants) %>% unique() -> variants_passed_uniqMarkerCount_iterative_filter
     all_could_be_but_not_have_been_detected_based_on_uniqMarkers <- unique(c(all_could_be_but_not_have_been_detected_based_on_uniqMarkers, could_be_but_not_have_been_detected_based_on_uniqMarkers))
 
-    writeLines(paste("LOG: variants detected based on iterative unique markers as following (1):"))
-    print(variants_passed_uniqMarkerCount_iterative_filter)
+    #writeLines(paste("LOG: variants detected based on iterative unique markers as following (1):"))
+    #print(variants_passed_uniqMarkerCount_iterative_filter)
 
     # merge above detected lineages
     detectedLineages <- unique(c(detectedLineages, variants_passed_uniqMarkerCount_filter[variants_passed_uniqMarkerCount_filter %in% variants_passed_markerCount_filter], variants_passed_uniqMarkerCount_iterative_filter[variants_passed_uniqMarkerCount_iterative_filter %in% variants_passed_markerCount_filter]))
@@ -518,11 +527,16 @@ get_pairwise_LCA <- function(x,y){
 
 get_LCA <- function(z){
     lcas <- c()
-    for (i in seq_along(z)){
-      for (j in seq_along(z)){
-        lca <- get_pairwise_LCA(z[i], z[j])
-        if(nchar(lca) > 0 & lca %notin% z){
-          lcas <- unique(c(lcas, lca))
+
+    if(length(z) == 1){
+      lcas = z;
+    } else{
+      for (i in seq_along(z)){
+        for (j in seq_along(z)){
+          lca <- get_pairwise_LCA(z[i], z[j])
+          if(nchar(lca) > 0 & lca %notin% z){
+            lcas <- unique(c(lcas, lca))
+          }
         }
       }
     }
