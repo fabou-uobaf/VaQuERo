@@ -243,7 +243,7 @@ detect_lineages <- function(DT_, timepoint_){
     # collapse timepoints if several are specified
     DT_ %>% filter(sample_date_decimal %in% timepoint_) %>%
         group_by(Variants, LocationID, LocationName, NUC) %>%
-        summarize(ID = DT_$ID[1], sample_date = DT_$sample_date[1], sample_date_decimal = timepoint_[1], value.freq = mean(value.freq, na.rm=TRUE), value.depth = mean(value.depth, na.rm = TRUE)) -> DT_
+        summarize(ID = DT_$ID[1], sample_date = DT_$sample_date[1], sample_date_decimal = timepoint_[1], value.freq = mean(value.freq, na.rm=TRUE), value.depth = mean(value.depth, na.rm = TRUE), .groups = "drop_last") -> DT_
 
 
     # detect variants with enough marker mutations

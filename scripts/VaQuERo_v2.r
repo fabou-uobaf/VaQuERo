@@ -104,10 +104,10 @@ if(opt$debug){
     opt$metadata = "data/metaData_general.csv"
     opt$data="data/mutationData_DB_NationMonitoringSites.tsv.gz"
     opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2024-03-29_Europe.csv"
-    opt$pmarker="VaQuERo/resources/mutations_problematic_vss1_v3.csv"
+    opt$pmarker="VaQuERo/resources/mutations_problematic_2023-11-23.csv"
     opt$smarker="VaQuERo/resources/mutations_special_2022-12-21.csv"
     opt$zero=0.01
-    opt$ninconsens=0.2
+    opt$ninconsens=0.4
     opt$depth=50
     opt$minuniqmark=1
     opt$minuniqmarkfrac=0.4
@@ -176,7 +176,7 @@ if(length(sourceFile) == 1 && file.exists(sourceFile)){
 ## print parameter to Log
 
 writeLines("##~LOG~PARAMETERS~####################")
-print(opt)
+str(opt)
 writeLines("##~LOG~PARAMETERS~####################")
 writeLines("\n\n\n")
 
@@ -693,7 +693,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
                   fit1 <- tryCatch(gamlss(formula, data = ssdt, family = BE, trace = FALSE, weights = weight),error=function(e) e, warning=function(w) w)
                   writeLines(paste("LOG: fall back to BE"))
                   if(any(grepl("warning|error", class(fit1)))){
-              writeLines(paste("  WARNING: BE did not converge at", timePoints[t], " .. skipped"))
+                    writeLines(paste("  WARNING: BE did not converge at", timePoints[t], " .. skipped"))
                     next; ## remove if unconverged BE results should be used
                   }
                 }
