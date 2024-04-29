@@ -759,6 +759,9 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
     writeLines(paste0("PROGRESS: finished variant quantifiaction for all timePoints "))
 
     # remove variants which are never observed
+    if(dim(plantFittedData)[1] == 0){
+      next;
+    }
     plantFittedData %>% group_by(variant) %>% mutate(maxValue = max(value)) %>% filter(maxValue>0) %>% dplyr::select(-"maxValue") -> plantFittedData
 
 
@@ -1328,6 +1331,10 @@ if(dim(globalFittedData)[1] > 0){
 ##
 
 
+if (dim(globalFittedData)[1] == 0){
+  writeLines(paste("WARNING: no varianted fitted in any of the samples; script will end here"))
+  q("no")
+}
 globalFittedData %>% group_by(LocationID) %>% mutate(n = length(unique(sample_date))) %>% filter(n > tpLimitToPlot*2) %>% filter(variant %in% VoI) %>% ungroup() %>% group_by(LocationID, LocationName, sample_date, variant) %>% summarize(value = mean(value), .groups = "drop") -> globalFittedData2
 if (dim(globalFittedData2)[1] >= tpLimitToPlot){
   writeLines(paste("PROGRESS: plotting overview VoI"))
