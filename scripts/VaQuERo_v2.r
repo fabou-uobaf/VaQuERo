@@ -326,7 +326,15 @@ metaDT %>% dplyr::select("LocationID") %>% distinct() -> locationsReportedOn
 # Generate map of all locations sequenced in current run
 
 ## determine last sequencing batch ID
-as.character(metaDT %>% filter(!is.na(BSF_run)) %>% filter(!is.na(BSF_start_date)) %>% group_by(BSF_run, BSF_start_date) %>% summarize(.groups = "drop") %>% ungroup() %>% filter(as.Date(BSF_start_date) == max(as.Date(BSF_start_date))) %>% dplyr::select("BSF_run")) -> last_BSF_run_id
+metaDT %>% filter(!is.na(BSF_run)) %>%
+    filter(!is.na(BSF_start_date)) %>%
+    group_by(BSF_run, BSF_start_date) %>%
+    summarize(.groups = "keep") %>%
+    ungroup() %>%
+    mutate(BSF_start_date_max = max(as.Date(BSF_start_date), na.rm = TRUE)) %>%
+    filter(as.Date(BSF_start_date) == max(as.Date(BSF_start_date))) %>%
+    dplyr::select("BSF_run") %>%
+    as.character() -> last_BSF_run_id
 writeLines(paste("LOG: last_BSF_run_id", last_BSF_run_id))
 
 ## modify status of samples in last run based on number N in consensus
@@ -757,6 +765,13 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
           }
     }
     writeLines(paste0("PROGRESS: finished variant quantifiaction for all timePoints "))
+
+    # average per sample_date to take care of more than one sample a day
+    plantFittedData <- plantFittedData %>% group_by(variant, LocationID, LocationName, sample_date) %>% summarize(value = mean(value))
+    sampleID2sample_date <- metaDT %>% filter(LocationID == roi) %>% group_by(sample_date) %>% summarize(BSF_sample_name = paste(BSF_sample_name, collapse = ","))
+    sampleID2sample_date$sample_date <- as.character(sampleID2sample_date$sample_date)
+    plantFittedData <- left_join(x = plantFittedData, y = sampleID2sample_date, by = "sample_date")
+    plantFittedData <- plantFittedData %>% dplyr::select(variant, LocationID, LocationName, sample_id=BSF_sample_name, sample_date, value)
 
     # remove variants which are never observed
     if(dim(plantFittedData)[1] == 0){
@@ -1195,7 +1210,7 @@ if(dim(globalFittedData)[1] > 0){
 
           writeLines(paste("PROGRESS: plotting WWTP detection plot"))
 
-          left_join(x = sankey_all.dt, y = (metaDT %>% dplyr::select(LocationID, connected_people) %>% distinct()), multiple = "all") %>%
+          left_join(x = sankey_all.dt, y = (metaDT %>% dplyr::select(LocationID, connected_people) %>% distinct()), multiple = "all", by = "LocationID") %>%
               group_by(variant) %>% summarize(freq = weighted.mean(freq, w = connected_people, na.rm = TRUE), .groups = "keep") %>%
               filter(freq > zeroo/10) -> depicted_in_sankey
           sankey_all.dt %>%
@@ -1205,7 +1220,7 @@ if(dim(globalFittedData)[1] > 0){
               group_by(variant) %>% summarize(N = unique(N), d = length(unique(LocationID)), .groups = "keep") %>%
               mutate(nd = N - d) %>% dplyr::select(-"N") -> occurence.dt
           occurence.dt %>% mutate(r = paste0(sprintf("%.0f", 100*d/(d+nd)), "%")) -> occurence.rate
-          melt(occurence.dt)  -> occurence.dt
+          melt(occurence.dt, id.vars = c("variant"))  -> occurence.dt
 
           dpl <- ggplot(data = occurence.dt, aes(x = variant, y = value, fill = variable))
           dpl <- dpl + geom_col(position = position_stack(reverse = TRUE))
@@ -1399,7 +1414,8 @@ for (voi in VoI){
         s <- s + coord_sf(ylim = mapMargines[c(1,3)], xlim = mapMargines[c(2,4)], expand = FALSE)
         s <- s + annotation_scale(location = "bl")
         s <- s + annotation_north_arrow(location = "tl", which_north = "true", pad_x = unit(0.75, "in"), pad_y = unit(0.5, "in"), style = north_arrow_fancy_orienteering)
-        s <- s + geom_point(data=subset(mapdata, status == "pass"), aes(y=dcpLatitude, x=dcpLongitude, size = as.numeric(connected_people)), alpha = 1, shape = 3)
+        s <- s + geom_point(data=(mapSeqDT %>% filter(status == "pass") ), aes(y=dcpLatitude, x=dcpLongitude, size = as.numeric(connected_people)), alpha = .4, fill = "grey80", shape = 21)
+        s <- s + geom_point(data=(mapSeqDT %>% filter(status == "pass") ), aes(y=dcpLatitude, x=dcpLongitude, size = .7*as.numeric(connected_people)), alpha = .5, shape = 3)
         s <- s + geom_point(data=mapdata, aes(y=dcpLatitude, x=dcpLongitude, size = as.numeric(connected_people), col = as.numeric(value)), alpha = 0.8)
         s <- s + facet_wrap(~variant, nrow = 2)
         s <- s + theme(axis.text = element_blank(), legend.direction = "vertical", legend.box = "horizontal", legend.position = "bottom")
