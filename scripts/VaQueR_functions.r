@@ -23,22 +23,25 @@ decimalDate <- function(x, d){
 
 ## dealias variants
 dealias <- function(x){
+  if(is.factor(x)){
+    x <- as.character(x)
+  }
   ll <- strsplit(x, split="\\.")
   if(length(ll) >= 1){
     if(length(ll[[1]]) >= 1){
-  base <- strsplit(x, split="\\.")[[1]][1]
+      base <- strsplit(x, split="\\.")[[1]][1]
 
-  if(!any(names(aliases) == base)){
-    y <- base
-  } else if(nchar(aliases[names(aliases) == base]) == 0){
-    y <- base
-  } else if(grepl("^X", base)){
-    y <- base
-  } else {
-    y <- aliases[names(aliases) == base]
-  }
-  dealiased <- gsub(base, y, x)
-  return(dealiased)
+      if(!any(names(aliases) == base)){
+        y <- base
+      } else if(nchar(aliases[names(aliases) == base]) == 0){
+        y <- base
+      } else if(grepl("^X", base)){
+        y <- base
+      } else {
+        y <- aliases[names(aliases) == base]
+      }
+      dealiased <- gsub(base, y, x)
+      return(dealiased)
     } else{
       return(NA)
     }
@@ -46,6 +49,7 @@ dealias <- function(x){
     return(NA)
   }
 }
+# objectiv function for optimization
 objfnct <- function(data, par) {
   varN <- length(par)
   rs <-rowSums(as.matrix(data[,2:(varN+1)]) * matrix(rep(par, each = dim(data)[1]), ncol = dim(data)[2]-2))
@@ -175,7 +179,7 @@ makeTexTab <- function(filename, TAB, legendTxt){
     write(tabhead, file = filename, append = TRUE)
     write("\\hline", file = filename, append = TRUE)
     for (i in 1:dim(TAB)[1] ){
-      line = paste(paste(TAB[i,], collapse = " & "), "\\\\")
+      line = paste(do.call(paste, c(TAB[i,], collapse = " & ", sep = " & ")), "\\\\")
       line = gsub("%", "\\%", line, fixed = TRUE)
       line = gsub("_", "\\_", line, fixed = TRUE)
       write(line, file = filename, append = TRUE)

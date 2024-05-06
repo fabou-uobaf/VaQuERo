@@ -1011,9 +1011,17 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 
     rm(plantFittedData, plantFullData)
 }
+##XX##
 
 globalFittedData <- rbindlist(globalFittedDataList)
 globalFullData <- rbindlist(globalFullDataList)
+
+## complete set to add zeros for unobserved variants
+reshape2::dcast(globalFittedData, sample_id~variant, value.var = "value") -> globalFittedData_completed
+globalFittedData_completed[is.na(globalFittedData_completed)] <- 0
+globalFittedData_completed <- reshape2::melt(globalFittedData_completed, id.vars="sample_id", variable.name = "variant", value.name = "value")
+globalFittedData <- right_join(x = (globalFittedData %>% dplyr::select(LocationID, LocationName, sample_id, sample_date) %>% distinct()), y = globalFittedData_completed, by = c("sample_id"))
+globalFittedData <- globalFittedData %>% dplyr::select(variant, LocationID, LocationName, sample_id, sample_date, value)
 
 
 writeLines(paste("PROGRESS: loop over WWTP finished"))
@@ -1022,6 +1030,7 @@ writeLines(paste("PROGRESS: writing result tables"))
 globalFittedData %>% distinct() -> globalFittedData
 globalFullData %>% distinct() -> globalFullData
 globalFullSoiData %>% distinct() -> globalFullSoiData
+
 
 fwrite(globalFittedData , file = paste0(outdir, "/globalFittedData.csv"), sep = "\t")
 fwrite(globalFullData, file = paste0(outdir, "/globalFullData.csv.gz"), sep = "\t")
@@ -1047,7 +1056,7 @@ if (dim(globalFittedData)[1] >= tpLimitToPlot){
     stacker.dt %>% rowwise() %>% mutate(kw = as.Date(sample_date, tryFormats = c("%Y-%m-%d")) + 6 - as.numeric(strftime(as.Date(sample_date, tryFormats = c("%Y-%m-%d")), format = "%u"))) %>% group_by(variant, kw) %>% summarize(agg_value = weighted.mean(value, connected_people), .groups = "keep") -> stacker.dt
 
     stacker.dt %>% group_by(variant) %>% mutate(max = max(agg_value)) %>% filter(max > 0) -> stacker.dt
-    melt(data.table::dcast(stacker.dt, kw~variant, value.var = "agg_value", fill = 0), id.vars = c("kw"), variable.name = "variant", value.name = "agg_value") %>% filter(!is.na(kw)) -> stacker.dtt
+    reshape2::melt(reshape2::dcast(stacker.dt, kw~variant, value.var = "agg_value", fill = 0), id.vars = c("kw"), variable.name = "variant", value.name = "agg_value") %>% filter(!is.na(kw)) -> stacker.dtt
 
     ColorBaseData <- data.table(variant = character(), base = character())
     for (varr in unique(stacker.dtt$variant)){
@@ -1142,7 +1151,11 @@ if(dim(globalFittedData)[1] > 0){
             ungroup() %>%
             summarize(earliest = min(sample_date, na.rm = TRUE), latest = max(sample_date, na.rm = TRUE), .groups = "keep") -> sankey_date
 
-        left_join(x = sankey_all.dt, y = (metaDT %>% dplyr::select(LocationID, connected_people) %>%
+        reshape2::dcast(sankey_all.dt, LocationID~variant, value.var = "freq") -> sankey_completed.dt
+        sankey_completed.dt[is.na(sankey_completed.dt)] <- 0
+        sankey_completed.dt <- reshape2::melt(sankey_completed.dt, id.vars="LocationID", variable.name = "variant", value.name = "freq")
+
+        left_join(x = sankey_completed.dt, y = (metaDT %>% dplyr::select(LocationID, connected_people) %>%
             distinct()), by = "LocationID", multiple = "all") %>%
             group_by(variant) %>%
             summarize(freq = weighted.mean(freq, w = connected_people, na.rm = TRUE), .groups = "keep") -> sankey.dt
@@ -1210,7 +1223,11 @@ if(dim(globalFittedData)[1] > 0){
 
           writeLines(paste("PROGRESS: plotting WWTP detection plot"))
 
-          left_join(x = sankey_all.dt, y = (metaDT %>% dplyr::select(LocationID, connected_people) %>% distinct()), multiple = "all", by = "LocationID") %>%
+          reshape2::dcast(sankey_all.dt, LocationID~variant, value.var = "freq") -> sankey_completed.dt
+          sankey_completed.dt[is.na(sankey_completed.dt)] <- 0
+          sankey_completed.dt <- reshape2::melt(sankey_completed.dt, id.vars="LocationID", variable.name = "variant", value.name = "freq")
+
+          left_join(x = sankey_completed.dt, y = (metaDT %>% dplyr::select(LocationID, connected_people) %>% distinct()), multiple = "all", by = "LocationID") %>%
               group_by(variant) %>% summarize(freq = weighted.mean(freq, w = connected_people, na.rm = TRUE), .groups = "keep") %>%
               filter(freq > zeroo/10) -> depicted_in_sankey
           sankey_all.dt %>%
@@ -1220,7 +1237,7 @@ if(dim(globalFittedData)[1] > 0){
               group_by(variant) %>% summarize(N = unique(N), d = length(unique(LocationID)), .groups = "keep") %>%
               mutate(nd = N - d) %>% dplyr::select(-"N") -> occurence.dt
           occurence.dt %>% mutate(r = paste0(sprintf("%.0f", 100*d/(d+nd)), "%")) -> occurence.rate
-          melt(occurence.dt, id.vars = c("variant"))  -> occurence.dt
+          reshape2::melt(occurence.dt, id.vars = c("variant"))  -> occurence.dt
 
           dpl <- ggplot(data = occurence.dt, aes(x = variant, y = value, fill = variable))
           dpl <- dpl + geom_col(position = position_stack(reverse = TRUE))
@@ -1339,7 +1356,7 @@ if(dim(globalFittedData)[1] > 0){
       filename <- paste0(outdir, "/figs/sankey/Overview_byState.pdf")
       ggsave(filename = filename, plot = ppp, width = 18, height = 18)
       fwrite(as.list(c("sankey", "Overview", "allStates", filename)), file = summaryDataFile, append = TRUE, sep = "\t")
-      rm(ppp, filename, sankey_state.dt, sankey.dt, sankey.dtt)
+      rm(ppp, filename)
     }
 }
 
