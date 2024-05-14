@@ -821,6 +821,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
         sankey.dtt %>% rowwise() %>% mutate(node = ifelse(is.na(node), node, dealias(node))) %>% mutate(next_node = ifelse(is.na(next_node), next_node, dealias(next_node))) -> sankey.dtt
 
         sankey.dtt %>% rowwise() %>% mutate(label = ifelse((node == "0" & level>0), gsub("^0", "unclassified", label), label)) -> sankey.dtt
+        sankey.dtt <- sankey.dtt %>% mutate(label = ifelse((grepl("unclassified", label) & level != maxLev), NA, label))
 
         ggplot(sankey.dtt, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = label)) +
             geom_sankey(flow.alpha = .6, node.color = "gray30", type ='alluvial') +
@@ -1330,6 +1331,7 @@ if(dim(globalFittedData)[1] > 0){
             sankey.dtt %>% rowwise() %>% mutate(node = ifelse(is.na(node), node, dealias(node))) %>% mutate(next_node = ifelse(is.na(next_node), next_node, dealias(next_node))) -> sankey.dtt
 
             sankey.dtt %>% rowwise() %>% mutate(label = ifelse((node == "0" & level>0), gsub("^0", "unclassified", label), label)) -> sankey.dtt
+            sankey.dtt <- sankey.dtt %>% mutate(label = ifelse((grepl("unclassified", label) & level != maxLev), NA, label))
 
             unique(sankey.dtt$node) -> var2col
             if("0" %notin% var2col){c("0", var2col) -> var2col}
