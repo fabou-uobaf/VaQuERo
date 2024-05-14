@@ -1204,6 +1204,7 @@ if(dim(globalFittedData)[1] > 0){
           unlist(lapply(as.list(var2col), dealias)) -> dealiasvar2col
           sort(dealiasvar2col) -> dealiasvar2col
           viridis_pal(alpha = 1, begin = 0.025, end = .975, direction = 1, option = "D")(length(dealiasvar2col)) -> var2col
+          sankey.dtt <- sankey.dtt %>% mutate(label = ifelse((grepl("unclassified", label) & level != maxLev), NA, label))
 
           ggplot(sankey.dtt, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = label)) +
                 geom_sankey(flow.alpha = .6, node.color = "gray30", type ='alluvial') +

@@ -122,10 +122,10 @@ getTree <- function(x){
   list() -> ll
   for ( i in seq_along(vars)){
     ancestor <- c("0")
-    if(grepl("^B\\.", vars[i]) & "A" %notin% vars) {
+    if(grepl("^B\\.", long_var[i]) & "A" %notin% vars) {
       ancestor <- c(ancestor, "B")
     }
-    if(grepl("^A\\.", vars[i]) & "A" %notin% vars) {
+    if(grepl("^A\\.", long_var[i]) & "A" %notin% vars) {
       ancestor <- c(ancestor, "A")
     }
     for ( j in seq_along(vars)){
@@ -133,7 +133,7 @@ getTree <- function(x){
         ancestor <- c(ancestor, vars[j])
       }
     }
-    ll[[long_var[i]]] <- ancestor
+    ll[[long_var[i]]] <- unique(ancestor)
   }
   return(ll)
 }
