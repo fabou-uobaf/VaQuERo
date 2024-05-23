@@ -241,6 +241,17 @@ detect_lineages <- function(DT_, timepoint_){
     ## define variants for which at least minUniqMarker and minUniqMarkerRatio are found in the reduced marker definition
     ## define variants whos AF can not be explained by above detected markers assuming beta distribution (unless they could have been detected based on uniq markers)
 
+    mutlog <- data.table(indicatingMutation = character(), ID = character(), LocationID = character(), sample_date = character(), sample_date_decimal = character(), Variants = character(), mutation = character(), meth = character(), iter = numeric())
+
+
+    id_inuse <- DT_ %>% filter(sample_date_decimal %in% timepoint_) %>% pull(ID) %>% unique() %>% paste(collapse = ",")
+    LocationID_inuse <- DT_ %>% filter(sample_date_decimal %in% timepoint_) %>% pull(LocationID) %>% unique() %>% paste(collapse = ",")
+    sample_date_inuse <- DT_ %>% filter(sample_date_decimal %in% timepoint_) %>% pull(sample_date) %>% unique() %>% paste(collapse = ",") %>% as.character()
+    sample_date_decimal_inuse <- DT_ %>% filter(sample_date_decimal %in% timepoint_) %>% mutate(sample_date_decimal = formatC(sample_date_decimal, digits = 7)) %>% pull(sample_date_decimal)  %>% unique() %>% paste(collapse = ",") %>% as.character()
+
+    if(grepl(",", sample_date_decimal_inuse)){sample_date_decimal_inuse <- "multi"}
+    if(grepl(",", sample_date_inuse)){sample_date_inuse <- "multi"}
+
     detectedLineages <- c()
     all_could_be_but_not_have_been_detected_based_on_uniqMarkers <- c()
 
@@ -303,9 +314,12 @@ detect_lineages <- function(DT_, timepoint_){
         mothers_variants_passed_markerCombinationCount_filter <- get_LCA(mothers_variants_passed_markerCombinationCount_filter)
         mothers_variants_passed_markerCombinationCount_filter <- mothers_variants_passed_markerCombinationCount_filter[mothers_variants_passed_markerCombinationCount_filter %in% moi_marker_count$Variants]
     }
-    writeLines(paste("LOG: variants detected based on lca marker combinations as following:"))
-    print(mothers_variants_passed_markerCombinationCount_filter)
+    #writeLines(paste("LOG: variants detected based on lca marker combinations as following:"))
+    #print(mothers_variants_passed_markerCombinationCount_filter)
 
+    if( length(mothers_variants_passed_markerCombinationCount_filter) > 0) {
+      mutlog <- rbind(mutlog, data.table(indicatingMutation = "indicatingMutation", ID = id_inuse, LocationID = LocationID_inuse, sample_date = sample_date_inuse, sample_date_decimal = sample_date_decimal_inuse, Variants = mothers_variants_passed_markerCombinationCount_filter, mutation = NA, meth = "LCA", iter = 0))
+    }
 
     # detect variants with enough uniq marker mutations
     DT_ %>% filter(sample_date_decimal %in% timepoint_) %>%
@@ -320,19 +334,20 @@ detect_lineages <- function(DT_, timepoint_){
           filter(r > minUniqMarkerRatio) %>%
           filter(N >= minUniqMarker) %>%
           summarize(NUCS = paste(NUC, collapse = "; "), .groups = "drop_last") %>%
-          ungroup() %>% dplyr::select(Variants, NUCS) %>%
-          pull(Variants) %>% unique() -> variants_passed_uniqMarkerCount_filter
+          ungroup() %>% dplyr::select(Variants, NUCS) -> variants_passed_uniqMarkerCount_filter.data
+          variants_passed_uniqMarkerCount_filter.data %>% pull(Variants) %>% unique() -> variants_passed_uniqMarkerCount_filter
 
-    writeLines(paste("LOG: variants detected based on unique markers as following:"))
-    print(variants_passed_uniqMarkerCount_filter)
+    #writeLines(paste("LOG: variants detected based on unique markers as following:"))
+    #print(variants_passed_uniqMarkerCount_filter)
+
+
+    if( length(variants_passed_uniqMarkerCount_filter) > 0) {
+      mutlog <- rbind(mutlog, data.table(indicatingMutation = "indicatingMutation", ID = id_inuse, LocationID = LocationID_inuse, sample_date = sample_date_inuse, sample_date_decimal = sample_date_decimal_inuse, Variants = variants_passed_uniqMarkerCount_filter.data$Variants, mutation = variants_passed_uniqMarkerCount_filter.data$NUCS, meth = "UNIQ", iter = 0))
+    }
+
 
     # detect variants with enough uniq marker mutations
     # after variants which could have been detect by uniq markers, but have not, were ignored
-    #DT_ %>% filter(sample_date_decimal %in% timepoint_) %>%
-    #      filter(!grepl(";",Variants)) %>%
-    #      filter(value.depth > min.depth) %>%
-    #      ungroup() %>%
-    #      pull(Variants) %>% unique()  -> could_be_detected_based_on_uniqMarkers
     moi %>% filter(!grepl(";", Variants)) %>% pull(Variants) %>% unique() -> could_be_detected_based_on_uniqMarkers
     could_be_but_not_have_been_detected_based_on_uniqMarkers <- could_be_detected_based_on_uniqMarkers[could_be_detected_based_on_uniqMarkers %notin% variants_passed_uniqMarkerCount_filter]
     DT_ %>%
@@ -356,13 +371,16 @@ detect_lineages <- function(DT_, timepoint_){
           group_by(Variants, ID, sample_date_decimal) %>%
           mutate(N=n()) %>%
           mutate(r=N/n) %>%
-          filter(N >= minUniqMarker) %>%
+          filter(N >= minUniqMarker) -> variants_passed_uniqMarkerCount_iterative_filter.data
+    variants_passed_uniqMarkerCount_iterative_filter.data %>%
           summarize(.groups = "drop_last") %>%
           pull(Variants) %>% unique() -> variants_passed_uniqMarkerCount_iterative_filter
     all_could_be_but_not_have_been_detected_based_on_uniqMarkers <- unique(c(all_could_be_but_not_have_been_detected_based_on_uniqMarkers, could_be_but_not_have_been_detected_based_on_uniqMarkers))
 
-    #writeLines(paste("LOG: variants detected based on iterative unique markers as following (1):"))
-    #print(variants_passed_uniqMarkerCount_iterative_filter)
+
+    if( length(variants_passed_uniqMarkerCount_iterative_filter) > 0) {
+      mutlog <- rbind(mutlog, data.table(indicatingMutation = "indicatingMutation", ID = id_inuse, LocationID = LocationID_inuse, sample_date = sample_date_inuse, sample_date_decimal = sample_date_decimal_inuse, Variants = variants_passed_uniqMarkerCount_iterative_filter.data$Variants, mutation = variants_passed_uniqMarkerCount_iterative_filter.data$NUC, meth = "iterUNIQ", iter = 1))
+    }
 
     # merge above detected lineages
     detectedLineages <- unique(c(detectedLineages, variants_passed_uniqMarkerCount_filter[variants_passed_uniqMarkerCount_filter %in% variants_passed_markerCount_filter], variants_passed_uniqMarkerCount_iterative_filter[variants_passed_uniqMarkerCount_iterative_filter %in% variants_passed_markerCount_filter]))
@@ -387,12 +405,13 @@ detect_lineages <- function(DT_, timepoint_){
             filter(value.depth > min.depth) %>%
             group_by(Variants, ID, sample_date_decimal) %>%
             mutate(N=n()) %>% mutate(r=N/n) %>%
-            filter(N >= minUniqMarker) %>%
+            filter(N >= minUniqMarker)  %>%
             summarize(NUCS = paste(NUC, collapse = "; "), .groups = "drop_last") %>%
             ungroup() %>% dplyr::select(Variants, NUCS) %>% distinct() -> variants_passed_uniqMarkerCount_filter
 
-        writeLines(paste("LOG: [", c, "] variants detected based on unique markers after excluding detectable-but-not-detected lineages as following:"))
-        print(variants_passed_uniqMarkerCount_filter %>% filter(Variants %notin% variants_passed_uniqMarkerCount_filter))
+        #writeLines(paste("LOG: [", c, "] variants detected based on unique markers after excluding detectable-but-not-detected lineages as following:"))
+        #print(variants_passed_uniqMarkerCount_filter %>% filter(Variants %notin% variants_passed_uniqMarkerCount_filter))
+
 
         variants_passed_uniqMarkerCount_filter %>%
             pull(Variants) %>% unique() -> variants_passed_uniqMarkerCount_filter_list
@@ -426,18 +445,25 @@ detect_lineages <- function(DT_, timepoint_){
             group_by(Variants, ID, sample_date_decimal) %>%
             mutate(N=n()) %>%
             mutate(r=N/n) %>%
-            filter(N >= minUniqMarker) %>%
+            filter(N >= minUniqMarker) -> variants_passed_uniqMarkerCount_filter.iterative.data
+        variants_passed_uniqMarkerCount_filter.iterative.data %>%
             summarize(.groups = "drop_last") %>%
             pull(Variants) %>% unique() -> variants_passed_uniqMarkerCount_filter.iterative[[c]]
         could_be_detected_based_on_uniqMarkers.iterative[[c]] <- could_be_detected_based_on_uniqMarkers
         all_could_be_but_not_have_been_detected_based_on_uniqMarkers <- unique(c(all_could_be_but_not_have_been_detected_based_on_uniqMarkers, could_be_but_not_have_been_detected_based_on_uniqMarkers))
+
+        if( length(variants_passed_uniqMarkerCount_filter.iterative[[c]]) > 0) {
+          mutlog <- rbind(mutlog, data.table(indicatingMutation = "indicatingMutation", ID = id_inuse, LocationID = LocationID_inuse, sample_date = sample_date_inuse, sample_date_decimal = sample_date_decimal_inuse, Variants = variants_passed_uniqMarkerCount_filter.iterative.data$Variants, mutation = variants_passed_uniqMarkerCount_filter.iterative.data$NUC, meth = "iterativeUNIQ", iter = c))
+        }
+
+
         if(all(could_be_detected_based_on_uniqMarkers.iterative[[c]] %in% could_be_detected_based_on_uniqMarkers.iterative[[c-1]])){
             break
         }
     }
 
-    writeLines(paste0("LOG: variants detected based on iterative unique markers as following (2-",c, "):"))
-    print(variants_passed_uniqMarkerCount_iterative_filter)
+    #writeLines(paste0("LOG: variants detected based on iterative unique markers as following (2-",c, "):"))
+    #print(variants_passed_uniqMarkerCount_iterative_filter)
 
     detectedLineages <- unique(c(detectedLineages, mothers_variants_passed_markerCombinationCount_filter, unique(unlist(variants_passed_uniqMarkerCount_filter.iterative))[unique(unlist(variants_passed_uniqMarkerCount_filter.iterative)) %in% variants_passed_markerCount_filter]))
 
@@ -446,9 +472,9 @@ detect_lineages <- function(DT_, timepoint_){
     # explained by Z using a beta distribution
     pval_th <- 0.05
 
-    c = 1
+    c = 20
     overhang.added.lineages = c()
-    while(c < 20){
+    while(c < 40){
         c <- c + 1
         DT_reduced %>%
             filter(!grepl(";", Variants)) %>%
@@ -468,6 +494,10 @@ detect_lineages <- function(DT_, timepoint_){
                 writeLines(paste("LOG: lineages [rest] detected due to mutations [NUC] observed in excess [value.freq] to uniquely detected lineages [overhang]. only overhang would explain mean_overhang of AF"))
                 print(iteratively.added %>% dplyr::select(rest, overhang, NUC, value.freq, mean_overhang, pval))
         }
+        if( dim(iteratively.added)[1] > 0 ) {
+          mutlog <- rbind(mutlog, data.table(indicatingMutation = "indicatingMutation", ID = id_inuse, LocationID = LocationID_inuse, sample_date = sample_date_inuse, sample_date_decimal = sample_date_decimal_inuse, Variants = iteratively.added$rest, mutation = iteratively.added$NUC, meth = "iterOVERHANG", iter = c))
+        }
+
         iteratively.added %>% pull(rest) %>% unique() -> iteratively.overhang.added.lineages
         DT_reduced %>%
             mutate(Variants = strsplit(as.character(Variants), ";")) %>%
@@ -486,8 +516,8 @@ detect_lineages <- function(DT_, timepoint_){
     # remove overhang.added.lineages if they could have been detected by uniq markers
     overhang.added.lineages <- overhang.added.lineages[overhang.added.lineages %notin% all_could_be_but_not_have_been_detected_based_on_uniqMarkers]
 
-    writeLines(paste0("LOG: variants detected based on iterative overhang mutations as following (1-",c, "):"))
-    print(overhang.added.lineages)
+    #writeLines(paste0("LOG: variants detected based on iterative overhang mutations as following (1-",c-20, "):"))
+    #print(overhang.added.lineages)
 
 
     detectedLineages <- unique(c(detectedLineages, overhang.added.lineages))
@@ -508,6 +538,15 @@ detect_lineages <- function(DT_, timepoint_){
       }
     }
     detectedLineages <- unique(c(detectedLineages, ancestors_to_add))
+
+    if( length(ancestors_to_add) > 0 ) {
+      mutlog <- rbind(mutlog, data.table(indicatingMutation = "indicatingMutation", ID = id_inuse, LocationID = LocationID_inuse, sample_date = sample_date_inuse, sample_date_decimal = sample_date_decimal_inuse, Variants = ancestors_to_add, mutation = NA, meth = "ANCESTOR", iter = c))
+    }
+
+    if(dim(mutlog)[1] > 0){
+      mutlog <- mutlog %>% group_by(Variants, mutation) %>% mutate(minIter = min(iter)) %>% filter(iter == minIter) %>% dplyr::select(-"minIter")
+      print(knitr::kable(mutlog, format = "rst", digits = 6, row.names = FALSE))
+    }
 
     return(detectedLineages)
 }
