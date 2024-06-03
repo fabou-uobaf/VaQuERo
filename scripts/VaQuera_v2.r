@@ -101,6 +101,8 @@ option_list = list(
               help="Fileformate of produced graphics. Select from pdf, png [default %default]", metavar="character"),
   make_option(c("--ignoreregion"), type="character", default="0-0",
               help="Regions to be ignored from analysis. Useful if certain amplicons are producing unreliable AF. Specify in the a format like <100-120|21955-23288> to specify two regions. [default %default]", metavar="character"),
+  make_option(c("--onlyLastRun"), type="logical", default="TRUE",
+              help="Set to FALSE if all samples and not just the samples which where included in the last run should be considered. [default %default]", metavar="character"),
   make_option(c("--debug"), type="logical", default="FALSE",
               help="Toggle to use run with provided example data [default %default]", metavar="character"),
   make_option(c("--verbose"), type="logical", default="FALSE",
@@ -117,16 +119,16 @@ if(opt$debug){
   opt$metadata = "data/metaData_general.csv"
   opt$data="data/mutationData_DB_NationMonitoringSites.tsv.gz"
   opt$inputformat = "tidy"
-  opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2023-11-11_Europe.csv"
-  opt$mutstats  = "VaQuERo/resources/mutations_stats_pango_codonPhased_2023-11-11.csv.gz"
-  opt$group2var = "VaQuERo/resources/groupMembers_pango_codonPhased_2023-11-11_Europe.csv"
+  opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2024-05-07_Europe.csv"
+  opt$mutstats  = "VaQuERo/resources/mutations_stats_pango_codonPhased_2024-05-07.csv.gz"
+  opt$group2var = "VaQuERo/resources/groupMembers_pango_codonPhased_2024-05-07_Europe.csv"
   opt$pmarker="VaQuERo/resources/mutations_problematic_2023-11-23.csv"
   opt$precomp = "output-variants/globalFittedData.csv"
   opt$ninconsens = 0.2
   opt$zero=0.01
   opt$depth=50
   opt$minexcessfreq=0.04
-  opt$mingeospread=0.10
+  opt$mingeospread=0.08
   opt$pval = 0.01
   opt$minpositivesample=2
   opt$removeLongIndels=1
@@ -135,15 +137,16 @@ if(opt$debug){
   opt$verbose = TRUE
   opt$graph = "pdf"
   opt$TimecoursePlot="all"
-  opt$geogrowthlimit = 0.05
+  opt$geogrowthlimit = 0.04
   opt$wmefgrowthlimit = 0.02
   opt$alphaprime = 2.2
   opt$minweeksample = 10
   opt$filstrat = "and"
-  opt$start = "2023-05-06"
-  opt$end = "2023-12-06"
+  opt$start = "2023-12-02"
+  opt$end = "2024-06-02"
   opt$nw   = 2
-  opt$ignoreregion = "21955-23288"
+  opt$onlyLastRun = FALSE
+  #opt$ignoreregion = "21955-23288"
   writeLines("Warning: command line option overwritten")
 }
 #####################################################
@@ -448,7 +451,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
     metaDT %>% filter(BSF_sample_name %in% sdt$ID) %>% filter(BSF_run %in% last_BSF_run_id) %>% dplyr::select(BSF_run) %>% group_by(BSF_run) %>% summarize(n = n(), .groups = "keep") -> count_last_BSF_run_id
 
     ## skip roi if not in the most recent run
-    if(identical(count_last_BSF_run_id$n, integer(0))){
+    if(opt$onlyLastRun == TRUE & identical(count_last_BSF_run_id$n, integer(0))){
         writeLines(paste0("WARNING: sample location <", roiname, "> skipped from analysis since not part of the latest sequencing run <", last_BSF_run_id, ">"))
         next;
     }
@@ -789,6 +792,9 @@ for (periodend in as.character(seq( from = min(globalAFdata_m$midweek_date) + op
       writeLines(paste("PROGRESS: join mutations growing geographically", opt$filstrat, "by weighted mean excess freq"))
     }
 
+    if(is.null(geo_growing_nucs$mutation) | is.null(wmef_growing_nucs$mutation)){
+      next;
+    }
     growing_nucs_or  <- full_join(x = geo_growing_nucs, y = wmef_growing_nucs, by = "mutation", suffix = c(".geo", ".wmef"))
     growing_nucs_and <- inner_join(x = geo_growing_nucs, y = wmef_growing_nucs, by = "mutation", suffix = c(".geo", ".wmef"))
 
@@ -885,9 +891,14 @@ for (periodend in as.character(seq( from = min(globalAFdata_m$midweek_date) + op
           outbreakInfoPlot <- outbreakInfoPlot + geom_tile(color = "white", alpha = 0.8)
           if(dim(outbreak.dt)[1] <= 1){
             outbreakInfoPlot <- outbreakInfoPlot + scale_fill_viridis_c(name = "Allele frequency", trans = "sqrt", option = "B", begin = 0.1, end = 0.9, guide = guide_colorbar(direction = "horizontal", title.position = "top", label.position="bottom", label.hjust = 0.5, label.vjust = 0.5, label.theme = element_text(angle = 90)))
-          } else{
+          } else if(length(unique(outbreak.dt$AF.freq)) > 1){
             outbreakInfoPlot <- outbreakInfoPlot + scale_fill_viridis_b(name = "Allele frequency", trans = "sqrt", option = "B", begin = 0.1, end = 0.9, guide = guide_colorbar(direction = "horizontal", title.position = "top", label.position="bottom", label.hjust = 0.5, label.vjust = 0.5, label.theme = element_text(angle = 90)))
+          } else{
+            outbreakInfoPlot <- ggplot(data = outbreak.dt, aes(x = label, y = ID, fill = AF.freq))
+            outbreakInfoPlot <- outbreakInfoPlot + geom_tile(color = "white", alpha = 0.8)
+            outbreakInfoPlot <- outbreakInfoPlot + scale_fill_viridis_c(name = "Allele frequency", option = "B", begin = 0.1, end = 0.9, guide = guide_colorbar(direction = "horizontal", title.position = "top", label.position="bottom", label.hjust = 0.5, label.vjust = 0.5, label.theme = element_text(angle = 90)))
           }
+
           outbreakInfoPlot <- outbreakInfoPlot + theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
           outbreakInfoPlot <- outbreakInfoPlot + xlab("Excess Mutations") + ylab("Variants")
           outbreakInfoPlot <- outbreakInfoPlot + coord_flip()
@@ -969,6 +980,13 @@ span$midweek_date <- as.Date(span$midweek_date)
 ## filter mutations which happen to grow in at least opt$nw consecutive weeks
 if(opt$verbose){
   writeLines(paste("LOG: filter mutations which happen to grow in at least", opt$nw, "consecutive weeks"))
+}
+
+
+### kill if no mutations are found
+if (!exists("timecourseMutationSet$nuc_mutation")){
+  writeLines(paste("WARNING: no mutation data found in <timecourseMutationSet>. Program ends here!"))
+  quit(save="no")
 }
 
 timecourseMutationSet %>% dplyr::select(nuc_mutation, label, midweek_date) %>% distinct() %>% group_by(label, nuc_mutation) %>% arrange(midweek_date, .by_group = TRUE) %>% mutate(prior = as.numeric(midweek_date - lag(midweek_date, n = opt$nw-1))) %>% dplyr::select(nuc_mutation, label, midweek_date, prior) %>% mutate(maxprio = min(prior, na.rm = TRUE)) %>% filter(maxprio >= (opt$nw-1)*7 & maxprio < (opt$nw)*7) %>% pull(nuc_mutation) %>% unique() -> consecutive_mutation_to_use
