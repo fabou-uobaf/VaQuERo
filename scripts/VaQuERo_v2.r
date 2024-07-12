@@ -103,7 +103,7 @@ if(opt$debug){
     opt$dir = "dev_output"
     opt$metadata = "data/metaData_general.csv"
     opt$data="data/mutationData_DB_NationMonitoringSites.tsv.gz"
-    opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2024-03-29_Europe.csv"
+    opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2024-05-07_Europe.csv"
     opt$pmarker="VaQuERo/resources/mutations_problematic_2023-11-23.csv"
     opt$smarker="VaQuERo/resources/mutations_special_2022-12-21.csv"
     opt$zero=0.01
@@ -111,15 +111,15 @@ if(opt$debug){
     opt$depth=50
     opt$minuniqmark=1
     opt$minuniqmarkfrac=0.4
-    opt$minqmark=5
+    opt$minqmark=6
+    opt$minmarkfrac=0.6
     opt$alphaprime=2.2
-    opt$minmarkfrac=0.7
-    opt$smoothingsamples=2
-    opt$smoothingtime=22
-    opt$voi="B.1.1.7,B.1.617.2,P.1,BA.2.86"
-    opt$highlight="B.1.617.2,BA.1,BA.2,BA.5,BA.2.86"
-    opt$colorBase="B.1.617.2,BA.1,BA.2,BA.5,BA.2.86"
-    opt$recent <- 999
+    opt$smoothingsamples=1
+    opt$smoothingtime=8
+    opt$voi="KS.1,KP.2,KP.3,KP.4,BA.1"
+    opt$highlight="BA.2,BA.5,XBB,BA.2.86"
+    opt$colorBase="BA.2,BA.5,XBB,BA.2.86"
+    opt$recent <- 22
     print("Warning: command line option overwritten")
 }
 #####################################################
@@ -573,7 +573,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
             # detect lineage in current center timepoint
             specifiedLineages <- detect_lineages(DT_ = ssdt, timepoint_ = timepoint)
 
-            # depricated; use neigboring timepoints individially and merge resulting list
+            # deprecated; use neigboring timepoints individially and merge resulting list
             if(0){
               # check if current timepoint is squeezed between two timepoint
               # detect lineage in neighboring timepoints
@@ -649,6 +649,8 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
                 ssdt[as.data.frame(ssdt)[,colnames(ssdt) %in% specifiedLineages ] > 0,] -> ssdt
                 ssdt[as.data.frame(ssdt)[,colnames(ssdt) %in% unique(specifiedLineages, highlightedVariants) ] > 0,] -> detour4log
               }
+              ### remove mutations which are marker of all of the specifiedLineages
+              #ssdt <- ssdt[rowSums(as.data.frame(ssdt)[colnames(ssdt) %in% specifiedLineages]) < length(specifiedLineages)]
 
               ## remove zeros and low depth
               ssdt %>% filter(value.freq > 0)  %>% filter(value.depth > min.depth) -> ssdt
@@ -683,10 +685,10 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
                 next;
               }
 
-              ## add weight (1/(dayDiff+1)*log10(sequencingdepth)*sqrt(1/number_of_variants)*1/mutationLength
-              ssdt %>% rowwise() %>% mutate(varweight = sqrt(1/(1+str_count(Variants, ";")))) %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(mutationweight = 1/nchar(gsub("\\d", "", NUC))/2) %>% mutate(weight = 1*timeweight*varweight*mutationweight) -> ssdt
-              detour4log %>% rowwise() %>% mutate(varweight = sqrt(1/(1+str_count(Variants, ";")))) %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(weight = timeweight*varweight) %>% filter(!grepl(";.+;", Variants)) -> detour4log
-              detour4log %>% rowwise() %>% mutate(varweight = sqrt(1/(1+str_count(Variants, ";")))) %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(weight = timeweight*varweight) %>% dplyr::select(sample_date, NUC, value.freq, weight, all_of(specifiedLineages)) -> detour4log_printer
+              ## add weight (1/(dayDiff+1)  *  log10(sequencingdepth)  *  (1/number_of_variants)^2  *  1/mutationLength
+              ssdt %>% rowwise() %>% mutate(varweight = (1/(sum(unlist(str_split(Variants, pattern = ";")) %in% specifiedLineages)))^2 ) %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(mutationweight = 1/nchar(gsub("\\d", "", NUC))/2) %>% mutate(weight = 1*timeweight*varweight*mutationweight) -> ssdt
+              detour4log %>% rowwise() %>% mutate(varweight = (1/(sum(unlist(str_split(Variants, pattern = ";")) %in% specifiedLineages)))^2 ) %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(weight = timeweight*varweight) %>% filter(!grepl(";.+;", Variants)) -> detour4log
+              detour4log %>% rowwise() %>% mutate(varweight = (1/(sum(unlist(str_split(Variants, pattern = ";")) %in% specifiedLineages)))^2 ) %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(weight = timeweight*varweight) %>% dplyr::select(sample_date, NUC, value.freq, weight, all_of(specifiedLineages)) -> detour4log_printer
               detour4log_printer %>% rowwise() %>% mutate(value.freq = signif(value.freq, digits = 2), weight = signif(weight, digits = 2)) -> detour4log_printer
               detour4log %>% arrange(Variants) -> detour4log
               print(data.frame(date = detour4log$sample_date, Tweight = round(detour4log$timeweight, digits = 2), depth = detour4log$value.depth, weight = round(detour4log$weight, digits = 2), value = round(detour4log$value.freq, digits = 2), variants = detour4log$Variants, mutation = detour4log$NUC))
