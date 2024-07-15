@@ -75,10 +75,10 @@ option_list = list(
               help="Minimal absolute number of uniq markers that variant is considered detected [default %default]", metavar="character"),
   make_option(c("--minuniqmarkfrac"), type="double", default=0.4,
               help="Minimal fraction of uniq markers that variant is considered detected [default %default]", metavar="character"),
-  make_option(c("--minqmark"), type="integer", default=3,
-              help="Minimal absolute number of markers that variant is considered detected [default %default]", metavar="character"),
-  make_option(c("--minmarkfrac"), type="double", default=0.4,
+  make_option(c("--mininfofrac"), type="double", default=0.6,
               help="Minimal fraction of markers that variant is considered detected [default %default]", metavar="character"),
+  make_option(c("--addUniqZeros"), type="logical", default="FALSE", action = "store_true",
+            help="Should unobserved uniq marker added with AF=0 [default %default]", metavar="character"),
   make_option(c("--smoothingsamples"), type="integer", default=2,
               help="Number of previous timepoints use for smoothing [default %default]", metavar="character"),
   make_option(c("--smoothingtime"), type="double", default=2,
@@ -111,8 +111,8 @@ if(opt$debug){
     opt$depth=50
     opt$minuniqmark=1
     opt$minuniqmarkfrac=0.4
-    opt$minqmark=6
-    opt$minmarkfrac=0.6
+    opt$mininfofrac=0.6
+    opt$addUniqZeros=TRUE
     opt$alphaprime=2.2
     opt$smoothingsamples=1
     opt$smoothingtime=8
@@ -129,7 +129,7 @@ options(warn=-1)
 
 
 ## loading external function library, expected to be in same dir as execution script
-sourceFileBase = "VaQueR_functions.r"
+sourceFileBase = "^VaQueR_functions.r$"
 sourceDir <- function() {
         cmdArgs <- commandArgs(trailingOnly = FALSE)
         needle <- "--file="
@@ -170,6 +170,7 @@ if(length(sourceFile) == 1 && file.exists(sourceFile)){
     source(sourceFile)
   } else{
     print(paste("ERROR: source file", sourceFileBase, "not found. Please double check if it is in the same directory as the analysis script VaQuERo_v2.R"))
+    exit()
   }
 }
 
@@ -249,8 +250,7 @@ recentEnought = opt$recent # sample with less than this days in the past are not
 tpLimitToPlot = opt$plottp # produce plot only if at least than n time points
 minUniqMarker <- opt$minuniqmark # minmal absolute number of uniq markers that variant is considered detected
 minUniqMarkerRatio <- opt$minuniqmarkfrac # minmal fraction of uniq markers that variant is considered detected (0.25)
-minMarker <- opt$minqmark # minmal absolute number of sensitive markers that variant is considered detected
-minMarkerRatio <- opt$minmarkfrac # minmal fraction of sensitive markers that variant is considered detected (0.25)
+minInfoRatio <- opt$mininfofrac # minmal fraction of information from sensitive markers that variant is considered detected (0.6)
 timeLag <- opt$smoothingsamples # number of previous timepoints use for smoothing
 timeStart <- 1 # set to 1 if all time points should be considered; 2 if first should not be considered
 timeLagDay <- opt$smoothingtime # previous timepoints for smoothing are ignored if more days before
@@ -276,9 +276,36 @@ writeLines(paste0("PROGRESS: read mutation files "))
 moi <- fread(file = markermutationFile)
 unite(moi, NUC, c(4,3,5), ALT, sep = "", remove = FALSE) -> moi
 moi %>% mutate(Variants = gsub("other;?", "", Variants)) %>% mutate(Variants = gsub(";;", ";", Variants)) -> moi   ### just there to fix GISAID issue with BQ.1.1 vs BQ.1
-moi %>% dplyr::select("Variants") %>% mutate(Variants = strsplit(as.character(Variants), ";")) %>% unnest(cols = c(Variants)) %>% group_by(Variants) %>% summarize(n = n(), .groups = "keep") -> moi_marker_count
 moi %>% dplyr::select("Variants") %>% group_by(Variants) %>% summarize(n = n(), .groups = "keep")  -> moi_markerCombination_count
 moi %>% filter(!grepl(";", Variants)) %>% dplyr::select("Variants") %>% mutate(Variants = strsplit(as.character(Variants), ";")) %>% unnest(cols = c(Variants)) %>% group_by(Variants) %>% summarize(n = n(), .groups = "keep") -> moi_uniq_marker_count
+
+## counter number of mutations for each variant and calculate information content for each variant
+variant_counter <- moi %>%
+                      dplyr::select("Variants") %>%
+                      mutate(Variants = strsplit(as.character(Variants), ";")) %>%
+                      unnest(cols = c(Variants)) %>%
+                      pull(Variants) %>%
+                      unique() %>%
+                      length()
+
+moi_marker_information <- moi %>%
+                      dplyr::select("Variants", "NUC") %>%
+                      mutate(Variants = strsplit(as.character(Variants), ";")) %>%
+                      unnest(cols = c(Variants)) %>%
+                      group_by(NUC) %>%
+                      mutate(i = -1*log(n()/variant_counter)) %>%
+                      dplyr::select("NUC", "i") %>%
+                      distinct()
+
+moi_variant_information <- moi %>%
+                      dplyr::select("Variants", "NUC") %>%
+                      mutate(Variants = strsplit(as.character(Variants), ";")) %>%
+                      unnest(cols = c(Variants)) %>%
+                      group_by(NUC) %>%
+                      mutate(i = -1*log(n()/variant_counter)) %>%
+                      group_by(Variants) %>%
+                      summarize(n = n(), i = sum(i), .groups = "keep")
+
 
 ## read special mutations of interest from file
 soi <- fread(file = specialmutationFile)
@@ -537,7 +564,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
     ## count how many sample from this plant were in the last BSF run
     metaDT %>% filter(BSF_sample_name %in% sdt$ID) %>% filter(BSF_run %in% last_BSF_run_id) %>% dplyr::select(BSF_run) %>% group_by(BSF_run) %>% summarize(n = n(), .groups = "keep") -> count_last_BSF_run_id
 
-    specifiedLineagesTimecourse <- moi_marker_count$Variants
+    specifiedLineagesTimecourse <- moi_variant_information$Variants
 
     ### FROM HERE LOOP OVER TIME POINTS
     sdt %>% dplyr::select(sample_date_decimal, sample_date) %>% distinct() -> timePointsCombinations
@@ -549,6 +576,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
             timepoint <- timePoints[t]
             timepoint_classic <- timePoints_classic[t]
             ref_timepoint_classic <- timepoint_classic
+            ref_timepoint         <- timepoint
             timepoint_day <- decimalDate(timepoint_classic,0)
             T <- which(timePoints_classic == timepoint_classic)
             timepoint <- timePoints[T]
@@ -670,6 +698,60 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
                 writeLines(paste("LOG: ", mutationsBeforeOutlierRemoval-mutationsAfterOutlierRemoval, "mutations ignored since classified as outlier", "(", mutationsAfterOutlierRemoval, " remaining from", mutationsBeforeOutlierRemoval, ")"))
               }
 
+              ## add unobserved uniq markers for specifiedLineages (after ignoring nonSpecifiedLineages) with AF 0
+              if(opt$addUniqZeros){
+                missedUniqMutations <- moi %>%
+                        mutate(Variants = strsplit(as.character(Variants), ";")) %>%
+                        unnest(Variants) %>%
+                        filter(Variants %in% specifiedLineages) %>%
+                        group_by(NUC) %>%
+                        summarize(n = n(), Variants = paste(Variants, sep =";", collapse =";"), .groups = "drop") %>%
+                        filter(n == 1) %>%
+                        filter(NUC %notin% ssdt$NUC)
+                if(dim(missedUniqMutations)[1] > 0){
+
+                  depthweight <- 10*min.depth
+                  writeLines(paste("LOG: add", length(unique(missedUniqMutations$NUC)), " mutation to AF =", 0.5/depthweight, " since unobserved marker for", length(unique(missedUniqMutations$Variants)), "variants"))
+
+                  for (j in 1:dim(missedUniqMutations)[1]){
+
+                    mockssdt <- c()
+                    mockssdt  <- c(mockssdt, as.character(missedUniqMutations[j,3]))
+                    mockssdt  <- c(mockssdt, as.character(sdt %>% filter(sample_date %in% c(ref_timepoint_classic) ) %>% dplyr::select(ID) %>% distinct() %>% pull(ID) %>% paste(collapse = ",", sep = ",")))
+                    mockssdt  <- c(mockssdt, as.character(ref_timepoint_classic))
+                    mockssdt  <- c(mockssdt, as.character(ref_timepoint))
+                    mockssdt  <- c(mockssdt, as.character(0.5/depthweight))
+                    mockssdt  <- c(mockssdt, as.character(depthweight))
+                    mockssdt  <- c(mockssdt, as.character(roi))
+                    mockssdt  <- c(mockssdt, as.character(roiname))
+                    mockssdt  <- c(mockssdt, as.character(missedUniqMutations[j,1]))
+                    mockssdt <- as.data.table(matrix(mockssdt, nrow = 1))
+                    colnames(mockssdt) <- colnames(ssdt)[1:9]
+                    mockssdt$sample_date <- as.IDate(mockssdt$sample_date)
+                    mockssdt$sample_date_decimal <- as.numeric(mockssdt$sample_date_decimal)
+                    mockssdt$value.freq <- as.numeric(mockssdt$value.freq)
+                    mockssdt$value.depth <- as.numeric(mockssdt$value.depth)
+
+
+                    mockmmat <- c()
+                    for (iij in colnames(ssdt)[colnames(ssdt) %in% specifiedLineages]){
+                        Mm <- ifelse(iij == missedUniqMutations[j,3], 1, 0)
+                        mockmmat  <- c(mockmmat, as.character(Mm))
+                    }
+                    mockmmat <- as.data.table(matrix(mockmmat, nrow = 1))
+                    colnames(mockmmat) <- colnames(ssdt)[colnames(ssdt) %in% specifiedLineages]
+                    mockmmat <- as.data.table(lapply(mockmmat, as.numeric))
+
+                    mock <- cbind(mockssdt, mockmmat)
+                    if(any(colnames(ssdt) == "groupflag")){
+                      mock$groupflag <- "mockMissedUniq"
+                    }
+                    ssdt <- rbind(ssdt, mock)
+                  }
+                }
+              }
+
+
               ## generate regression formula
               if ( length(specifiedLineages) > 1 ){
                 formula <- as.formula(paste("value.freq", paste(specifiedLineages, collapse='+'), sep = " ~" ))
@@ -766,11 +848,11 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 
           }
     }
-    writeLines(paste0("PROGRESS: finished variant quantifiaction for all timePoints "))
+    writeLines(paste0("PROGRESS: finished variant quantification for all timePoints "))
 
     # average per sample_date to take care of more than one sample a day
-    plantFittedData <- plantFittedData %>% group_by(variant, LocationID, LocationName, sample_date) %>% summarize(value = mean(value))
-    sampleID2sample_date <- metaDT %>% filter(LocationID == roi) %>% group_by(sample_date) %>% summarize(BSF_sample_name = paste(BSF_sample_name, collapse = ","))
+    plantFittedData <- plantFittedData %>% group_by(variant, LocationID, LocationName, sample_date) %>% summarize(value = mean(value), .groups = "keep")
+    sampleID2sample_date <- metaDT %>% filter(LocationID == roi) %>% group_by(sample_date) %>% summarize(BSF_sample_name = paste(BSF_sample_name, collapse = ","), .groups = "keep")
     sampleID2sample_date$sample_date <- as.character(sampleID2sample_date$sample_date)
     plantFittedData <- left_join(x = plantFittedData, y = sampleID2sample_date, by = "sample_date")
     plantFittedData <- plantFittedData %>% dplyr::select(variant, LocationID, LocationName, sample_id=BSF_sample_name, sample_date, value)
@@ -1014,7 +1096,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 
     rm(plantFittedData, plantFullData)
 }
-##XX##
+
 
 globalFittedData <- rbindlist(globalFittedDataList)
 globalFullData <- rbindlist(globalFullDataList)
