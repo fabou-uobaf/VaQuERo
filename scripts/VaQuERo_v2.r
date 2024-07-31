@@ -100,7 +100,7 @@ opt = parse_args(opt_parser);
 #####################################################
 ####  parameter setting for interactive debugging
 if(opt$debug){
-    opt$dir = "dev_output"
+    opt$dir = "output-variants"
     opt$metadata = "data/metaData_general.csv"
     opt$data="data/mutationData_DB_NationMonitoringSites.tsv.gz"
     opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2024-05-07_Europe.csv"
@@ -122,6 +122,7 @@ if(opt$debug){
     opt$recent <- 22
     print("Warning: command line option overwritten")
 }
+
 #####################################################
 
 ## define functions
@@ -572,280 +573,305 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
     timePoints_classic <- timePointsCombinations$sample_date[order(timePointsCombinations$sample_date_decimal)]
 
     if (length(timePoints) >= timeStart){
-          for (t in timeStart:length(timePoints)) {
-            timepoint <- timePoints[t]
-            timepoint_classic <- timePoints_classic[t]
-            ref_timepoint_classic <- timepoint_classic
-            ref_timepoint         <- timepoint
-            timepoint_day <- decimalDate(timepoint_classic,0)
-            T <- which(timePoints_classic == timepoint_classic)
-            timepoint <- timePoints[T]
-            writeLines(paste("PROGRESS:", roiname, paste0("(tp: ", t, ")"), "@", paste(ref_timepoint_classic, collapse=", "), "(", paste(signif(timepoint, digits = 10), collapse=", "), ")"))
+          t <- timeStart
+          catchCounter = 0
+          while(t <= length(timePoints)){
+            checkSuccess<-tryCatch( {
+                timepoint <- timePoints[t]
+                timepoint_classic <- timePoints_classic[t]
+                ref_timepoint_classic <- timepoint_classic
+                ref_timepoint         <- timepoint
+                timepoint_day <- decimalDate(timepoint_classic,0)
+                T <- which(timePoints_classic == timepoint_classic)
+                timepoint <- timePoints[T]
+                writeLines(paste("PROGRESS:", roiname, paste0("(tp: ", t, ")"), "@", paste(ref_timepoint_classic, collapse=", "), "(", paste(signif(timepoint, digits = 10), collapse=", "), ")"))
 
-            lowerDiff <- ifelse(min(T) > timeLag, timeLag, min(T)-1)
-            upperDiff <- ifelse((max(T)+timeLag) <= length(timePoints), timeLag, length(timePoints)-max(T))
-            diffs <- (-lowerDiff:upperDiff)
-            allTimepoints <- timePoints[min(T+diffs):max(T+diffs)]
-            allTimepoints_classic <- timePoints_classic[min(T+diffs):max(T+diffs)]
-            if(any(abs(as.numeric(timepoint_day - allTimepoints)) <= (timeLagDay/(leapYear(floor(timepoint_day)))))){
-              allTimepoints_classic <- allTimepoints_classic[abs(as.numeric(timepoint_day - allTimepoints)) <= timeLagDay/(leapYear(floor(timepoint_day)))]
-              allTimepoints <- allTimepoints[abs(as.numeric(timepoint_day - allTimepoints)) <= timeLagDay/(leapYear(floor(timepoint_day)))]
+                lowerDiff <- ifelse(min(T) > timeLag, timeLag, min(T)-1)
+                upperDiff <- ifelse((max(T)+timeLag) <= length(timePoints), timeLag, length(timePoints)-max(T))
+                diffs <- (-lowerDiff:upperDiff)
+                allTimepoints <- timePoints[min(T+diffs):max(T+diffs)]
+                allTimepoints_classic <- timePoints_classic[min(T+diffs):max(T+diffs)]
+                if(any(abs(as.numeric(timepoint_day - allTimepoints)) <= (timeLagDay/(leapYear(floor(timepoint_day)))))){
+                  allTimepoints_classic <- allTimepoints_classic[abs(as.numeric(timepoint_day - allTimepoints)) <= timeLagDay/(leapYear(floor(timepoint_day)))]
+                  allTimepoints <- allTimepoints[abs(as.numeric(timepoint_day - allTimepoints)) <= timeLagDay/(leapYear(floor(timepoint_day)))]
 
-            } else{
-              allTimepoints <- timepoint
-              allTimepoints_classic <- rep(timepoint_classic, times = length(timepoint))
-            }
-
-            sdt %>% filter(sample_date %in% c(timepoint_classic, allTimepoints_classic) ) -> ssdt
-
-            # detect lineage in current center timepoint
-            specifiedLineages <- detect_lineages(DT_ = ssdt, timepoint_ = timepoint)
-
-            # deprecated; use neigboring timepoints individially and merge resulting list
-            if(0){
-              # check if current timepoint is squeezed between two timepoint
-              # detect lineage in neighboring timepoints
-              # add lineages detected in any to specifiedLineages
-              # or if last time point, check which lineages are detecten in any of the previous two timePoints
-              # add them
-              prev_timepoints <- allTimepoints[allTimepoints < timepoint]
-              aft_timepoints <- allTimepoints[allTimepoints > timepoint]
-              if(length(prev_timepoints)>0 & length(aft_timepoints)>0){
-                writeLines("LOG: augment variant detection with previous and following time points")
-                if(abs(max(prev_timepoints) - timepoint)*365 < opt$smoothingtime){
-                  prev_specifiedLineages <- detect_lineages(DT_ = ssdt, timepoint_ = max(prev_timepoints))
-                  specifiedLineages <- unique(c(specifiedLineages, prev_specifiedLineages))
-                }
-                if(abs(min(aft_timepoints) - timepoint)*365 < opt$smoothingtime){
-                  aft_specifiedLineages <- detect_lineages(DT_ = ssdt, timepoint_ = min(prev_timepoints))
-                  specifiedLineages <- unique(c(specifiedLineages, aft_specifiedLineages))
-                }
-              }
-              if(timepoint == max(timePoints) & length(prev_timepoints)>=1){
-                writeLines("LOG: augment variant detection be the two previous time points")
-
-                prev_timepoint <- sort(prev_timepoints, decreasing=TRUE)[1]
-                if(abs(prev_timepoint - timepoint)*365 < opt$smoothingtime){
-                  prev_specifiedLineages <- detect_lineages(DT_ = ssdt, timepoint_ = prev_timepoint)
-                  specifiedLineages <- unique(c(specifiedLineages, prev_specifiedLineages))
-                }
-              }
-              if(timepoint == max(timePoints) & length(prev_timepoints)>=2){
-                prevprev_timepoint <- sort(prev_timepoints, decreasing=TRUE)[2]
-                if(abs(prevprev_timepoint - timepoint)*365 < opt$smoothingtime){
-                  prevprev_specifiedLineages <- detect_lineages(DT_ = ssdt, timepoint_ = prevprev_timepoint)
-                  specifiedLineages <- unique(c(specifiedLineages, prevprev_specifiedLineages))
-                }
-              }
-            }
-
-            # use neigboring timepoints merged to deduce resulting list
-            if(1){
-              # detect lineage in merged data from neighboring timepoints + current timepoint
-              # add lineages detected in any to specifiedLineages
-              prev_timepoints <- allTimepoints[allTimepoints < timepoint]
-              aft_timepoints <- allTimepoints[allTimepoints > timepoint]
-
-              merged_specifiedLineages <- detect_lineages(DT_ = ssdt, timepoint_ = c(prev_timepoints, timepoint, aft_timepoints))
-              specifiedLineages <- unique(c(specifiedLineages, merged_specifiedLineages))
-            }
-
-
-
-            writeLines(paste("LOG: (", t, ")", timepoint_classic, roiname, paste("(",length(allTimepoints[allTimepoints %in% timepoint]), "same day;", "+", length(allTimepoints[allTimepoints %notin% timepoint]), "neighboring TP;", length(specifiedLineages), "detected lineages)")))
-            writeLines(paste0("LOG: detected lineages (", length(specifiedLineages), "): ", paste(specifiedLineages, sep = ", ", collapse = ", ")))
-
-            if( length(specifiedLineages) > 0){
-              writeLines(paste("LOG:", "PERFORM REGRESSION WITH", length(specifiedLineages), "LINEAGES"))
-
-              # join model matrix columns to measured variables
-              smmat <- as.data.frame(mmat)[,which(colnames(mmat) %in% c("NUC", specifiedLineages))]
-              if (length(specifiedLineages) > 1){
-                smmat$groupflag <- apply( as.data.frame(mmat)[,which(colnames(mmat) %in% c(specifiedLineages))], 1 , paste , collapse = "" )
-              } else{
-                smmat$groupflag <-  as.data.frame(mmat)[,which(colnames(mmat) %in% c(specifiedLineages))]
-              }
-              left_join(x = ssdt, y = smmat, by = c("NUC"), multiple = "all") -> ssdt
-              ssdt %>% ungroup() %>% mutate(groupflag = paste(groupflag, ifelse(grepl(";", Variants), "M", "U"), sample_date_decimal)) -> ssdt
-
-              ## remove mutations which are not marker of any of the specifiedLineages
-              ## keep mutations which are marker of all of the specifiedLineages
-              if( sum(colnames(ssdt) %in% specifiedLineages) > 1){
-                ssdt[( rowSums(as.data.frame(ssdt)[,colnames(ssdt) %in% specifiedLineages ]) > 0 & rowSums(as.data.frame(ssdt)[,colnames(ssdt) %in% specifiedLineages ]) <= length(specifiedLineages)),] -> ssdt
-                ssdt[( rowSums(as.data.frame(ssdt)[,colnames(ssdt) %in% unique(specifiedLineages, highlightedVariants) ]) > 0 & rowSums(as.data.frame(ssdt)[,colnames(ssdt) %in% unique(specifiedLineages, highlightedVariants) ]) <= length(unique(specifiedLineages, highlightedVariants))),] -> detour4log
-              } else{
-                ssdt[as.data.frame(ssdt)[,colnames(ssdt) %in% specifiedLineages ] > 0,] -> ssdt
-                ssdt[as.data.frame(ssdt)[,colnames(ssdt) %in% unique(specifiedLineages, highlightedVariants) ] > 0,] -> detour4log
-              }
-              ### remove mutations which are marker of all of the specifiedLineages
-              #ssdt <- ssdt[rowSums(as.data.frame(ssdt)[colnames(ssdt) %in% specifiedLineages]) < length(specifiedLineages)]
-
-              ## remove zeros and low depth
-              ssdt %>% filter(value.freq > 0)  %>% filter(value.depth > min.depth) -> ssdt
-
-              ## transform to avoid 1
-              ssdt %>% mutate(value.freq = (value.freq * (value.depth-1) + 0.5)/value.depth) -> ssdt
-
-              # remove "OTHERS"
-              ssdt %>% mutate(Variants = gsub("other;*", "", Variants)) -> ssdt
-
-              ## remove outlier per group flag
-              ## remove if outside 1.5*IQR+/-0.05
-              dim(ssdt)[1] -> mutationsBeforeOutlierRemoval
-              ssdt %>% group_by(groupflag) %>% mutate(iqr = IQR(value.freq)) %>% mutate(upperbond = quantile(value.freq, 0.75) + 1.5 * iqr + 0.05, lowerbond = quantile(value.freq, 0.25) - 1.5 * iqr - 0.05) %>% filter((value.freq <= upperbond ) & (value.freq >= lowerbond)) %>% ungroup() %>% dplyr::select(-"groupflag", -"iqr", -"upperbond", -"lowerbond") -> ssdt
-              dim(ssdt)[1] -> mutationsAfterOutlierRemoval
-              if(mutationsAfterOutlierRemoval < mutationsBeforeOutlierRemoval){
-                writeLines(paste("LOG: ", mutationsBeforeOutlierRemoval-mutationsAfterOutlierRemoval, "mutations ignored since classified as outlier", "(", mutationsAfterOutlierRemoval, " remaining from", mutationsBeforeOutlierRemoval, ")"))
-              }
-
-              ## add unobserved uniq markers for specifiedLineages (after ignoring nonSpecifiedLineages) with AF 0
-              if(opt$addUniqZeros){
-                missedUniqMutations <- moi %>%
-                        mutate(Variants = strsplit(as.character(Variants), ";")) %>%
-                        unnest(Variants) %>%
-                        filter(Variants %in% specifiedLineages) %>%
-                        group_by(NUC) %>%
-                        summarize(n = n(), Variants = paste(Variants, sep =";", collapse =";"), .groups = "drop") %>%
-                        filter(n == 1) %>%
-                        filter(NUC %notin% ssdt$NUC)
-                if(dim(missedUniqMutations)[1] > 0){
-
-                  depthweight <- 10*min.depth
-                  writeLines(paste("LOG: add", length(unique(missedUniqMutations$NUC)), " mutation to AF =", 0.5/depthweight, " since unobserved marker for", length(unique(missedUniqMutations$Variants)), "variants"))
-
-                  for (j in 1:dim(missedUniqMutations)[1]){
-
-                    mockssdt <- c()
-                    mockssdt  <- c(mockssdt, as.character(missedUniqMutations[j,3]))
-                    mockssdt  <- c(mockssdt, as.character(sdt %>% filter(sample_date %in% c(ref_timepoint_classic) ) %>% dplyr::select(ID) %>% distinct() %>% pull(ID) %>% paste(collapse = ",", sep = ",")))
-                    mockssdt  <- c(mockssdt, as.character(ref_timepoint_classic))
-                    mockssdt  <- c(mockssdt, as.character(ref_timepoint))
-                    mockssdt  <- c(mockssdt, as.character(0.5/depthweight))
-                    mockssdt  <- c(mockssdt, as.character(depthweight))
-                    mockssdt  <- c(mockssdt, as.character(roi))
-                    mockssdt  <- c(mockssdt, as.character(roiname))
-                    mockssdt  <- c(mockssdt, as.character(missedUniqMutations[j,1]))
-                    mockssdt <- as.data.table(matrix(mockssdt, nrow = 1))
-                    colnames(mockssdt) <- colnames(ssdt)[1:9]
-                    mockssdt$sample_date <- as.IDate(mockssdt$sample_date)
-                    mockssdt$sample_date_decimal <- as.numeric(mockssdt$sample_date_decimal)
-                    mockssdt$value.freq <- as.numeric(mockssdt$value.freq)
-                    mockssdt$value.depth <- as.numeric(mockssdt$value.depth)
-
-
-                    mockmmat <- c()
-                    for (iij in colnames(ssdt)[colnames(ssdt) %in% specifiedLineages]){
-                        Mm <- ifelse(iij == missedUniqMutations[j,3], 1, 0)
-                        mockmmat  <- c(mockmmat, as.character(Mm))
-                    }
-                    mockmmat <- as.data.table(matrix(mockmmat, nrow = 1))
-                    colnames(mockmmat) <- colnames(ssdt)[colnames(ssdt) %in% specifiedLineages]
-                    mockmmat <- as.data.table(lapply(mockmmat, as.numeric))
-
-                    mock <- cbind(mockssdt, mockmmat)
-                    if(any(colnames(ssdt) == "groupflag")){
-                      mock$groupflag <- "mockMissedUniq"
-                    }
-                    ssdt <- rbind(ssdt, mock)
-                  }
-                }
-              }
-
-
-              ## generate regression formula
-              if ( length(specifiedLineages) > 1 ){
-                formula <- as.formula(paste("value.freq", paste(specifiedLineages, collapse='+'), sep = " ~" ))
-              } else{
-                ssdt %>% filter(grepl(specifiedLineages, Variants)) -> ssdt
-                formula <- as.formula(paste("value.freq", "1", sep = " ~" ))
-              }
-
-              ## check if the current timepoint is still represented in the data
-              ssdt %>% filter(sample_date_decimal %in% timepoint) -> ssdt2
-              if(dim(ssdt2)[1] == 0){
-              writeLines(paste("  WARNING: since no mutations found in timepoint of interest (", timepoint, ") regression will be skipped"))
-                next;
-              }
-
-              ## add weight (1/(dayDiff+1)  *  log10(sequencingdepth)  *  (1/number_of_variants)^2  *  1/mutationLength
-              ssdt %>% rowwise() %>% mutate(varweight = (1/(sum(unlist(str_split(Variants, pattern = ";")) %in% specifiedLineages)))^2 ) %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(mutationweight = 1/nchar(gsub("\\d", "", NUC))/2) %>% mutate(weight = 1*timeweight*varweight*mutationweight) -> ssdt
-              detour4log %>% rowwise() %>% mutate(varweight = (1/(sum(unlist(str_split(Variants, pattern = ";")) %in% specifiedLineages)))^2 ) %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(weight = timeweight*varweight) %>% filter(!grepl(";.+;", Variants)) -> detour4log
-              detour4log %>% rowwise() %>% mutate(varweight = (1/(sum(unlist(str_split(Variants, pattern = ";")) %in% specifiedLineages)))^2 ) %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(weight = timeweight*varweight) %>% dplyr::select(sample_date, NUC, value.freq, weight, all_of(specifiedLineages)) -> detour4log_printer
-              detour4log_printer %>% rowwise() %>% mutate(value.freq = signif(value.freq, digits = 2), weight = signif(weight, digits = 2)) -> detour4log_printer
-              detour4log %>% arrange(Variants) -> detour4log
-              print(data.frame(date = detour4log$sample_date, Tweight = round(detour4log$timeweight, digits = 2), depth = detour4log$value.depth, weight = round(detour4log$weight, digits = 2), value = round(detour4log$value.freq, digits = 2), variants = detour4log$Variants, mutation = detour4log$NUC))
-              rm(detour4log, detour4log_printer)
-
-              ## make regression
-              if(0){
-                method = "SIMPLEX"
-                fit1 <- tryCatch(gamlss(formula, data = ssdt, family = SIMPLEX, trace = FALSE, weights = weight),error=function(e) e, warning=function(w) w)
-                if(any(grepl("warning|error", class(fit1)))){
-                  method = "BE"
-                  fit1 <- tryCatch(gamlss(formula, data = ssdt, family = BE, trace = FALSE, weights = weight),error=function(e) e, warning=function(w) w)
-                  writeLines(paste("LOG: fall back to BE"))
-                  if(any(grepl("warning|error", class(fit1)))){
-                    writeLines(paste("  WARNING: BE did not converge at", timePoints[t], " .. skipped"))
-                    next; ## remove if unconverged BE results should be used
-                  }
-                }
-              }
-              if(1){
-                method = "BE"
-                fit1 <- tryCatch(gamlss(formula, data = ssdt, family = BE, trace = FALSE, weights = weight),error=function(e) e, warning=function(w) w)
-                writeLines(paste("LOG: fall back to BE"))
-                if(any(grepl("warning|error", class(fit1)))){
-                  writeLines(paste("LOG: BE did not converge either at", timePoints[t], " .. skipped"))
-                  next; ## remove if unconverged BE results should be used
-                }
-              }
-              ssdt$fit1 <- predict(fit1, type="response", what="mu")
-
-              ssdt %>% dplyr::select(value.freq, all_of(specifiedLineages), fit1) -> ssdt_toOp
-              startValues <- starterV(ssdt_toOp)
-
-              O = 5
-              matrix(rep(0, length(specifiedLineages)*O), O) -> optimizedN
-              for (o in 1:O){
-                optim(par=startValues, fn=objfnct, data=ssdt_toOp, method = "L-BFGS-B", lower = 0, upper = 1) -> optimized
-                optimizedN[o,] <- optimized$par
-              }
-              optimized$par <- apply(optimizedN, 2, median)
-
-              ## normalize fitted value if sum is > 1
-              ssdt %>% filter(!grepl(";", Variants)) %>% filter(Variants %in% specifiedLineages) %>% mutate(fit1 = signif(fit1, 5))%>% dplyr::select("Variants", "fit1") %>% arrange(Variants) %>%  distinct()  %>% ungroup()  %>% mutate(T = sum(fit1)) %>% mutate(fit2 = ifelse(T>1, fit1/(T+0.00001), fit1)) -> ssdtFit
-              data.table(Variants = specifiedLineages, fit1 = signif(optimized$par, 5))  %>% arrange(Variants) %>%  distinct()  %>% ungroup()  %>% mutate(T = sum(fit1)) %>% mutate(fit2 = ifelse(T>1, fit1/(T+0.00001), fit1)) -> ssdtFit
-
-              ## add sample ID to output
-              if (any(ssdt$sample_date_decimal == timePoints[t])){
-                ssdt %>% filter(sample_date_decimal == timePoints[t]) %>% dplyr::select(ID) %>% distinct() -> sample_ID
-              } else{
-                data.frame(ID = ".") -> sample_ID
-              writeLines(paste("WARNING:", "no sample ID for", roi, "@", timePoints[t]))
-              }
-              ssdtFit$ID = rep(unique(sample_ID$ID)[length(unique(sample_ID$ID))], n = length(ssdtFit$Variants))
-
-              if(unique(ssdtFit$T)>1){
-                writeLines(paste("  LOG: fitted value corrected for >1: T =", unique(ssdtFit$T), "; method used =", method))
-              }
-
-              ssdt %>% ungroup() %>% mutate(all_Variants = Variants) %>% mutate(Variants = strsplit(as.character(Variants), ";")) %>% unnest(Variants) %>% filter(Variants %in% specifiedLineages) %>% mutate(T = unique(ssdtFit$T)) %>% mutate(fit2 = ifelse(T > 1, fit1/T, fit1)) %>% filter(sample_date_decimal == timePoints[t]) -> ssdt2
-              plantFullData <- rbind(plantFullData, data.table(variant = ssdt2$Variants, all_variants = ssdt2$all_Variants, LocationID =  rep(roi, length(ssdt2$fit1)), LocationName  =  rep(roiname, length(ssdt2$fit1)), sample_date = as.character(ssdt2$sample_date), value = ssdt2$fit2, marker = ssdt2$NUC, singlevalue = ssdt2$value.freq ))
-
-              ## save norm.fitted values into global DF; set all untested variants to 0
-              for (j in specifiedLineagesTimecourse){
-                ssdtFit %>% filter(Variants == j) -> extractedFt
-                if (dim(extractedFt)[1] > 0){
-                  plantFittedData <- rbind(plantFittedData, data.table(variant = rep(j, length(extractedFt$fit2)), LocationID =  rep(roi, length(extractedFt$fit2)), LocationName  =  rep(roiname, length(extractedFt$fit2)), sample_id = extractedFt$ID, sample_date =  rep(as.character(unique(ssdt2$sample_date)), length(extractedFt$fit2)), value = extractedFt$fit2 ))
                 } else{
-                  plantFittedData <- rbind(plantFittedData, data.table(variant = j, LocationID = roi, LocationName  = roiname, sample_id = extractedFt$ID, sample_date = as.character(unique(ssdt2$sample_date)), value = 0 ))
+                  allTimepoints <- timepoint
+                  allTimepoints_classic <- rep(timepoint_classic, times = length(timepoint))
                 }
-              }
-              rm(formula, fit1, ssdt, ssdt2)
-            } else {
-              writeLines(paste("LOG:", "NOTHIN FOR REGRESSION AT", timePoints[t], "since number of lineages detected ==", length(specifiedLineages), "; ... ignore TIMEPOINT"))
-            }
 
+                sdt %>% filter(sample_date %in% c(timepoint_classic, allTimepoints_classic) ) -> ssdt
+
+                # detect lineage in current center timepoint
+                adaptivMinInfoRatio <- 1-((1-minInfoRatio)^(1.1))
+                specifiedLineages <- detect_lineages(DT_ = ssdt, timepoint_ = timepoint, minInfoRatio_ = adaptivMinInfoRatio)
+
+                # deprecated; use neigboring timepoints individially and merge resulting list
+                if(0){
+                  # check if current timepoint is squeezed between two timepoint
+                  # detect lineage in neighboring timepoints
+                  # add lineages detected in any to specifiedLineages
+                  # or if last time point, check which lineages are detecten in any of the previous two timePoints
+                  # add them
+                  prev_timepoints <- allTimepoints[allTimepoints < timepoint]
+                  aft_timepoints <- allTimepoints[allTimepoints > timepoint]
+                  if(length(prev_timepoints)>0 & length(aft_timepoints)>0){
+                    writeLines("LOG: augment variant detection with previous and following time points")
+                    if(abs(max(prev_timepoints) - timepoint)*365 < opt$smoothingtime){
+                      prev_specifiedLineages <- detect_lineages(DT_ = ssdt, timepoint_ = max(prev_timepoints), minInfoRatio_ = minInfoRatio)
+                      specifiedLineages <- unique(c(specifiedLineages, prev_specifiedLineages))
+                    }
+                    if(abs(min(aft_timepoints) - timepoint)*365 < opt$smoothingtime){
+                      aft_specifiedLineages <- detect_lineages(DT_ = ssdt, timepoint_ = min(prev_timepoints), minInfoRatio_ = minInfoRatio)
+                      specifiedLineages <- unique(c(specifiedLineages, aft_specifiedLineages))
+                    }
+                  }
+                  if(timepoint == max(timePoints) & length(prev_timepoints)>=1){
+                    writeLines("LOG: augment variant detection be the two previous time points")
+
+                    prev_timepoint <- sort(prev_timepoints, decreasing=TRUE)[1]
+                    if(abs(prev_timepoint - timepoint)*365 < opt$smoothingtime){
+                      prev_specifiedLineages <- detect_lineages(DT_ = ssdt, timepoint_ = prev_timepoint, minInfoRatio_ = minInfoRatio)
+                      specifiedLineages <- unique(c(specifiedLineages, prev_specifiedLineages))
+                    }
+                  }
+                  if(timepoint == max(timePoints) & length(prev_timepoints)>=2){
+                    prevprev_timepoint <- sort(prev_timepoints, decreasing=TRUE)[2]
+                    if(abs(prevprev_timepoint - timepoint)*365 < opt$smoothingtime){
+                      prevprev_specifiedLineages <- detect_lineages(DT_ = ssdt, timepoint_ = prevprev_timepoint)
+                      specifiedLineages <- unique(c(specifiedLineages, prevprev_specifiedLineages))
+                    }
+                  }
+                }
+
+                # use neigboring timepoints merged to deduce resulting list
+                if(1){
+                  # detect lineage in merged data from neighboring timepoints + current timepoint
+                  # add lineages detected in any to specifiedLineages
+                  prev_timepoints <- allTimepoints[allTimepoints < timepoint]
+                  aft_timepoints <- allTimepoints[allTimepoints > timepoint]
+
+                  adaptivMinInfoRatio <- 1-((1-minInfoRatio)^(1.1^length(allTimepoints)))
+                  merged_specifiedLineages <- detect_lineages(DT_ = ssdt, timepoint_ = c(prev_timepoints, timepoint, aft_timepoints), minInfoRatio_ = adaptivMinInfoRatio)
+                  specifiedLineages <- unique(c(specifiedLineages, merged_specifiedLineages))
+                }
+
+
+
+                writeLines(paste("LOG: (", t, ")", timepoint_classic, roiname, paste("(",length(allTimepoints[allTimepoints %in% timepoint]), "same day;", "+", length(allTimepoints[allTimepoints %notin% timepoint]), "neighboring TP;", length(specifiedLineages), "detected lineages)")))
+                writeLines(paste0("LOG: detected lineages (", length(specifiedLineages), "): ", paste(specifiedLineages, sep = ", ", collapse = ", ")))
+
+                if( length(specifiedLineages) > 0){
+                  writeLines(paste("LOG:", "PERFORM REGRESSION WITH", length(specifiedLineages), "LINEAGES"))
+
+                  # join model matrix columns to measured variables
+                  smmat <- as.data.frame(mmat)[,which(colnames(mmat) %in% c("NUC", specifiedLineages))]
+                  if (length(specifiedLineages) > 1){
+                    smmat$groupflag <- apply( as.data.frame(mmat)[,which(colnames(mmat) %in% c(specifiedLineages))], 1 , paste , collapse = "" )
+                  } else{
+                    smmat$groupflag <-  as.data.frame(mmat)[,which(colnames(mmat) %in% c(specifiedLineages))]
+                  }
+                  left_join(x = ssdt, y = smmat, by = c("NUC"), multiple = "all") -> ssdt
+                  ssdt %>% ungroup() %>% mutate(groupflag = paste(groupflag, ifelse(grepl(";", Variants), "M", "U"), sample_date_decimal)) -> ssdt
+
+                  ## remove mutations which are not marker of any of the specifiedLineages
+                  ## keep mutations which are marker of all of the specifiedLineages
+                  if( sum(colnames(ssdt) %in% specifiedLineages) > 1){
+                    ssdt[( rowSums(as.data.frame(ssdt)[,colnames(ssdt) %in% specifiedLineages ]) > 0 & rowSums(as.data.frame(ssdt)[,colnames(ssdt) %in% specifiedLineages ]) <= length(specifiedLineages)),] -> ssdt
+                    ssdt[( rowSums(as.data.frame(ssdt)[,colnames(ssdt) %in% unique(specifiedLineages, highlightedVariants) ]) > 0 & rowSums(as.data.frame(ssdt)[,colnames(ssdt) %in% unique(specifiedLineages, highlightedVariants) ]) <= length(unique(specifiedLineages, highlightedVariants))),] -> detour4log
+                  } else{
+                    ssdt[as.data.frame(ssdt)[,colnames(ssdt) %in% specifiedLineages ] > 0,] -> ssdt
+                    ssdt[as.data.frame(ssdt)[,colnames(ssdt) %in% unique(specifiedLineages, highlightedVariants) ] > 0,] -> detour4log
+                  }
+                  ### remove mutations which are marker of all of the specifiedLineages
+                  #ssdt <- ssdt[rowSums(as.data.frame(ssdt)[colnames(ssdt) %in% specifiedLineages]) < length(specifiedLineages)]
+
+                  ## remove zeros and low depth
+                  ssdt %>% filter(value.freq > 0)  %>% filter(value.depth > min.depth) -> ssdt
+
+                  ## transform to avoid 1
+                  ssdt %>% mutate(value.freq = (value.freq * (value.depth-1) + 0.5)/value.depth) -> ssdt
+
+                  # remove "OTHERS"
+                  ssdt %>% mutate(Variants = gsub("other;*", "", Variants)) -> ssdt
+
+                  ## remove outlier per group flag
+                  ## remove if outside 1.5*IQR+/-0.05
+                  dim(ssdt)[1] -> mutationsBeforeOutlierRemoval
+                  ssdt %>% group_by(groupflag) %>% mutate(iqr = IQR(value.freq)) %>% mutate(upperbond = quantile(value.freq, 0.75) + 1.5 * iqr + 0.05, lowerbond = quantile(value.freq, 0.25) - 1.5 * iqr - 0.05) %>% filter((value.freq <= upperbond ) & (value.freq >= lowerbond)) %>% ungroup() %>% dplyr::select(-"groupflag", -"iqr", -"upperbond", -"lowerbond") -> ssdt
+                  dim(ssdt)[1] -> mutationsAfterOutlierRemoval
+                  if(mutationsAfterOutlierRemoval < mutationsBeforeOutlierRemoval){
+                    writeLines(paste("LOG: ", mutationsBeforeOutlierRemoval-mutationsAfterOutlierRemoval, "mutations ignored since classified as outlier", "(", mutationsAfterOutlierRemoval, " remaining from", mutationsBeforeOutlierRemoval, ")"))
+                  }
+
+                  ## add unobserved uniq markers for specifiedLineages (after ignoring nonSpecifiedLineages) with AF 0
+                  if(opt$addUniqZeros){
+                    missedUniqMutations <- moi %>%
+                            mutate(Variants = strsplit(as.character(Variants), ";")) %>%
+                            unnest(Variants) %>%
+                            filter(Variants %in% specifiedLineages) %>%
+                            group_by(NUC) %>%
+                            summarize(n = n(), Variants = paste(Variants, sep =";", collapse =";"), .groups = "drop") %>%
+                            filter(n == 1) %>%
+                            filter(NUC %notin% ssdt$NUC)
+                    if(dim(missedUniqMutations)[1] > 0){
+
+                      depthweight <- 10*min.depth
+                      writeLines(paste("LOG: add", length(unique(missedUniqMutations$NUC)), " mutation to AF =", 0.5/depthweight, " since unobserved marker for", length(unique(missedUniqMutations$Variants)), "variants"))
+
+                      for (j in 1:dim(missedUniqMutations)[1]){
+
+                        mockssdt <- c()
+                        mockssdt  <- c(mockssdt, as.character(missedUniqMutations[j,3]))
+                        mockssdt  <- c(mockssdt, as.character(sdt %>% filter(sample_date %in% c(ref_timepoint_classic) ) %>% dplyr::select(ID) %>% distinct() %>% pull(ID) %>% paste(collapse = ",", sep = ",")))
+                        mockssdt  <- c(mockssdt, as.character(ref_timepoint_classic))
+                        mockssdt  <- c(mockssdt, as.character(ref_timepoint))
+                        mockssdt  <- c(mockssdt, as.character(0.5/depthweight))
+                        mockssdt  <- c(mockssdt, as.character(depthweight))
+                        mockssdt  <- c(mockssdt, as.character(roi))
+                        mockssdt  <- c(mockssdt, as.character(roiname))
+                        mockssdt  <- c(mockssdt, as.character(missedUniqMutations[j,1]))
+                        mockssdt <- as.data.table(matrix(mockssdt, nrow = 1))
+                        colnames(mockssdt) <- colnames(ssdt)[1:9]
+                        mockssdt$sample_date <- as.IDate(mockssdt$sample_date)
+                        mockssdt$sample_date_decimal <- as.numeric(mockssdt$sample_date_decimal)
+                        mockssdt$value.freq <- as.numeric(mockssdt$value.freq)
+                        mockssdt$value.depth <- as.numeric(mockssdt$value.depth)
+
+
+                        mockmmat <- c()
+                        for (iij in colnames(ssdt)[colnames(ssdt) %in% specifiedLineages]){
+                            Mm <- ifelse(iij == missedUniqMutations[j,3], 1, 0)
+                            mockmmat  <- c(mockmmat, as.character(Mm))
+                        }
+                        mockmmat <- as.data.table(matrix(mockmmat, nrow = 1))
+                        colnames(mockmmat) <- colnames(ssdt)[colnames(ssdt) %in% specifiedLineages]
+                        mockmmat <- as.data.table(lapply(mockmmat, as.numeric))
+
+                        mock <- cbind(mockssdt, mockmmat)
+                        if(any(colnames(ssdt) == "groupflag")){
+                          mock$groupflag <- "mockMissedUniq"
+                        }
+                        ssdt <- rbind(ssdt, mock)
+                      }
+                    }
+                  }
+
+
+                  ## generate regression formula
+                  if ( length(specifiedLineages) > 1 ){
+                    formula <- as.formula(paste("value.freq", paste(specifiedLineages, collapse='+'), sep = " ~" ))
+                  } else{
+                    ssdt %>% filter(grepl(specifiedLineages, Variants)) -> ssdt
+                    formula <- as.formula(paste("value.freq", "1", sep = " ~" ))
+                  }
+
+                  ## check if the current timepoint is still represented in the data
+                  ssdt %>% filter(sample_date_decimal %in% timepoint) -> ssdt2
+                  if(dim(ssdt2)[1] == 0){
+                  writeLines(paste("  WARNING: since no mutations found in timepoint of interest (", timepoint, ") regression will be skipped"))
+                    t <- t + 1
+                    next;
+                  }
+
+                  ## add weight (1/(dayDiff+1))  *  log10(sequencingdepth)  *  (1/number_of_variants)^2  *  1/mutationLength
+                  ssdt %>% rowwise() %>% mutate(varweight = (1/(sum(unlist(str_split(Variants, pattern = ";")) %in% specifiedLineages)))^2 ) %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(mutationweight = 1/nchar(gsub("\\d", "", NUC))/2) %>% mutate(weight = 1*timeweight*varweight*mutationweight) -> ssdt
+                  detour4log %>% rowwise() %>% mutate(varweight = (1/(sum(unlist(str_split(Variants, pattern = ";")) %in% specifiedLineages)))^2 ) %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(weight = timeweight*varweight) %>% filter(!grepl(";.+;", Variants)) -> detour4log
+                  detour4log %>% rowwise() %>% mutate(varweight = (1/(sum(unlist(str_split(Variants, pattern = ";")) %in% specifiedLineages)))^2 ) %>%  mutate(timeweight = 1/(abs(timePoints[t] - sample_date_decimal)*(leapYear(floor(timePoints[t]))) + 1)) %>% mutate(weight = timeweight*varweight) %>% dplyr::select(sample_date, NUC, value.freq, weight, all_of(specifiedLineages)) -> detour4log_printer
+                  detour4log_printer %>% rowwise() %>% mutate(value.freq = signif(value.freq, digits = 2), weight = signif(weight, digits = 2)) -> detour4log_printer
+                  detour4log %>% arrange(Variants) -> detour4log
+                  print(data.frame(date = detour4log$sample_date, Tweight = round(detour4log$timeweight, digits = 2), depth = detour4log$value.depth, weight = round(detour4log$weight, digits = 2), value = round(detour4log$value.freq, digits = 2), variants = detour4log$Variants, mutation = detour4log$NUC))
+                  rm(detour4log, detour4log_printer)
+
+                  ## make regression
+                  if(0){
+                    method = "SIMPLEX"
+                    fit1 <- tryCatch(gamlss(formula, data = ssdt, family = SIMPLEX, trace = FALSE, weights = weight),error=function(e) e, warning=function(w) w)
+                    if(any(grepl("warning|error", class(fit1)))){
+                      method = "BE"
+                      fit1 <- tryCatch(gamlss(formula, data = ssdt, family = BE, trace = FALSE, weights = weight),error=function(e) e, warning=function(w) w)
+                      writeLines(paste("LOG: fall back to BE"))
+                      if(any(grepl("warning|error", class(fit1)))){
+                        writeLines(paste("  WARNING: BE did not converge at", timePoints[t], " .. skipped"))
+                        t <- t + 1
+                        next; ## remove if unconverged BE results should be used
+                      }
+                    }
+                  }
+                  if(1){
+                    method = "BE"
+                    fit1 <- tryCatch(gamlss(formula, data = ssdt, family = BE, trace = FALSE, weights = weight),error=function(e) e, warning=function(w) w)
+                    writeLines(paste("LOG: fall back to BE"))
+                    if(any(grepl("warning|error", class(fit1)))){
+                      writeLines(paste("LOG: BE did not converge either at", timePoints[t], " .. skipped"))
+                      t <- t + 1
+                      next; ## remove if unconverged BE results should be used
+                    }
+                  }
+                  ssdt$fit1 <- predict(fit1, type="response", what="mu")
+
+                  ssdt %>% dplyr::select(value.freq, all_of(specifiedLineages), fit1) -> ssdt_toOp
+                  startValues <- starterV(ssdt_toOp)
+
+                  O = 5
+                  matrix(rep(0, length(specifiedLineages)*O), O) -> optimizedN
+                  for (o in 1:O){
+                    optim(par=startValues, fn=objfnct, data=ssdt_toOp, method = "L-BFGS-B", lower = 0, upper = 1) -> optimized
+                    optimizedN[o,] <- optimized$par
+                  }
+                  optimized$par <- apply(optimizedN, 2, median)
+
+                  ## normalize fitted value if sum is > 1
+                  ssdt %>% filter(!grepl(";", Variants)) %>% filter(Variants %in% specifiedLineages) %>% mutate(fit1 = signif(fit1, 5))%>% dplyr::select("Variants", "fit1") %>% arrange(Variants) %>%  distinct()  %>% ungroup()  %>% mutate(T = sum(fit1)) %>% mutate(fit2 = ifelse(T>1, fit1/(T+0.00001), fit1)) -> ssdtFit
+                  data.table(Variants = specifiedLineages, fit1 = signif(optimized$par, 5))  %>% arrange(Variants) %>%  distinct()  %>% ungroup()  %>% mutate(T = sum(fit1)) %>% mutate(fit2 = ifelse(T>1, fit1/(T+0.00001), fit1)) -> ssdtFit
+
+                  ## add sample ID to output
+                  if (any(ssdt$sample_date_decimal == timePoints[t])){
+                    ssdt %>% filter(sample_date_decimal == timePoints[t]) %>% dplyr::select(ID) %>% distinct() -> sample_ID
+                  } else{
+                    data.frame(ID = ".") -> sample_ID
+                  writeLines(paste("WARNING:", "no sample ID for", roi, "@", timePoints[t]))
+                  }
+                  ssdtFit$ID = rep(unique(sample_ID$ID)[length(unique(sample_ID$ID))], n = length(ssdtFit$Variants))
+
+                  if(unique(ssdtFit$T)>1){
+                    writeLines(paste("  LOG: fitted value corrected for >1: T =", unique(ssdtFit$T), "; method used =", method))
+                  }
+
+                  ssdt %>% ungroup() %>% mutate(all_Variants = Variants) %>% mutate(Variants = strsplit(as.character(Variants), ";")) %>% unnest(Variants) %>% filter(Variants %in% specifiedLineages) %>% mutate(T = unique(ssdtFit$T)) %>% mutate(fit2 = ifelse(T > 1, fit1/T, fit1)) %>% filter(sample_date_decimal == timePoints[t]) -> ssdt2
+                  plantFullData <- rbind(plantFullData, data.table(variant = ssdt2$Variants, all_variants = ssdt2$all_Variants, LocationID =  rep(roi, length(ssdt2$fit1)), LocationName  =  rep(roiname, length(ssdt2$fit1)), sample_date = as.character(ssdt2$sample_date), value = ssdt2$fit2, marker = ssdt2$NUC, singlevalue = ssdt2$value.freq ))
+
+                  ## save norm.fitted values into global DF; set all untested variants to 0
+                  for (j in specifiedLineagesTimecourse){
+                    ssdtFit %>% filter(Variants == j) -> extractedFt
+                    if (dim(extractedFt)[1] > 0){
+                      plantFittedData <- rbind(plantFittedData, data.table(variant = rep(j, length(extractedFt$fit2)), LocationID =  rep(roi, length(extractedFt$fit2)), LocationName  =  rep(roiname, length(extractedFt$fit2)), sample_id = extractedFt$ID, sample_date =  rep(as.character(unique(ssdt2$sample_date)), length(extractedFt$fit2)), value = extractedFt$fit2 ))
+                    } else{
+                      plantFittedData <- rbind(plantFittedData, data.table(variant = j, LocationID = roi, LocationName  = roiname, sample_id = extractedFt$ID, sample_date = as.character(unique(ssdt2$sample_date)), value = 0 ))
+                    }
+                  }
+                  rm(formula, fit1, ssdt, ssdt2)
+                } else {
+                  writeLines(paste("LOG:", "NOTHIN FOR REGRESSION AT", timePoints[t], "since number of lineages detected ==", length(specifiedLineages), "; ... ignore TIMEPOINT"))
+                }
+            }, error=function(e) {print("WARNING: Iteration failed somewhere")})
+            if(is.null(checkSuccess)){
+              t <- t + 1
+              catchCounter = 0
+              rm(checkSuccess)
+              next
+            } else if(catchCounter < 3){
+              writeLines(paste("LOG: repeat loop for timepoint", t, "for", catchCounter, "times"))
+              catchCounter <- catchCounter + 1
+              rm(checkSuccess)
+              next
+            } else{
+              writeLines(paste("LOG: stop repeating loop for", t))
+              t <- t + 1
+              catchCounter = 0
+              rm(checkSuccess)
+              next
+            }
           }
     }
     writeLines(paste0("PROGRESS: finished variant quantification for all timePoints "))
@@ -1096,7 +1122,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 
     rm(plantFittedData, plantFullData)
 }
-
+##XX##
 
 globalFittedData <- rbindlist(globalFittedDataList)
 globalFullData <- rbindlist(globalFullDataList)

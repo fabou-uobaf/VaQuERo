@@ -232,8 +232,8 @@ collapse2mother <- function(x, xset){
 }
 
 
-detect_lineages <- function(DT_, timepoint_){
-    ## define variants for which at least minInfoRatio is found cummulatively over all detected marker
+detect_lineages <- function(DT_, timepoint_, minInfoRatio_){
+    ## define variants for which at least minInfoRatio_ is found cummulatively over all detected marker
     ## define variants which could be detected by unique markers
     ## define variants with at least minUniqMarkerRatio and minUniqMarker of all uniq markers are found
     ## remove all variants not detected based on minMarker and all which could be, but were not detected, based on uniq markers
@@ -261,7 +261,7 @@ detect_lineages <- function(DT_, timepoint_){
         summarize(ID = DT_$ID[1], sample_date = DT_$sample_date[1], sample_date_decimal = timepoint_[1], value.freq = mean(value.freq, na.rm=TRUE), value.depth = mean(value.depth, na.rm = TRUE), .groups = "drop_last") -> DT_
 
 
-    # detect variants with enough information content given the detected marker mutations and minInfoRatio
+    # detect variants with enough information content given the detected marker mutations and minInfoRatio_
     # this is a necessary but not sufficient condition
     DT_ %>% filter(sample_date_decimal %in% timepoint_) %>%
           mutate(Variants = strsplit(as.character(Variants), ";")) %>%
@@ -272,11 +272,11 @@ detect_lineages <- function(DT_, timepoint_){
           arrange(desc(I)) %>%
           left_join(y = moi_variant_information, by = "Variants", multiple = "all") %>%
           mutate(R = I/i) -> variants_markerInfo
-    variants_markerInfo %>% filter(R >= minInfoRatio) %>%
+    variants_markerInfo %>% filter(R >= minInfoRatio_) %>%
           pull(Variants) %>%
           unique() -> variants_passed_markerInfo_filter
 
-    print(knitr::kable(variants_markerInfo %>% arrange(desc(R)) %>% mutate(Filter = ifelse(R > minInfoRatio, "ACCEPTED due to Information", "! declined due to Information")) %>% filter(R > .75*minInfoRatio), format = "rst", digits = 6, row.names = FALSE))
+    print(knitr::kable(variants_markerInfo %>% arrange(desc(R)) %>% mutate(Filter = ifelse(R > minInfoRatio_, "ACCEPTED due to Information", "! declined due to Information")) %>% filter(R > .75*minInfoRatio_), format = "rst", digits = 6, row.names = FALSE))
 
 
     if(length(variants_passed_markerInfo_filter) <= 0){
