@@ -272,7 +272,7 @@ if( opt$verbose & !dir.exists(paste0(outdir, "/figs/singleModels"))){
 if( ! dir.exists(paste0(outdir, "/figs/nucleotides"))) {
   dir.create(paste0(outdir, "/figs/nucleotides"), showWarnings = FALSE)
 }
-
+file.create(summaryDataFile)
 
 ## read alias file
 aliases <- fromJSON(file ="https://raw.githubusercontent.com/cov-lineages/pango-designation/master/pango_designation/alias_key.json")

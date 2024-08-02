@@ -111,14 +111,14 @@ if(opt$debug){
     opt$depth=50
     opt$minuniqmark=1
     opt$minuniqmarkfrac=0.4
-    opt$mininfofrac=0.6
+    opt$mininfofrac=0.66
     opt$addUniqZeros=TRUE
     opt$alphaprime=2.2
     opt$smoothingsamples=1
     opt$smoothingtime=8
-    opt$voi="KS.1,KP.2,KP.3,KP.4,BA.1"
-    opt$highlight="BA.2,BA.5,XBB,BA.2.86"
-    opt$colorBase="BA.2,BA.5,XBB,BA.2.86"
+    opt$voi="KS.1,KS.1.1,KP.2,KP.2.3,KP.3,KP.3.1,KP.4"
+    opt$highlight="KP.3,KP.2,BA.2.86"
+    opt$colorBase="BA.2,BA.2.86,KP.3"
     opt$recent <- 22
     print("Warning: command line option overwritten")
 }
@@ -957,8 +957,15 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
         ## print stacked area overview of all detected lineages
         plantFittedData2 <- plantFittedData
 
-        ## sort variants according dealiased names
-        plantFittedData2 %>% dplyr::select(variant) %>% distinct() %>% rowwise() %>% mutate(variant_dealias = dealias(variant)) %>% arrange(variant_dealias) %>% pull(variant) -> variant_order
+        ## sort variants according dealiased names, priotizing highlightedVariants
+        plantFittedData2 %>%
+          dplyr::select(variant) %>%
+          distinct() %>%
+          rowwise() %>%
+          mutate(variant_dealias = dealias(variant)) %>%
+          arrange(variant_dealias) %>%
+          pull(variant) -> variant_order
+
         plantFittedData2$variant <- factor(plantFittedData2$variant, levels = variant_order)
 
         ## avoid >1 sums per time point
@@ -983,11 +990,28 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
         ColorBaseData %>% group_by(base) %>%  mutate(n = n()) %>% arrange(base, variant_dealiased) %>% dplyr::mutate(id = cur_group_id()) %>% mutate(id = ifelse(id > 6, 6, id)) -> ColorBaseData
         ColorBaseData %>% group_by(id) %>% mutate(i = row_number()) %>% rowwise() %>% mutate(col = getColor(n, id, i)) -> ColorBaseData
 
-        plottng_data %>% filter(sample_date == max(sample_date, na.rm = TRUE)) %>% filter(value > 0) -> plottng_labels
 
         plottng_data$variant_dealiased <- unlist(lapply(as.list(as.character(plottng_data$variant)), dealias))
-        stackorder <- plottng_data %>% ungroup() %>%  dplyr::select(variant, variant_dealiased) %>% distinct() %>% arrange(variant_dealiased)
-        plottng_data$variant <- factor(plottng_data$variant, levels = stackorder$variant)
+        stackorder <- plottng_data %>% ungroup() %>%  dplyr::select(variant, variant_dealiased) %>% distinct() %>% arrange(variant_dealiased) %>% pull(variant)
+        stackorder <- as.character(stackorder)
+
+        stackorder_dealias <- unlist(lapply(as.list(stackorder), dealias))
+        highlightedVariants_dealias <- unlist(lapply(as.list(highlightedVariants), dealias))
+        stackorder_highlight <- c()
+        for (v in seq_along(highlightedVariants)){
+          vv <- highlightedVariants[v]
+          vd <- highlightedVariants_dealias[v]
+          nv <- grep(vd, stackorder_dealias)
+          stackorder_highlight <- c(stackorder_highlight, nv[nv %notin% stackorder_highlight])
+        }
+        stackorder_highlight <- c(stackorder_highlight, seq_along(stackorder)[seq_along(stackorder) %notin% stackorder_highlight])
+        stackorder_highlight <- stackorder[stackorder_highlight]
+
+
+        plottng_data$variant <- factor(plottng_data$variant, levels = rev(stackorder_highlight))
+
+        plottng_data %>% filter(sample_date == max(sample_date, na.rm = TRUE)) %>% filter(value > 0) -> plottng_labels
+        plottng_labels$variant <- factor(plottng_labels$variant, levels = rev(stackorder_highlight[stackorder_highlight %in% plottng_labels$variant]))
 
         ggplot(data = plottng_data, aes(x = as.Date(sample_date), y = value, fill = variant, color = variant)) -> q3
         q3 <- q3 + geom_area(position = "stack", alpha = 0.6)
@@ -1190,11 +1214,31 @@ if (dim(globalFittedData)[1] >= tpLimitToPlot){
     ColorBaseData %>% group_by(base) %>%  mutate(n = n()) %>% arrange(base, variant_dealiased) %>% dplyr::mutate(id = cur_group_id()) %>% mutate(id = ifelse(id > 6, 6, id)) -> ColorBaseData
     ColorBaseData %>% group_by(id) %>% mutate(i = row_number()) %>% rowwise() %>% mutate(col = getColor(n, id, i)) -> ColorBaseData
 
-    stacker.dtt %>% ungroup() %>% filter(kw == max(kw)) %>% filter(agg_value > 0) -> stacker.labels
-
     stacker.dtt$variant_dealiased <- unlist(lapply(as.list(as.character(stacker.dtt$variant)), dealias))
     stackorder <- stacker.dtt %>% ungroup() %>%  dplyr::select(variant, variant_dealiased) %>% distinct() %>% arrange(variant_dealiased)
-    stacker.dtt$variant <- factor(stacker.dtt$variant, levels = stackorder$variant)
+    stacker.dtt$variant <- factor(stacker.dtt$variant, levels = rev(stackorder$variant))
+
+    stack_order <- stacker.dtt %>% ungroup() %>% dplyr::select(variant) %>%
+      distinct() %>%
+      rowwise() %>%
+      mutate(variant_dealias = dealias(variant)) %>%
+      arrange(variant_dealias) %>%
+      pull(variant)
+    stack_order_dealias <- unlist(lapply(as.list(stack_order), dealias))
+    highlightedVariants_dealias <- unlist(lapply(as.list(highlightedVariants), dealias))
+    stack_order_highlight <- c()
+    for (v in seq_along(highlightedVariants)){
+      vv <- highlightedVariants[v]
+      vd <- highlightedVariants_dealias[v]
+      nv <- grep(vd, stack_order_dealias)
+      stack_order_highlight <- c(stack_order_highlight, nv[nv %notin% stack_order_highlight])
+    }
+    stack_order_highlight <- c(stack_order_highlight, seq_along(stack_order)[seq_along(stack_order) %notin% stack_order_highlight])
+    stack_order <- stack_order[stack_order_highlight]
+    stacker.dtt$variant <- factor(stacker.dtt$variant, levels = rev(stack_order))
+
+    stacker.labels <- stacker.dtt %>% ungroup() %>% filter(kw == max(kw)) %>% filter(agg_value > 0)
+    stacker.labels$variant <- factor(stacker.labels$variant, levels = rev(stackorder_highlight[stackorder_highlight %in% stacker.labels$variant]))
 
 
     ap <- ggplot(data = stacker.dtt, aes(x = as.Date(kw), y = agg_value, fill = variant, color = variant))
@@ -1492,38 +1536,20 @@ if (dim(globalFittedData2)[1] >= tpLimitToPlot){
 rm(globalFittedData2)
 
 ## print overview of all variants and all plants
-globalFittedData %>% dplyr::select(variant) %>% distinct() %>% rowwise() %>% mutate(variant_dealias = dealias(variant)) %>% arrange(variant_dealias) %>% pull(variant) -> variant_order
 
 globalFittedData$variant <- factor(globalFittedData$variant, levels = variant_order)
 globalFittedData %>% group_by(LocationID) %>% mutate(n = length(unique(sample_date))) %>% filter(n > tpLimitToPlot*2) %>% ungroup() %>% group_by(LocationID, LocationName, sample_date, variant) %>% summarize(value = mean(value), .groups = "drop") -> globalFittedData2
-if (dim(globalFittedData2)[1] >= tpLimitToPlot){
-  writeLines(paste("PROGRESS: plotting overview"))
-  r1 <- ggplot(data = globalFittedData2, aes(x = as.Date(sample_date), y = value, fill = variant))
-  r1 <- r1 + geom_area(position = "stack", alpha = 0.7)
-  r1 <- r1 + facet_wrap(~LocationName)
-  r1 <- r1 + scale_fill_viridis_d(alpha = 0.6, begin = .05, end = .95, option = "H", direction = +1, name="")
-  r1 <- r1 + scale_y_continuous(labels=scales::percent, limits = c(0,1), breaks = c(0,0.5,1))
-  r1 <- r1 + theme_minimal()
-  r1 <- r1 + theme(legend.position="bottom", strip.text.x = element_text(size = 5), panel.grid.minor = element_blank(), panel.spacing.y = unit(0, "lines"), legend.direction="horizontal", axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
-  r1 <- r1 + guides(fill = guide_legend(title = "", ncol = 10))
-  r1 <- r1 + scale_x_date(date_breaks = "6 month", date_labels =  "%b %y")
-  r1 <- r1 + ylab(paste0("Variantenanteil [1/1]") )
-  r1 <- r1 + xlab("")
-  filename <- paste0(outdir, '/figs/fullview', paste('/wwtp', "all", sep="_"), ".pdf")
-  #ggsave(filename = filename, plot = r1, width = plotWidth*1.5, height = plotHeight*1.5)
-  #fwrite(as.list(c("fullOverview", c(roiname, "all", filename))), file = summaryDataFile, append = TRUE, sep = "\t")
-  rm(r1,filename)
-}
-rm(globalFittedData2)
-
 
 # Generate map of each VoI detected recently
 
 writeLines(paste("PROGRESS: start plotting maps"))
 for (voi in VoI){
-  writeLines(paste("  PROGRESS: considering", voi))
+  writeLines(paste("  PROGRESS: considering", voi, "and sublineages"))
 
-  globalFittedData %>% filter(variant == voi) %>% filter(! is.na(sample_id) ) -> mapdata
+  voi_dealias <- dealias(voi)
+  mapdata <- globalFittedData %>% filter(!is.na(variant)) %>% rowwise() %>% mutate(variant_dealias = dealias(variant))  %>% filter(grepl(voi_dealias, variant_dealias)) %>% group_by(LocationID, LocationName, sample_id, sample_date) %>% summarize(variant = voi, value = sum(value))
+
+
   if(all(dim(mapdata) > 0)){
     metaDT$sample_date <- as.Date(metaDT$sample_date)
     mapdata$sample_date <- as.Date(mapdata$sample_date)
@@ -1534,7 +1560,7 @@ for (voi in VoI){
       mapdata %>% filter(value > 0) -> mapdata
 
       if (length(mapdata$value) > 0 ){
-        writeLines(paste("  PROGRESS: plotting map for", voi))
+        writeLines(paste("  PROGRESS: plotting map for", paste0(voi,"*")))
         print(data.frame(location=mapdata$LocationName, dates = mapdata$sample_date, values = mapdata$value))
 
         s <- ggplot()
@@ -1549,7 +1575,7 @@ for (voi in VoI){
         s <- s + geom_point(data=mapdata, aes(y=dcpLatitude, x=dcpLongitude, size = as.numeric(connected_people), col = as.numeric(value)), alpha = 0.8)
         s <- s + facet_wrap(~variant, nrow = 2)
         s <- s + theme(axis.text = element_blank(), legend.direction = "vertical", legend.box = "horizontal", legend.position = "bottom")
-        s <- s + guides(size = guide_legend(title = "Population", nrow = 2), col = guide_colourbar(title = paste0("Anteil ", voi), direction = "horizontal", title.position = "top"))
+        s <- s + guides(size = guide_legend(title = "Population", nrow = 2), col = guide_colourbar(title = paste0("Anteil ", paste0(voi,"*")), direction = "horizontal", title.position = "top"))
         s <- s + scale_color_viridis_c(direction = 1, begin = .05, end = .95, option = "C")
         s <- s + scale_size(range = c(2, 6), labels = scales::comma, breaks = c(50000, 100000, 500000, 1000000))
 
