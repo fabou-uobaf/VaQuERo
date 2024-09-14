@@ -119,32 +119,32 @@ if(opt$debug){
   opt$metadata = "data/metaData_general.csv"
   opt$data="data/mutationData_DB_NationMonitoringSites.tsv.gz"
   opt$inputformat = "tidy"
-  opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2024-05-07_Europe.csv"
-  opt$mutstats  = "VaQuERo/resources/mutations_stats_pango_codonPhased_2024-05-07.csv.gz"
-  opt$group2var = "VaQuERo/resources/groupMembers_pango_codonPhased_2024-05-07_Europe.csv"
+  opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2024-07-29_Europe.csv"
+  opt$mutstats  = "VaQuERo/resources/mutations_stats_pango_codonPhased_2024-07-29.csv.gz"
+  opt$group2var = "VaQuERo/resources/groupMembers_pango_codonPhased_2024-07-29_Europe.csv"
   opt$pmarker="VaQuERo/resources/mutations_problematic_2023-11-23.csv"
   opt$precomp = "output-variants/globalFittedData.csv"
-  opt$ninconsens = 0.2
+  #opt$ninconsens = 0.2
   opt$zero=0.01
   opt$depth=50
-  opt$minexcessfreq=0.04
-  opt$mingeospread=0.08
   opt$pval = 0.01
   opt$minpositivesample=2
   opt$removeLongIndels=1
   opt$periodlength = 61
   opt$indels = 1
-  opt$verbose = TRUE
+  opt$verbose = FALSE
   opt$graph = "pdf"
   opt$TimecoursePlot="all"
   opt$geogrowthlimit = 0.04
   opt$wmefgrowthlimit = 0.02
+  opt$mingeospread=0.04
+  opt$minexcessfreq=0.02
+  opt$nw   = 1
   opt$alphaprime = 2.2
-  opt$minweeksample = 10
+  opt$minweeksample = 8
   opt$filstrat = "and"
-  opt$start = "2023-12-02"
-  opt$end = "2024-06-02"
-  opt$nw   = 2
+  opt$start = "2024-05-11"
+  opt$end = "2024-09-11"
   opt$onlyLastRun = FALSE
   #opt$ignoreregion = "21955-23288"
   writeLines("Warning: command line option overwritten")
@@ -557,9 +557,9 @@ if(dim(globalAFdata)[1] == 0){
 
 ####################
 ## add meta data and consistend midweek data to globalAFdata
-if(opt$verbose){
-  writeLines(paste("PROGRESS: add meta data and consistend midweek data to globalAFdata"))
-}
+
+writeLines(paste("PROGRESS: add meta data and consistend midweek data to globalAFdata"))
+
 metaDT %>% dplyr::select(LocationID, LocationName, connected_people, dcpLatitude, dcpLongitude) %>% distinct() -> wwtp_meta
 metaDTs <- metaDT %>% dplyr::select(LocationID, LocationName, connected_people, sample_date) %>% mutate(midweek_date = sample_date + 3 - as.numeric(strftime(sample_date, format = "%u"))) %>% distinct()
 metaDTs <- metaDTs %>% group_by(midweek_date) %>% mutate(n = n()) %>% filter(n > opt$minweeksample) %>% dplyr::select(-n, -sample_date)
@@ -966,31 +966,38 @@ for (periodend in as.character(seq( from = min(globalAFdata_m$midweek_date) + op
 timecourseMutationSet <- rbindlist(timecourseMutationSet_List )
 timecourseMutationSet$midweek_date <- as.Date(timecourseMutationSet$midweek_date)
 
+
 #####################################################
 ##### make plots as done in cuadrilla with data in timecourseMutationSet
+## filter mutations which happen to grow in at least opt$nw consecutive weeks
 
-if(opt$verbose){
-  writeLines("PROGRESS: define weekly frame from start to end")
-}
+writeLines(paste("LOG: filter mutations which happen to grow in at least", opt$nw, "consecutive weeks"))
+
 span <- seq(from = as.Date(opt$start), by = 7, to = as.Date(opt$end))
 span <- data.table(midweek_date = span + 3 - as.numeric(strftime(span, format = "%u")))
 span$midweek_date <- as.Date(span$midweek_date)
 
 
-## filter mutations which happen to grow in at least opt$nw consecutive weeks
-if(opt$verbose){
-  writeLines(paste("LOG: filter mutations which happen to grow in at least", opt$nw, "consecutive weeks"))
-}
-
-
 ### kill if no mutations are found
-if (!exists("timecourseMutationSet$nuc_mutation")){
-  writeLines(paste("WARNING: no mutation data found in <timecourseMutationSet>. Program ends here!"))
-  quit(save="no")
+if (!exists("timecourseMutationSet")){
+  if(length(unique(timecourseMutationSet$nuc_mutation)) < 1){
+    writeLines(paste("WARNING: no mutation data found in <timecourseMutationSet>. Program ends here!"))
+    quit(save="no")
+  }
 }
 
-timecourseMutationSet %>% dplyr::select(nuc_mutation, label, midweek_date) %>% distinct() %>% group_by(label, nuc_mutation) %>% arrange(midweek_date, .by_group = TRUE) %>% mutate(prior = as.numeric(midweek_date - lag(midweek_date, n = opt$nw-1))) %>% dplyr::select(nuc_mutation, label, midweek_date, prior) %>% mutate(maxprio = min(prior, na.rm = TRUE)) %>% filter(maxprio >= (opt$nw-1)*7 & maxprio < (opt$nw)*7) %>% pull(nuc_mutation) %>% unique() -> consecutive_mutation_to_use
-timecourseMutationSet %>% filter(nuc_mutation %in% consecutive_mutation_to_use) -> timecourseMutationSet
+consecutive_mutation_to_use <- timecourseMutationSet %>%
+    dplyr::select(nuc_mutation, label, midweek_date) %>%
+    distinct() %>%
+    group_by(label, nuc_mutation) %>%
+    arrange(midweek_date, .by_group = TRUE) %>%
+    mutate(prior = as.numeric(midweek_date - lag(midweek_date, n = opt$nw-1))) %>%
+    dplyr::select(nuc_mutation, label, midweek_date, prior) %>%
+    mutate(maxprio = min(prior, na.rm = TRUE)) %>%
+    filter(maxprio >= (opt$nw-1)*7 & maxprio < (opt$nw)*7) %>%
+    pull(nuc_mutation) %>%
+    unique()
+timecourseMutationSet <- timecourseMutationSet %>% filter(nuc_mutation %in% consecutive_mutation_to_use)
 
 ### kill if no mutations are found
 if (length(unique(consecutive_mutation_to_use)) < 1){
@@ -1003,7 +1010,9 @@ if (length(unique(consecutive_mutation_to_use)) < 1){
 if(opt$verbose){
   writeLines(paste("PROGRESS: count mutations per week an detect outlier"))
 }
-left_join(x = span, y = timecourseMutationSet, by = c("midweek_date")) %>% group_by(midweek_date) %>% summarize(n = sum(!is.na(label)), .groups = "keep") -> mut_per_week
+mut_per_week <- left_join(x = span, y = timecourseMutationSet, by = c("midweek_date")) %>%
+    group_by(midweek_date) %>%
+    summarize(n = sum(!is.na(label)), .groups = "keep")
 mean_mut_per_week <- mean(mut_per_week$n)
 mut_per_week <- mut_per_week %>% rowwise() %>% mutate(p = ppois(n, lambda = mean_mut_per_week, lower.tail = FALSE))
 mut_per_week$q <- p.adjust(mut_per_week$p)
@@ -1016,9 +1025,9 @@ if(opt$verbose){
   writeLines(paste("PROGRESS: generate outbreak.info like heatmap for plotted excess mutations"))
 }
 
-mstat %>% filter(nucc %in% consecutive_mutation_to_use) -> mstatf
-mstatf %>% mutate(label = paste0(nucc, " [", AA_change, "]")) -> mstatf
-mstatf %>% mutate(label = toupper(label)) -> mstatf
+mstatf <- mstat %>% filter(nucc %in% consecutive_mutation_to_use)
+mstatf <- mstatf %>% mutate(label = paste0(nucc, " [", AA_change, "]"))
+mstatf <- mstatf %>% mutate(label = toupper(label))
 
 ## identify mutations which are seen in timecourseMutationSet but not in mstatf
 timecourseMutationSet %>% mutate(label = toupper(label)) -> timecourseMutationSet
@@ -1137,7 +1146,9 @@ if(opt$verbose){
   writeLines(paste("PROGRESS: print all enriched mutation to file"))
 }
 
-rdt <- left_join(x = timecourseMutationSet, y = mut_per_week, by = "midweek_date") %>% filter(q < 0.01) %>% dplyr::select(nucMutation = nuc_mutation, label, midweekDate = midweek_date, excessFreq=excess_mw, spread=r, growth_excessFreq=growth_pred.wmef, growth_spread=growth_pred.geo, mutation_enrichment_pval=q)
+rdt <- left_join(x = timecourseMutationSet, y = mut_per_week, by = "midweek_date") %>%
+    filter(p <= pval_th) %>%
+    dplyr::select(nucMutation = nuc_mutation, label, midweekDate = midweek_date, excessFreq=excess_mw, spread=r, growth_excessFreq=growth_pred.wmef, growth_spread=growth_pred.geo, mutation_enrichment_pval=q)
 filename <- paste0(opt$dir, "/",  paste('cuadrilla', sep="_"), ".csv")
 fwrite(x = rdt, file = filename)
 
