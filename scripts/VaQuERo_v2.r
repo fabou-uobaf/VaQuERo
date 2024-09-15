@@ -103,7 +103,7 @@ if(opt$debug){
     opt$dir = "output-variants"
     opt$metadata = "data/metaData_general.csv"
     opt$data="data/mutationData_DB_NationMonitoringSites.tsv.gz"
-    opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2024-05-07_Europe.csv"
+    opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2024-09-04_Europe.csv"
     opt$pmarker="VaQuERo/resources/mutations_problematic_2023-11-23.csv"
     opt$smarker="VaQuERo/resources/mutations_special_2022-12-21.csv"
     opt$zero=0.01
@@ -926,15 +926,18 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 
         sankey.dtt %>% filter(!is.na(node)) -> sankey.dtt
         max(as.numeric(gsub("level", "", sankey.dtt$next_x)), na.rm = TRUE) -> maxLev
-        sankey.dtt %>% group_by(x, node) %>% mutate(n = paste0("[", 100*n()/sankeyPrecision, "%]")) %>% rowwise() %>% mutate(level = as.numeric(gsub("level", "", x))) %>% mutate(label = ifelse(level == maxLev, paste(node, n), node)) -> sankey.dtt
+
+        #sankey.dtt %>% group_by(x, node) %>% mutate(n = paste0("[", 100*n()/sankeyPrecision, "%]")) %>% rowwise() %>% mutate(level = as.numeric(gsub("level", "", x))) %>% mutate(label = ifelse(level == maxLev, paste(node, n), node)) -> sankey.dtt
+        sankey.dtt %>% group_by(x, node) %>% mutate(n = paste0("[", 100*n()/sankeyPrecision, "%]")) %>% rowwise() %>% mutate(level = as.numeric(gsub("level", "", x))) %>% mutate(label = paste(node, n)) -> sankey.dtt
 
         sankey.dtt %>% rowwise() %>% mutate(node = ifelse(is.na(node), node, dealias(node))) %>% mutate(next_node = ifelse(is.na(next_node), next_node, dealias(next_node))) -> sankey.dtt
 
         sankey.dtt %>% rowwise() %>% mutate(label = ifelse((node == "0" & level>0), gsub("^0", "unclassified", label), label)) -> sankey.dtt
         sankey.dtt <- sankey.dtt %>% mutate(label = ifelse((grepl("unclassified", label) & level != maxLev), NA, label))
+        sankey.dtt %>% group_by(node, x) %>% mutate(label = ifelse(length(unique(next_node)) == 1 & node == next_node & level != maxLev, NA, label)) -> sankey.dtt
 
         ggplot(sankey.dtt, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = label)) +
-            geom_sankey(flow.alpha = .6, node.color = "gray30", type ='alluvial') +
+            geom_sankey(flow.alpha = .6, type ='alluvial') +
             geom_sankey_label(size = 3, color = "white", fill = "gray40", position = position_nudge(x = 0.05, y = 0), na.rm = TRUE, type ='alluvial', hjust = 0) +
             theme_sankey(base_size = 16) +
             labs(x = NULL) +
@@ -1146,7 +1149,6 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 
     rm(plantFittedData, plantFullData)
 }
-##XX##
 
 globalFittedData <- rbindlist(globalFittedDataList)
 globalFullData <- rbindlist(globalFullDataList)
@@ -1348,7 +1350,8 @@ if(dim(globalFittedData)[1] > 0){
 
           sankey.dtt %>% filter(!is.na(node)) -> sankey.dtt
           max(as.numeric(gsub("level", "", sankey.dtt$next_x)), na.rm = TRUE) -> maxLev
-          sankey.dtt %>% group_by(x, node) %>% mutate(n = paste0("[", 100*n()/sankeyPrecision, "%]")) %>% rowwise() %>% mutate(level = as.numeric(gsub("level", "", x))) %>% mutate(label = ifelse(level == maxLev, paste(node, n), node)) -> sankey.dtt
+          #sankey.dtt %>% group_by(x, node) %>% mutate(n = paste0("[", 100*n()/sankeyPrecision, "%]")) %>% rowwise() %>% mutate(level = as.numeric(gsub("level", "", x))) %>% mutate(label = ifelse(level == maxLev, paste(node, n), node)) -> sankey.dtt
+          sankey.dtt %>% group_by(x, node) %>% mutate(n = paste0("[", 100*n()/sankeyPrecision, "%]")) %>% rowwise() %>% mutate(level = as.numeric(gsub("level", "", x))) %>% mutate(label = paste(node, n)) -> sankey.dtt
 
           sankey.dtt %>% rowwise() %>% mutate(node = ifelse(is.na(node), node, dealias(node))) %>% mutate(next_node = ifelse(is.na(next_node), next_node, dealias(next_node))) -> sankey.dtt
 
@@ -1360,9 +1363,10 @@ if(dim(globalFittedData)[1] > 0){
           sort(dealiasvar2col) -> dealiasvar2col
           viridis_pal(alpha = 1, begin = 0.025, end = .975, direction = 1, option = "D")(length(dealiasvar2col)) -> var2col
           sankey.dtt <- sankey.dtt %>% mutate(label = ifelse((grepl("unclassified", label) & level != maxLev), NA, label))
+          sankey.dtt <- sankey.dtt %>% group_by(node, x) %>% mutate(label = ifelse(length(unique(next_node)) == 1 & node == next_node & level != maxLev, NA, label))
 
           ggplot(sankey.dtt, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = label)) +
-                geom_sankey(flow.alpha = .6, node.color = "gray30", type ='alluvial') +
+                geom_sankey(flow.alpha = .6, type ='alluvial') +
                 geom_sankey_label(size = 3, color = "white", fill = "gray40", position = position_nudge(x = 0.05, y = 0), na.rm = TRUE, type ='alluvial', hjust = 0) +
                 theme_sankey(base_size = 16) +
                 labs(x = NULL) +
@@ -1386,14 +1390,24 @@ if(dim(globalFittedData)[1] > 0){
           left_join(x = sankey_completed.dt, y = (metaDT %>% dplyr::select(LocationID, connected_people) %>% distinct()), multiple = "all", by = "LocationID") %>%
               group_by(variant) %>% summarize(freq = weighted.mean(freq, w = connected_people, na.rm = TRUE), .groups = "keep") %>%
               filter(freq > zeroo/10) -> depicted_in_sankey
-          sankey_all.dt %>%
-              ungroup() %>% filter(variant %in% depicted_in_sankey$variant) %>%
-              mutate(N = length(unique(LocationID))) %>%
-              filter(freq > zeroo/10) %>%
-              group_by(variant) %>% summarize(N = unique(N), d = length(unique(LocationID)), .groups = "keep") %>%
-              mutate(nd = N - d) %>% dplyr::select(-"N") -> occurence.dt
+
+          occurence.dt <- data.table(variant = character(), d = numeric(), nd = numeric())
+          for (variant_ in depicted_in_sankey$variant){
+              variant_dealias_ <- dealias(variant_)
+              sankey_all.dt %>% rowwise() %>%
+                  mutate(variant_dealias = dealias(variant)) %>%
+                  ungroup() %>%
+                  mutate(N = length(unique(LocationID))) %>%
+                  filter(grepl(variant_dealias_, variant_dealias)) %>%
+                  filter(freq > zeroo/10) %>%
+                  summarize(variant = paste0(variant_, ".*"), N = unique(N), d = length(unique(LocationID)), .groups = "keep") %>%
+                  mutate(nd = N - d) %>% dplyr::select(-"N") -> occurence.rate.perVar
+              occurence.dt <- rbind(occurence.dt, occurence.rate.perVar)
+          }
+
           occurence.dt %>% mutate(r = paste0(sprintf("%.0f", 100*d/(d+nd)), "%")) -> occurence.rate
           reshape2::melt(occurence.dt, id.vars = c("variant"))  -> occurence.dt
+          occurence.dt$variant <- factor(occurence.dt$variant, levels = occurence.dt %>% filter(variable == "d") %>% arrange(value) %>% pull(variant))
 
           dpl <- ggplot(data = occurence.dt, aes(x = variant, y = value, fill = variable))
           dpl <- dpl + geom_col(position = position_stack(reverse = TRUE))
@@ -1480,12 +1494,14 @@ if(dim(globalFittedData)[1] > 0){
 
             sankey.dtt %>% filter(!is.na(node)) -> sankey.dtt
             max(as.numeric(gsub("level", "", sankey.dtt$next_x)), na.rm = TRUE) -> maxLev
-            sankey.dtt %>% group_by(x, node) %>% mutate(n = paste0("[", 100*n()/sankeyPrecision, "%]")) %>% rowwise() %>% mutate(level = as.numeric(gsub("level", "", x))) %>% mutate(label = ifelse(level == maxLev, paste(node, n), node)) -> sankey.dtt
+            #sankey.dtt %>% group_by(x, node) %>% mutate(n = paste0("[", 100*n()/sankeyPrecision, "%]")) %>% rowwise() %>% mutate(level = as.numeric(gsub("level", "", x))) %>% mutate(label = ifelse(level == maxLev, paste(node, n), node)) -> sankey.dtt
+            sankey.dtt %>% group_by(x, node) %>% mutate(n = paste0("[", 100*n()/sankeyPrecision, "%]")) %>% rowwise() %>% mutate(level = as.numeric(gsub("level", "", x))) %>% mutate(label = paste(node, n)) -> sankey.dtt
 
             sankey.dtt %>% rowwise() %>% mutate(node = ifelse(is.na(node), node, dealias(node))) %>% mutate(next_node = ifelse(is.na(next_node), next_node, dealias(next_node))) -> sankey.dtt
 
             sankey.dtt %>% rowwise() %>% mutate(label = ifelse((node == "0" & level>0), gsub("^0", "unclassified", label), label)) -> sankey.dtt
             sankey.dtt <- sankey.dtt %>% mutate(label = ifelse((grepl("unclassified", label) & level != maxLev), NA, label))
+            sankey.dtt <- sankey.dtt %>% group_by(node, x) %>% mutate(label = ifelse(length(unique(next_node)) == 1 & node == next_node & level != maxLev, NA, label))
 
             unique(sankey.dtt$node) -> var2col
             if("0" %notin% var2col){c("0", var2col) -> var2col}
@@ -1494,9 +1510,10 @@ if(dim(globalFittedData)[1] > 0){
             viridis_pal(alpha = 1, begin = 0.025, end = .975, direction = 1, option = "D")(length(dealiasvar2col)) -> var2col
 
             ggplot(sankey.dtt, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = label)) +
-                geom_sankey(flow.alpha = .6, node.color = "gray30", type ='alluvial') +
-                geom_sankey_label(size = 3, color = "white", fill = "gray40", position = position_nudge(x = 0.05, y = 0), na.rm = TRUE, type ='alluvial', hjust = 0) +
-                theme_sankey(base_size = 16) + labs(x = NULL) + ggtitle(paste0("Gewichtetes Mittel: ", stateoi), subtitle = paste( sankey_date$earliest , "bis", sankey_date$latest)) +
+                geom_sankey(flow.alpha = .6, type ='alluvial') +
+                geom_sankey_label(size = 3, color = "white", position = position_nudge(x = 0.05, y = 0), na.rm = TRUE, type ='alluvial', hjust = 0) +
+                theme_sankey(base_size = 16) + labs(x = NULL) +
+                ggtitle(paste0("Gewichtetes Mittel: ", stateoi), subtitle = paste( sankey_date$earliest , "bis", sankey_date$latest)) +
                 theme(legend.position = "none", axis.text.x = element_blank(), plot.title = element_text(hjust = 0), plot.subtitle=element_text(hjust = 0)) +
                 scale_fill_manual(values = var2col, breaks = dealiasvar2col) +
                 scale_x_discrete(expand = expansion(mult = c(0, .1), add = c(.1, .8))) -> pp
@@ -1547,7 +1564,13 @@ for (voi in VoI){
   writeLines(paste("  PROGRESS: considering", voi, "and sublineages"))
 
   voi_dealias <- dealias(voi)
-  mapdata <- globalFittedData %>% filter(!is.na(variant)) %>% rowwise() %>% mutate(variant_dealias = dealias(variant))  %>% filter(grepl(voi_dealias, variant_dealias)) %>% group_by(LocationID, LocationName, sample_id, sample_date) %>% summarize(variant = voi, value = sum(value))
+  mapdata <- globalFittedData %>%
+      filter(!is.na(variant)) %>%
+      rowwise() %>%
+      mutate(variant_dealias = dealias(variant)) %>%
+      filter(grepl(voi_dealias, variant_dealias)) %>%
+      group_by(LocationID, LocationName, sample_id, sample_date) %>%
+      summarize(variant = paste0(voi, ".*"), value = sum(value), .groups = "keep")
 
 
   if(all(dim(mapdata) > 0)){
@@ -1556,8 +1579,13 @@ for (voi in VoI){
     left_join(x = mapdata, y = metaDT, by = c("sample_id" = "BSF_sample_name", "LocationName", "LocationID", "sample_date"), multiple = "all") -> mapdata
 
     if (dim(mapdata)[1] > 0){
-      mapdata %>% group_by(LocationID) %>% mutate(latest = max(as.Date(sample_date))) %>% filter(latest == sample_date) %>% filter(BSF_run == last_BSF_run_id) %>% filter( (as.Date(format(Sys.time(), "%Y-%m-%d")) - recentEnought) < sample_date) -> mapdata
-      mapdata %>% filter(value > 0) -> mapdata
+      mapdata <- mapdata %>%
+          group_by(LocationID) %>%
+          mutate(latest = max(as.Date(sample_date))) %>%
+          filter(latest == sample_date) %>%
+          filter(BSF_run == last_BSF_run_id) %>%
+          filter( (as.Date(format(Sys.time(), "%Y-%m-%d")) - recentEnought) < sample_date)
+      mapdata <- mapdata %>% filter(value > 0)
 
       if (length(mapdata$value) > 0 ){
         writeLines(paste("  PROGRESS: plotting map for", paste0(voi,"*")))
