@@ -938,7 +938,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 
         ggplot(sankey.dtt, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = label)) +
             geom_sankey(flow.alpha = .6, type ='alluvial') +
-            geom_sankey_label(size = 3, color = "white", fill = "gray40", position = position_nudge(x = 0.05, y = 0), na.rm = TRUE, type ='alluvial', hjust = 0) +
+            geom_sankey_label(size = 2, color = "white", fill = "gray40", position = position_nudge(x = 0.05, y = 0), na.rm = TRUE, type ='alluvial', hjust = 0) +
             theme_sankey(base_size = 16) +
             labs(x = NULL) +
             ggtitle(roiname, subtitle = sankey_date) +
@@ -1367,7 +1367,7 @@ if(dim(globalFittedData)[1] > 0){
 
           ggplot(sankey.dtt, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = label)) +
                 geom_sankey(flow.alpha = .6, type ='alluvial') +
-                geom_sankey_label(size = 3, color = "white", fill = "gray40", position = position_nudge(x = 0.05, y = 0), na.rm = TRUE, type ='alluvial', hjust = 0) +
+                geom_sankey_label(size = 2, color = "white", fill = "gray40", position = position_nudge(x = 0.05, y = 0), na.rm = TRUE, type ='alluvial', hjust = 0) +
                 theme_sankey(base_size = 16) +
                 labs(x = NULL) +
                 ggtitle("Gewichtetes Mittel: Österreich", subtitle = paste( sankey_date$earliest , "bis", sankey_date$latest)) +
@@ -1419,7 +1419,7 @@ if(dim(globalFittedData)[1] > 0){
           dpl <- dpl + scale_y_continuous()
           dpl <- dpl + theme(plot.title = element_text(hjust = 0), plot.subtitle=element_text(hjust = 0))
           dpl <- dpl + ggtitle("Anteil an positiven Kläranlagen per Variante", subtitle = paste( sankey_date$earliest , "bis", sankey_date$latest))
-          dpl <- dpl + geom_label(data = occurence.rate, aes(x = variant, y = d, label = r), fill = "grey90")
+          dpl <- dpl + geom_label(data = occurence.rate, aes(x = variant, y = d, label = r), fill = "grey90",  size = 3)
           dpl <- dpl + coord_flip()
 
           filename1 <- paste0(outdir, "/figs/sankey/Detection_",  opt$country, ".pdf")
@@ -1427,7 +1427,15 @@ if(dim(globalFittedData)[1] > 0){
           fwrite(as.list(c("detection", "Overview", opt$country, filename1)), file = summaryDataFile, append = TRUE, sep = "\t")
 
           writeLines(paste("PROGRESS: generating WWTP detection table"))
-
+          
+          sankey_all.dt %>%
+              ungroup() %>% filter(variant %in% depicted_in_sankey$variant) %>%
+              mutate(N = length(unique(LocationID))) %>%
+              filter(freq > zeroo/10) %>%
+              group_by(variant) %>% summarize(N = unique(N), d = length(unique(LocationID)), .groups = "keep") %>%
+              mutate(nd = N - d) %>% dplyr::select(-"N") -> occurence.dt
+          occurence.dt %>% mutate(r = paste0(sprintf("%.0f", 100*d/(d+nd)), "%")) -> occurence.rate
+          reshape2::melt(occurence.dt, id.vars = c("variant"))  -> occurence.dt
           left_join(x = occurence.rate, y = occurence.freq, by = "variant", multiple = "all") -> synopsis.dt
           synopsis.dt %>% filter(freq > zeroo/10) %>% mutate(freq = signif(freq, digits = 2)) -> synopsis.dt
           colnames(synopsis.dt) <- c("Variante", "Detektiert", "Nicht detektiert", "Prozent", "Gew. Mittel")
@@ -1511,7 +1519,7 @@ if(dim(globalFittedData)[1] > 0){
 
             ggplot(sankey.dtt, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = label)) +
                 geom_sankey(flow.alpha = .6, type ='alluvial') +
-                geom_sankey_label(size = 3, color = "white", position = position_nudge(x = 0.05, y = 0), na.rm = TRUE, type ='alluvial', hjust = 0) +
+                geom_sankey_label(size = 2, color = "white", position = position_nudge(x = 0.05, y = 0), na.rm = TRUE, type ='alluvial', hjust = 0) +
                 theme_sankey(base_size = 16) + labs(x = NULL) +
                 ggtitle(paste0("Gewichtetes Mittel: ", stateoi), subtitle = paste( sankey_date$earliest , "bis", sankey_date$latest)) +
                 theme(legend.position = "none", axis.text.x = element_blank(), plot.title = element_text(hjust = 0), plot.subtitle=element_text(hjust = 0)) +
