@@ -8,7 +8,6 @@ suppressPackageStartupMessages(library("ggplot2"))
 suppressPackageStartupMessages(library("reshape2"))
 suppressPackageStartupMessages(library("dplyr"))
 suppressPackageStartupMessages(library("data.table"))
-suppressPackageStartupMessages(library("gamlss"))
 suppressPackageStartupMessages(library("ggrepel"))
 suppressPackageStartupMessages(library("scales"))
 suppressPackageStartupMessages(library("betareg"))
@@ -17,23 +16,11 @@ suppressPackageStartupMessages(library("stringr"))
 suppressPackageStartupMessages(library("lubridate"))
 suppressPackageStartupMessages(library("rjson"))
 suppressPackageStartupMessages(library("RColorBrewer"))
-suppressPackageStartupMessages(library("ggsankey"))
 suppressPackageStartupMessages(library("viridis"))
 suppressPackageStartupMessages(library("patchwork"))
-suppressPackageStartupMessages(library("ggpubr"))
-suppressPackageStartupMessages(library("ComplexHeatmap"))
-suppressPackageStartupMessages(library("dendextend"))
-suppressPackageStartupMessages(library("circlize"))
 suppressPackageStartupMessages(library("NbClust"))
 suppressPackageStartupMessages(library("gslnls"))
 suppressPackageStartupMessages(library("cowplot"))
-suppressPackageStartupMessages(library("DBI"))
-suppressPackageStartupMessages(library("ggspatial"))
-suppressPackageStartupMessages(library("sf"))
-suppressPackageStartupMessages(library("rnaturalearth"))
-suppressPackageStartupMessages(library("rnaturalearthdata"))
-suppressPackageStartupMessages(library("ggmap"))
-suppressPackageStartupMessages(library("tmaptools"))
 
 
 
@@ -119,32 +106,32 @@ if(opt$debug){
   opt$metadata = "data/metaData_general.csv"
   opt$data="data/mutationData_DB_NationMonitoringSites.tsv.gz"
   opt$inputformat = "tidy"
-  opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2024-07-29_Europe.csv"
-  opt$mutstats  = "VaQuERo/resources/mutations_stats_pango_codonPhased_2024-07-29.csv.gz"
-  opt$group2var = "VaQuERo/resources/groupMembers_pango_codonPhased_2024-07-29_Europe.csv"
+  opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2024-09-04_Europe.csv"
+  opt$mutstats  = "VaQuERo/resources/mutations_stats_pango_codonPhased_2024-09-04.csv.gz"
+  opt$group2var = "VaQuERo/resources/groupMembers_pango_codonPhased_2024-09-04_Europe.csv"
   opt$pmarker="VaQuERo/resources/mutations_problematic_2023-11-23.csv"
   opt$precomp = "output-variants/globalFittedData.csv"
   #opt$ninconsens = 0.2
   opt$zero=0.01
-  opt$depth=50
+  opt$depth=500
   opt$pval = 0.01
   opt$minpositivesample=2
   opt$removeLongIndels=1
   opt$periodlength = 61
-  opt$indels = 1
+  opt$indels = FALSE
   opt$verbose = FALSE
   opt$graph = "pdf"
   opt$TimecoursePlot="all"
   opt$geogrowthlimit = 0.04
-  opt$wmefgrowthlimit = 0.02
+  opt$wmefgrowthlimit = 0.04
   opt$mingeospread=0.04
-  opt$minexcessfreq=0.02
-  opt$nw   = 1
+  opt$minexcessfreq=0.04
+  opt$nw   = 2
   opt$alphaprime = 2.2
   opt$minweeksample = 8
   opt$filstrat = "and"
-  opt$start = "2024-05-11"
-  opt$end = "2024-09-11"
+  opt$start = Sys.Date() - 6*30
+  opt$end = Sys.Date()
   opt$onlyLastRun = FALSE
   #opt$ignoreregion = "21955-23288"
   writeLines("Warning: command line option overwritten")
@@ -369,10 +356,10 @@ sewage_samps.dt$value.qual[is.na(sewage_samps.dt$value.qual)] <- 0
 sewage_samps.dt %>% filter(ID %in% sampleoi) -> sewage_samps.dt
 rm(sewage_samps)
 
-#remove problematic sites
+## remove problematic sites
 sewage_samps.dt %>% filter(POS %notin% problematic$Postion) -> sewage_samps.dt
 
-#removeLongIndels
+## removeLongIndels
 if (removeLongIndels > 0){
   befi <- length(unique(sewage_samps.dt$NUC))
   sewage_samps.dt %>% filter(nchar(ALT) <= removeLongIndels & nchar(REF) <= removeLongIndels) -> sewage_samps.dt
@@ -380,6 +367,8 @@ if (removeLongIndels > 0){
   writeLines(paste0("LOG: indels of length greater than or equal to ",removeLongIndels, " nt are removed; in total ", befi-afi, " mutations were ignored; set --removeLongIndels 0 if undesired."))
 }
 
+## set AF := 0 if DP <= min.depth
+sewage_samps.dt <- sewage_samps.dt %>% filter(value.depth >= min.depth)
 
 # remove regions specified via --ignoreregion
 if(length(ignoreregionend) > 0){
@@ -428,7 +417,31 @@ writeLines(paste("LOG: latest sample in current run:", latestSample$latest))
 ## generate for each mutation a nice printable label
 sewage_samps.dt %>% mutate(label = paste(NUC, paste0("[", paste(ANN.GENE,ANN.AA, sep =":"), "]"))) %>% dplyr::select(NUC, label) %>% distinct() -> nuc2label
 
-### kill if no mutations are found
+
+## check for each mutation if DP explains increase better then time
+if(FALSE){
+  DPartefakts <- c()
+  for (mif in unique(sewage_samps.dt$NUC)) {
+    mif.dt <- sewage_samps.dt %>% filter(NUC == mif)
+
+    if(length(unique(mif.dt$LocationID)) > 1){
+      modeldpt <- lm(log10(value.freq) ~ LocationID + log10(value.depth) + sample_date_decimal, data = mif.dt)
+      modeldp <- lm(log10(value.freq) ~ LocationID + log10(value.depth), data = mif.dt)
+
+      modelcmp <- anova( modeldp, modeldpt, test="Chisq")
+      mif.pval <- modelcmp$`Pr(>Chi)`[2]
+      mif.pval <- ifelse(is.na(mif.pval), 1, mif.pval)
+      if(mif.pval > pval_th){
+        DPartefakts <- c(DPartefakts, mif)
+      }
+    } else{
+      DPartefakts <- c(DPartefakts, mif)
+    }
+  }
+  sewage_samps.dt <- sewage_samps.dt %>% filter(NUC %notin% DPartefakts)
+}
+
+## kill if no mutations are found
 if (length(unique(sewage_samps.dt$ID)) < 1){
   writeLines(paste("WARNING: no mutation data found in input file. Program ends here!"))
   quit(save="no")
@@ -498,7 +511,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 
             ## extract observed AF
             sewage_samps.sdt %>% filter(ID == sampleID) -> observedAF
-            right_join(x= expectedAF, y = observedAF, by = c("nucc" = "NUC")) %>% dplyr::select(nucc, AA_change, AF, value.freq) %>% rename(expected.freq = AF, observed.freq = value.freq) -> expected_vs_observed_AF
+            right_join(x= expectedAF, y = observedAF, by = c("nucc" = "NUC")) %>% dplyr::select(nucc, AA_change, AF, value.freq, value.depth) %>% rename(expected.freq = AF, observed.freq = value.freq) -> expected_vs_observed_AF
 
             ##################
             ## contrast observed and expected AF
@@ -506,7 +519,7 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
 
             ## filter sig. excess mutations based on beta distriubtion
             # transform 0 and 1 values to [0,1]
-            refDepth <- 5000
+            refDepth <- min(expected_vs_observed_AF$value.depth) # was set to 5000 at some point
             minRefFreq <- qbeta(c(pval_th), alphaprime, betaParamFromMean((1-(refDepth - 1 + 0.5)/refDepth), alphaprime), ncp = 0, lower.tail = FALSE, log.p = FALSE)
             expected_vs_observed_AF  %>%
                 filter(expected.freq > minRefFreq | observed.freq > minRefFreq) %>%
@@ -538,7 +551,8 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
                                   observed      = expected_vs_observed_AF_transformed$observed.freq,
                                   expected      = expected_vs_observed_AF_transformed$expected.freq,
                                   excess        = expected_vs_observed_AF_transformed$observed.freq - expected_vs_observed_AF_transformed$expected.freq,
-                                  pvalue        = expected_vs_observed_AF_transformed$qval
+                                  pvalue        = expected_vs_observed_AF_transformed$qval,
+                                  dp            = expected_vs_observed_AF_transformed$value.depth
                               )
                 globalAFdataList[[length(globalAFdataList)+1]] <- localAFdata
 
@@ -600,7 +614,9 @@ for (periodend in as.character(seq( from = min(globalAFdata_m$midweek_date) + op
     currentAFdata <- currentAFdata %>% mutate(excess = ifelse(is.na(excess), 0, excess))
     currentAFdata <- currentAFdata %>% rowwise() %>% mutate(excess = ifelse(pvalue < pval_th, excess, 0))
     currentAFdata_completed <- data.table::dcast(currentAFdata, nuc_mutation+midweek_date~LocationID, fun.aggregate = mean, value.var = "excess", fill = 0) %>% data.table::melt(id.vars = c("nuc_mutation", "midweek_date"), variable.name = "LocationID", value.name = "excess")
+    currentDPdata_completed <- data.table::dcast(currentAFdata, nuc_mutation+midweek_date~LocationID, fun.aggregate = mean, value.var = "dp", fill = 0) %>% data.table::melt(id.vars = c("nuc_mutation", "midweek_date"), variable.name = "LocationID", value.name = "dp")
     currentAFdata_completed <- inner_join(x = currentAFdata_completed, y = currentmetaDTs, by = c("LocationID", "midweek_date"))
+    currentAFdata_completed <- left_join(x = currentAFdata_completed, y = currentDPdata_completed, by = c("LocationID", "midweek_date", "nuc_mutation"))
 
 
     ####################
@@ -608,7 +624,13 @@ for (periodend in as.character(seq( from = min(globalAFdata_m$midweek_date) + op
     if(opt$verbose){
       writeLines(paste("PROGRESS: calculate population weighted mean excess mutation frequency per mutation"))
     }
-    dt_wmef <- currentAFdata_completed %>% group_by(nuc_mutation, midweek_date) %>% summarize(excess_mw = weighted.mean(excess, w = connected_people), .groups = "keep")
+    dt_wmef <- currentAFdata_completed %>%
+        group_by(nuc_mutation, midweek_date) %>%
+        summarize(
+          excess_mw = weighted.mean(excess, w = connected_people),
+          dp_mw = weighted.mean(dp[dp>0], w = connected_people[dp>0]),
+          .groups = "keep"
+        )
 
     ####################
     ## deduce nls growth of timecourse population weighted mean excess mutation frequency per mutation
@@ -616,30 +638,38 @@ for (periodend in as.character(seq( from = min(globalAFdata_m$midweek_date) + op
     if(opt$verbose){
       writeLines(paste("PROGRESS: deduce nls growth of timecourse population weighted mean excess frequency"))
     }
-    ind.mois <- dt_wmef %>% group_by(nuc_mutation) %>% mutate(max = max(excess_mw)) %>% mutate(n = sum(excess_mw > 0))  %>% rowwise() %>% filter(max >= wmef_th & n >= minpossamp_th) %>% pull(nuc_mutation) %>% unique()
+    ind.mois <- dt_wmef %>%
+      group_by(nuc_mutation) %>%
+      mutate(max = max(excess_mw)) %>%
+      mutate(n = sum(excess_mw > 0)) %>%
+      rowwise() %>%
+      filter(max >= wmef_th & n >= minpossamp_th) %>%
+      pull(nuc_mutation) %>%
+      unique()
 
     prediction_collector_wmef_List <- list()
     prediction_collector_wmef <- data.table(mutation = character(), growth_pred = numeric(), inflection_pred = numeric())
 
     for (ind.moi in ind.mois){
       dtoi <- dt_wmef %>% filter(nuc_mutation == ind.moi)
+      dtoi_weights <- dtoi$dp_mw
       colnames(dtoi)[2] <- "t"
       colnames(dtoi)[3] <- "y"
       subset(dtoi, select = c("t", "y")) -> dtoi
       dtoi$d <- as.numeric(as.Date(dtoi$t)-as.Date(dtoi$t[1]))
       a <- 1
       fo <- y ~ a / (1 + exp(-b * (d-c)))
-      model <- tryCatch(gsl_nls(fo, start = list(b = 0.05, c = 2*max(dtoi$d)/3), data = dtoi),error=function(e) NA, warning=function(w) NA)
+      model <- tryCatch(gsl_nls(fo, start = list(b = 0.05, c = 2*max(dtoi$d)/3), data = dtoi, weights = dtoi_weights),error=function(e) NA, warning=function(w) NA)
       # if gsl_nls regession did not converge try different starting parameters
       if(1){
           if(identical(NA, model)){
-            model <- tryCatch(gsl_nls(fo, start = list(b = 0.01, c = max(dtoi$d)/2), data = dtoi),error=function(e) NA, warning=function(w) NA)
+            model <- tryCatch(gsl_nls(fo, start = list(b = 0.01, c = max(dtoi$d)/2), data = dtoi, weights = dtoi_weights),error=function(e) NA, warning=function(w) NA)
           }
           if(identical(NA, model)){
-            model <- tryCatch(gsl_nls(fo, start = list(b = 0.1, c = 2*max(dtoi$d)/3), data = dtoi),error=function(e) NA, warning=function(w) NA)
+            model <- tryCatch(gsl_nls(fo, start = list(b = 0.1, c = 2*max(dtoi$d)/3), data = dtoi, weights = dtoi_weights),error=function(e) NA, warning=function(w) NA)
           }
           if(identical(NA, model)){
-            model <- tryCatch(gsl_nls(fo, start = list(b = 0.2, c = max(dtoi$d)/2), data = dtoi),error=function(e) NA, warning=function(w) NA)
+            model <- tryCatch(gsl_nls(fo, start = list(b = 0.2, c = max(dtoi$d)/2), data = dtoi, weights = dtoi_weights),error=function(e) NA, warning=function(w) NA)
           }
       }
 
@@ -1048,11 +1078,15 @@ if(dim(missed_in_mstatf)[1] > 0){
 }
 
 ## define similarity between mutation in mstatf
-tree <- hclust(dist(t(outbreak.dt[,-1])))
-mutation_order <- tree$labels[tree$order]
-tree <- hclust(dist(data.frame(outbreak.dt[,-1], row.names = outbreak.dt[,1])))
-lineage_order <- tree$labels[tree$order]
-
+if(is.data.frame(outbreak.dt[,1])){
+  tree <- hclust(dist(t(outbreak.dt[,-1])))
+  mutation_order <- tree$labels[tree$order]
+  tree <- hclust(dist(data.frame(outbreak.dt[,-1], row.names = outbreak.dt[,1])))
+  lineage_order <- tree$labels[tree$order]
+} else{
+  mutation_order <- colnames(outbreak.dt)[-1]
+  lineage_order <- outbreak.dt$ID
+}
 data.table::melt(outbreak.dt, variable.name = "label", value.name = "AF.freq", id.vars = c("ID")) -> outbreak.dt
 outbreak.dt %>% rowwise() %>% mutate(dealiasID = dealias(ID)) -> outbreak.dt
 
@@ -1182,10 +1216,15 @@ if(dim(mutation.dtm)[1] > 1){
           theme_bw() + facet_grid(state~., scale = "free_y", space = "free_y") +
           theme(axis.text.y = element_blank(), strip.text.y = element_text(angle = 0, hjust = 1, vjust = 0.5), axis.ticks.y = element_blank(), panel.grid.major.y = element_blank()) +
           scale_x_date(date_breaks="1 months", date_labels = "%b %Y") +
-          scale_fill_fermenter(palette = "Oranges", direction = 1) +
           ylab("") + xlab("Sample Date") +
           ggtitle(paste("Marker co-occurrence, out of", length(moi.nuc.list), "mutations considered")) +
           theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5), panel.grid.major.x = element_line(color = "grey75"))
+
+  if(length(unique(mutation.dtm$NUCS)) > 1){
+    cooccurencePlot <- cooccurencePlot + scale_fill_fermenter(palette = "Oranges", direction = 1)
+  } else{
+    cooccurencePlot <- cooccurencePlot + scale_fill_distiller(palette = "Oranges", direction = 1)
+  }
 
   filename <- paste0(outdir, "/figs/nucleotides",  paste('/Nuc', "cooccurence", sep="_"), ".", opt$graph)
   ggsave(filename = filename, plot = cooccurencePlot, height = 9, width = 9)
