@@ -256,14 +256,14 @@ detect_lineages <- function(DT_, timepoint_, minInfoRatio_){
     all_could_be_but_not_have_been_detected_based_on_uniqMarkers <- c()
 
     # collapse timepoints if several are specified
-    DT_ %>% filter(sample_date_decimal %in% timepoint_) %>%
+    DT_ <- DT_ %>% filter(sample_date_decimal %in% timepoint_) %>%
         group_by(Variants, LocationID, LocationName, NUC) %>%
-        summarize(ID = DT_$ID[1], sample_date = DT_$sample_date[1], sample_date_decimal = timepoint_[1], value.freq = mean(value.freq, na.rm=TRUE), value.depth = mean(value.depth, na.rm = TRUE), .groups = "drop_last") -> DT_
+        summarize(ID = DT_$ID[1], sample_date = DT_$sample_date[1], sample_date_decimal = timepoint_[1], value.freq = mean(value.freq, na.rm=TRUE), value.depth = mean(value.depth, na.rm = TRUE), .groups = "drop_last")
 
 
     # detect variants with enough information content given the detected marker mutations and minInfoRatio_
     # this is a necessary but not sufficient condition
-    DT_ %>% filter(sample_date_decimal %in% timepoint_) %>%
+    variants_markerInfo <- DT_ %>% filter(sample_date_decimal %in% timepoint_) %>%
           mutate(Variants = strsplit(as.character(Variants), ";")) %>%
           unnest(Variants) %>% group_by(Variants, ID, sample_date_decimal) %>%
           left_join(y = moi_marker_information, by = "NUC", multiple = "all") %>%
@@ -271,10 +271,10 @@ detect_lineages <- function(DT_, timepoint_, minInfoRatio_){
           summarize(I = sum(i), .groups = "drop") %>%
           arrange(desc(I)) %>%
           left_join(y = moi_variant_information, by = "Variants", multiple = "all") %>%
-          mutate(R = I/i) -> variants_markerInfo
-    variants_markerInfo %>% filter(R >= minInfoRatio_) %>%
+          mutate(R = I/i)
+    variants_passed_markerInfo_filter <- variants_markerInfo %>% filter(R >= minInfoRatio_) %>%
           pull(Variants) %>%
-          unique() -> variants_passed_markerInfo_filter
+          unique()
 
     print(knitr::kable(variants_markerInfo %>% arrange(desc(R)) %>% mutate(Filter = ifelse(R > minInfoRatio_, "ACCEPTED due to Information", "! declined due to Information")) %>% filter(R > .75*minInfoRatio_), format = "rst", digits = 6, row.names = FALSE))
 
@@ -284,7 +284,7 @@ detect_lineages <- function(DT_, timepoint_, minInfoRatio_){
     }
 
     # detect variants with enough uniq marker mutations
-    DT_ %>% filter(sample_date_decimal %in% timepoint_) %>%
+    variants_passed_uniqMarkerCount_filter.data <- DT_ %>% filter(sample_date_decimal %in% timepoint_) %>%
           filter(!grepl(";",Variants)) %>%
           group_by(Variants, ID, sample_date_decimal) %>%
           left_join(y = moi_uniq_marker_count, by = "Variants", multiple = "all") %>%
@@ -296,8 +296,8 @@ detect_lineages <- function(DT_, timepoint_, minInfoRatio_){
           filter(r > minUniqMarkerRatio) %>%
           filter(N >= minUniqMarker) %>%
           summarize(NUCS = paste(NUC, collapse = "; "), .groups = "drop_last") %>%
-          ungroup() %>% dplyr::select(Variants, NUCS) -> variants_passed_uniqMarkerCount_filter.data
-          variants_passed_uniqMarkerCount_filter.data %>% pull(Variants) %>% unique() -> variants_passed_uniqMarkerCount_filter
+          ungroup() %>% dplyr::select(Variants, NUCS)
+    variants_passed_uniqMarkerCount_filter <- variants_passed_uniqMarkerCount_filter.data %>% pull(Variants) %>% unique()
 
     #writeLines(paste("LOG: variants detected based on unique markers as following:"))
     #print(variants_passed_uniqMarkerCount_filter)
@@ -310,9 +310,9 @@ detect_lineages <- function(DT_, timepoint_, minInfoRatio_){
 
     # detect variants with enough uniq marker mutations
     # after variants which could have been detect by uniq markers, but have not, were ignored
-    moi %>% filter(!grepl(";", Variants)) %>% pull(Variants) %>% unique() -> could_be_detected_based_on_uniqMarkers
+    could_be_detected_based_on_uniqMarkers <- moi %>% filter(!grepl(";", Variants)) %>% pull(Variants) %>% unique()
     could_be_but_not_have_been_detected_based_on_uniqMarkers <- could_be_detected_based_on_uniqMarkers[could_be_detected_based_on_uniqMarkers %notin% variants_passed_uniqMarkerCount_filter]
-    DT_ %>%
+    DT_reduced <- DT_ %>%
           filter(sample_date_decimal %in% timepoint_) %>%
           mutate(Variants = strsplit(as.character(Variants), ";")) %>%
           unnest(Variants) %>%
@@ -321,8 +321,8 @@ detect_lineages <- function(DT_, timepoint_, minInfoRatio_){
           group_by(ID, sample_date, sample_date_decimal, value.freq, value.depth, LocationID, LocationName, NUC) %>%
           summarize(Variants = paste(Variants, sep = ";", collapse = ";"), .groups = "drop_last") %>%
           ungroup() %>%
-          dplyr::select("Variants", "ID", "sample_date", "sample_date_decimal", "value.freq", "value.depth", "LocationID", "LocationName", "NUC")-> DT_reduced
-    DT_reduced %>%
+          dplyr::select("Variants", "ID", "sample_date", "sample_date_decimal", "value.freq", "value.depth", "LocationID", "LocationName", "NUC")
+    variants_passed_uniqMarkerCount_iterative_filter.data <- DT_reduced %>%
           filter(sample_date_decimal %in% timepoint_) %>%
           filter(!grepl(";",Variants)) %>%
           group_by(Variants, ID, sample_date_decimal) %>%
@@ -333,10 +333,10 @@ detect_lineages <- function(DT_, timepoint_, minInfoRatio_){
           group_by(Variants, ID, sample_date_decimal) %>%
           mutate(N=n()) %>%
           mutate(r=N/n) %>%
-          filter(N >= minUniqMarker) -> variants_passed_uniqMarkerCount_iterative_filter.data
-    variants_passed_uniqMarkerCount_iterative_filter.data %>%
+          filter(N >= minUniqMarker)
+    variants_passed_uniqMarkerCount_iterative_filter <- variants_passed_uniqMarkerCount_iterative_filter.data %>%
           summarize(.groups = "drop_last") %>%
-          pull(Variants) %>% unique() -> variants_passed_uniqMarkerCount_iterative_filter
+          pull(Variants) %>% unique()
     all_could_be_but_not_have_been_detected_based_on_uniqMarkers <- unique(c(all_could_be_but_not_have_been_detected_based_on_uniqMarkers, could_be_but_not_have_been_detected_based_on_uniqMarkers))
 
 
@@ -357,7 +357,7 @@ detect_lineages <- function(DT_, timepoint_, minInfoRatio_){
     could_be_detected_based_on_uniqMarkers.iterative[[c]] <- could_be_detected_based_on_uniqMarkers
     while(c < 20){
         c <- c + 1
-        DT_reduced %>%
+        variants_passed_uniqMarkerCount_filter <- DT_reduced %>%
             filter(sample_date_decimal %in% timepoint_) %>%
             filter(!grepl(";",Variants)) %>%
             group_by(Variants, ID, sample_date_decimal) %>%
@@ -369,24 +369,24 @@ detect_lineages <- function(DT_, timepoint_, minInfoRatio_){
             mutate(N=n()) %>% mutate(r=N/n) %>%
             filter(N >= minUniqMarker)  %>%
             summarize(NUCS = paste(NUC, collapse = "; "), .groups = "drop_last") %>%
-            ungroup() %>% dplyr::select(Variants, NUCS) %>% distinct() -> variants_passed_uniqMarkerCount_filter
+            ungroup() %>% dplyr::select(Variants, NUCS) %>% distinct()
 
         #writeLines(paste("LOG: [", c, "] variants detected based on unique markers after excluding detectable-but-not-detected lineages as following:"))
         #print(variants_passed_uniqMarkerCount_filter %>% filter(Variants %notin% variants_passed_uniqMarkerCount_filter))
 
 
-        variants_passed_uniqMarkerCount_filter %>%
-            pull(Variants) %>% unique() -> variants_passed_uniqMarkerCount_filter_list
+        variants_passed_uniqMarkerCount_filter_list <- variants_passed_uniqMarkerCount_filter %>%
+            pull(Variants) %>% unique()
 
-        DT_reduced %>%
+        could_be_detected_based_on_uniqMarkers <- DT_reduced %>%
             filter(sample_date_decimal %in% timepoint_) %>%
             filter(!grepl(";",Variants)) %>%
             filter(value.depth > min.depth) %>%
             ungroup() %>%
             pull(Variants) %>%
-            unique() -> could_be_detected_based_on_uniqMarkers
+            unique()
         could_be_but_not_have_been_detected_based_on_uniqMarkers <- could_be_detected_based_on_uniqMarkers[could_be_detected_based_on_uniqMarkers %notin% variants_passed_uniqMarkerCount_filter_list]
-        DT_reduced %>%
+        DT_reduced <- DT_reduced %>%
             filter(sample_date_decimal %in% timepoint_) %>%
             mutate(Variants = strsplit(as.character(Variants), ";")) %>%
             unnest(Variants) %>%
@@ -395,8 +395,8 @@ detect_lineages <- function(DT_, timepoint_, minInfoRatio_){
             group_by(ID, sample_date, sample_date_decimal, value.freq, value.depth, LocationID, LocationName, NUC) %>%
             summarize(Variants = paste(Variants, sep = ";", collapse = ";"), .groups = "drop_last") %>%
             ungroup() %>%
-            dplyr::select("Variants", "ID", "sample_date", "sample_date_decimal", "value.freq", "value.depth", "LocationID", "LocationName", "NUC")-> DT_reduced
-        DT_reduced %>%
+            dplyr::select("Variants", "ID", "sample_date", "sample_date_decimal", "value.freq", "value.depth", "LocationID", "LocationName", "NUC")
+        variants_passed_uniqMarkerCount_filter.iterative.data <- DT_reduced %>%
             filter(sample_date_decimal %in% timepoint_) %>%
             filter(!grepl(";",Variants)) %>%
             group_by(Variants, ID, sample_date_decimal) %>%
@@ -407,10 +407,10 @@ detect_lineages <- function(DT_, timepoint_, minInfoRatio_){
             group_by(Variants, ID, sample_date_decimal) %>%
             mutate(N=n()) %>%
             mutate(r=N/n) %>%
-            filter(N >= minUniqMarker) -> variants_passed_uniqMarkerCount_filter.iterative.data
-        variants_passed_uniqMarkerCount_filter.iterative.data %>%
+            filter(N >= minUniqMarker)
+        variants_passed_uniqMarkerCount_filter.iterative[[c]] <- variants_passed_uniqMarkerCount_filter.iterative.data %>%
             summarize(.groups = "drop_last") %>%
-            pull(Variants) %>% unique() -> variants_passed_uniqMarkerCount_filter.iterative[[c]]
+            pull(Variants) %>% unique()
         could_be_detected_based_on_uniqMarkers.iterative[[c]] <- could_be_detected_based_on_uniqMarkers
         all_could_be_but_not_have_been_detected_based_on_uniqMarkers <- unique(c(all_could_be_but_not_have_been_detected_based_on_uniqMarkers, could_be_but_not_have_been_detected_based_on_uniqMarkers))
 
@@ -438,11 +438,11 @@ detect_lineages <- function(DT_, timepoint_, minInfoRatio_){
     overhang.added.lineages = c()
     while(c < 40){
         c <- c + 1
-        DT_reduced %>%
+        expected_value_uniqSupported_lineages <- DT_reduced %>%
             filter(!grepl(";", Variants)) %>%
             group_by(Variants) %>%
-            summarize(mean_overhang = mean(value.freq), .groups = "drop") -> expected_value_uniqSupported_lineages
-        DT_reduced %>%
+            summarize(mean_overhang = mean(value.freq), .groups = "drop")
+        iteratively.added <- DT_reduced %>%
             rowwise() %>%
             filter(grepl(";", Variants)) %>%
             mutate(overhang = extract_loi( x = Variants, y = expected_value_uniqSupported_lineages$Variants), rest = extract_rest(x = Variants, y = expected_value_uniqSupported_lineages$Variants)) %>%
@@ -451,7 +451,7 @@ detect_lineages <- function(DT_, timepoint_, minInfoRatio_){
             dplyr::select(Variants, overhang, rest, value.freq, NUC) %>%
             left_join(y = expected_value_uniqSupported_lineages, by = c("overhang" = "Variants")) %>%
             mutate(pval = pbeta(value.freq, alphaprime, betaParamFromMean(mean_overhang, alphaprime), ncp = 0, lower.tail = FALSE, log.p = FALSE)) %>%
-            filter(pval <= pval_th) -> iteratively.added
+            filter(pval <= pval_th)
         if(dim(iteratively.added)[1] > 0){
                 writeLines(paste("LOG: lineages [rest] detected due to mutations [NUC] observed in excess [value.freq] to uniquely detected lineages [overhang]. only overhang would explain mean_overhang of AF"))
                 print(iteratively.added %>% dplyr::select(rest, overhang, NUC, value.freq, mean_overhang, pval))
@@ -460,8 +460,8 @@ detect_lineages <- function(DT_, timepoint_, minInfoRatio_){
           mutlog <- rbind(mutlog, data.table(indicatingMutation = "indicatingMutation", ID = id_inuse, LocationID = LocationID_inuse, sample_date = sample_date_inuse, sample_date_decimal = sample_date_decimal_inuse, Variants = iteratively.added$rest, mutation = iteratively.added$NUC, meth = "iterOVERHANG", iter = c))
         }
 
-        iteratively.added %>% pull(rest) %>% unique() -> iteratively.overhang.added.lineages
-        DT_reduced %>%
+        iteratively.overhang.added.lineages <- iteratively.added %>% pull(rest) %>% unique()
+        DT_reduced <- DT_reduced %>%
             mutate(Variants = strsplit(as.character(Variants), ";")) %>%
             unnest(Variants) %>%
             filter(Variants %in% variants_passed_markerInfo_filter) %>%
@@ -469,7 +469,7 @@ detect_lineages <- function(DT_, timepoint_, minInfoRatio_){
             group_by(ID, sample_date, sample_date_decimal, value.freq, value.depth, LocationID, LocationName, NUC) %>%
             summarize(Variants = paste(Variants, sep = ";", collapse = ";"), .groups = "drop_last") %>%
             ungroup() %>%
-            dplyr::select("Variants", "ID", "sample_date", "sample_date_decimal", "value.freq", "value.depth", "LocationID", "LocationName", "NUC") -> DT_reduced
+            dplyr::select("Variants", "ID", "sample_date", "sample_date_decimal", "value.freq", "value.depth", "LocationID", "LocationName", "NUC")
         overhang.added.lineages <- c(overhang.added.lineages, iteratively.overhang.added.lineages)
         if(length(iteratively.overhang.added.lineages) == 0){
             break
@@ -483,6 +483,41 @@ detect_lineages <- function(DT_, timepoint_, minInfoRatio_){
 
 
     detectedLineages <- unique(c(detectedLineages, overhang.added.lineages))
+
+    ## collaps in the DT_reduced all variants of one mutation to its least common ancestor
+    ## accept this one if it is accepted by variants_passed_uniqMarkerCount_filter
+    DT_simplified <- DT_reduced %>%
+      filter(sample_date_decimal %in% timepoint_) %>%
+      rowwise() %>%
+      mutate(Variant_vector = strsplit(as.character(Variants), ";")) %>%
+      mutate(Variants_LCA = get_LCA(unlist(Variant_vector))) %>%
+      filter(Variants_LCA %in% variants_passed_markerInfo_filter) %>%
+      dplyr::select("Variants", "Variants_LCA", "ID", "sample_date", "sample_date_decimal", "value.freq", "value.depth", "LocationID", "LocationName", "NUC")
+
+    variants_passed_uniqLCAMarkerCount_filter.data <- DT_simplified %>%
+      filter(sample_date_decimal %in% timepoint_) %>%
+      filter(!grepl(";",Variants_LCA)) %>%
+      filter(value.freq>zeroo) %>%
+      filter(value.depth > min.depth) %>%
+      group_by(Variants_LCA, ID, sample_date_decimal) %>%
+      summarize(NUCS = paste(NUC, collapse = "; "), .groups = "drop_last") %>%
+      ungroup() %>% dplyr::select(Variants_LCA, NUCS)
+    variants_passed_uniqLCAMarkerCount_filter <- variants_passed_uniqLCAMarkerCount_filter.data %>% pull(Variants_LCA) %>% unique()
+    variants_passed_uniqLCAMarkerCount_filter <- variants_passed_uniqLCAMarkerCount_filter[variants_passed_uniqLCAMarkerCount_filter %notin% detectedLineages]
+    variants_passed_uniqLCAMarkerCount_filter.data <- variants_passed_uniqLCAMarkerCount_filter.data %>% filter(Variants_LCA %notin% detectedLineages)
+
+
+    #writeLines(paste("LOG: variants detected based on unique markers as following:"))
+    #print(variants_passed_uniqMarkerCount_filter)
+
+
+    if( length(variants_passed_uniqLCAMarkerCount_filter) > 0) {
+      print(knitr::kable(variants_passed_uniqLCAMarkerCount_filter.data %>% rowwise() %>% mutate(NUCS = ifelse(nchar(NUCS) > 25, paste0(substr(NUCS, 1, 23), ".."), NUCS)), format = "rst", digits = 6, row.names = FALSE))
+      mutlog <- rbind(mutlog, data.table(indicatingMutation = "indicatingMutation", ID = id_inuse, LocationID = LocationID_inuse, sample_date = sample_date_inuse, sample_date_decimal = sample_date_decimal_inuse, Variants = variants_passed_uniqLCAMarkerCount_filter.data$Variants_LCA, mutation = ifelse(nchar(variants_passed_uniqLCAMarkerCount_filter.data$NUCS) > 25, paste0(substr(variants_passed_uniqLCAMarkerCount_filter.data$NUCS, 1, 23), ".."), variants_passed_uniqLCAMarkerCount_filter.data$NUCS), meth = "UNIQ_LCA", iter = 0))
+      detectedLineages <- unique(c(detectedLineages, variants_passed_uniqLCAMarkerCount_filter))
+    }
+
+
 
 
     ## accept all variants_passed_markerInfo_filter if ancestors to accepted by variants_passed_uniqMarkerCount_filter
@@ -530,7 +565,7 @@ get_pairwise_LCA <- function(x,y){
 
 
 
-get_LCA <- function(z){
+get_LCA.bak <- function(z){
     lcas <- c()
 
     if(length(z) == 1){
@@ -545,6 +580,40 @@ get_LCA <- function(z){
         }
       }
     }
+    return(lcas)
+}
+
+
+get_LCA <- function(z){
+    lcas <- z
+
+    if(length(z) <= 1){
+      lcas = z;
+    } else{
+      while(length(lcas) > 1){
+        for (i in seq_along(lcas)){
+          for (j in seq_along(lcas)){
+            if(j <= i){
+              next;
+            }
+            if(lcas[i] != "" & lcas[j] != ""){
+              lca <- get_pairwise_LCA(lcas[i], lcas[j])
+              lcas[i] <- lca
+              lcas[j] <- lca
+            } else{
+              lcas[i] <- ""
+              lcas[j] <- ""
+            }
+          }
+        }
+        lcas <- unique(lcas)
+        if(any(unique(lcas) == "")){
+          lcas <- c("")
+          last;
+        }
+      }
+    }
+
     return(lcas)
 }
 
