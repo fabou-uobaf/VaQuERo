@@ -2,7 +2,8 @@
 
 inst_packages <-  installed.packages()
 
-need_packages <- c("tidyr", "ggplot2", "reshape2", "dplyr", "data.table", "gamlss", "ggmap", "tmaptools", "ggrepel", "scales", "betareg", "ggspatial", "sf", "rnaturalearth", "rnaturalearthdata", "optparse", "stringr", "lubridate", "rjson", "RColorBrewer", "ggsankey", "cowplot", "viridis", "devtools", "patchwork", "ggpubr", "dendextend", "circlize", "NbClust", "gslnls")
+
+need_packages <- c("tidyverse", "ggridges", "tidyr", "ggplot2", "reshape2", "dplyr", "data.table", "gamlss", "ggmap", "tmaptools", "ggrepel", "scales", "betareg", "ggspatial", "sf", "rnaturalearth", "rnaturalearthdata", "optparse", "stringr", "lubridate", "rjson", "RColorBrewer", "ggsankey", "cowplot", "viridis", "devtools", "patchwork", "ggpubr", "dendextend", "circlize", "NbClust", "gslnls")
 need_dev_packages <- c("davidsjoberg/ggsankey")
 need_bioc_packages <- c("ComplexHeatmap")
 
@@ -37,3 +38,37 @@ for (need_to_install_bioc_package in  need_to_install_bioc_packages){
 
 
 print(paste("LOG: all set;", counter, "packages installed"))
+
+# check if all packages can be loaded
+suppressPackageStartupMessages(library("betareg"))
+suppressPackageStartupMessages(library("cowplot"))
+suppressPackageStartupMessages(library("data.table"))
+suppressPackageStartupMessages(library("dplyr"))
+suppressPackageStartupMessages(library("gamlss"))
+suppressPackageStartupMessages(library("ggmap"))
+suppressPackageStartupMessages(library("ggplot2"))
+suppressPackageStartupMessages(library("ggrepel"))
+suppressPackageStartupMessages(library("ggridges"))
+suppressPackageStartupMessages(library("ggsankey"))
+suppressPackageStartupMessages(library("ggspatial"))
+suppressPackageStartupMessages(library("gslnls"))
+suppressPackageStartupMessages(library("lubridate"))
+suppressPackageStartupMessages(library("NbClust"))
+suppressPackageStartupMessages(library("optparse"))
+suppressPackageStartupMessages(library("patchwork"))
+suppressPackageStartupMessages(library("RColorBrewer"))
+suppressPackageStartupMessages(library("reshape2"))
+suppressPackageStartupMessages(library("rjson"))
+suppressPackageStartupMessages(library("rnaturalearth"))
+suppressPackageStartupMessages(library("rnaturalearthdata"))
+suppressPackageStartupMessages(library("scales"))
+suppressPackageStartupMessages(library("sf"))
+suppressPackageStartupMessages(library("stringr"))
+suppressPackageStartupMessages(library("tidyr"))
+suppressPackageStartupMessages(library("tidyverse"))
+suppressPackageStartupMessages(library("tmaptools"))
+suppressPackageStartupMessages(library("viridis"))
+
+print(paste("LOG: all set;", 28, "packages loaded"))
+
+print(paste("LOG: installation script successfully executed"))
