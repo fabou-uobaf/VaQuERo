@@ -902,7 +902,7 @@ my $txt1 = '
     Auswahlkriterium Varianten: & Berücksichtigte Varianten aus drei Quellen \\\\
                                 & \\\\
                                 & Alle \emph{Variants~of~concern}, \emph{of~interest}, und \emph{under~monitoring}. \\\\
-                                & Definition folgt der Angabe von \href{https://www.ecdc.europa.eu/en/covid-19/variants-concern}{ECDC} (Stand 7. Mai., 2024)\\\\
+                                & Definition folgt der Angabe von \href{https://www.ecdc.europa.eu/en/covid-19/variants-concern}{ECDC} und \href{https://data.who.int/dashboards/covid19/variants}{WHO} (Stand 15. Juni., 2025)\\\\
                                 & \\\\
                                 & Alle Varianten die laut \href{https://gisaid.org/}{GISaid} Daten in Europa in zumindest\\\\
                                 & einem Land und einem Monat eine relative Häufigkeit $>$60\% aufwiesen, oder\\\\

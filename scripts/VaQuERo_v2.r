@@ -103,23 +103,23 @@ if(opt$debug){
     opt$dir = "output-variants"
     opt$metadata = "data/metaData_general.csv"
     opt$data="data/mutationData_DB_NationMonitoringSites.tsv.gz"
-    opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2024-09-04_Europe.csv"
-    opt$pmarker="VaQuERo/resources/mutations_problematic_2023-11-23.csv"
+    opt$marker="VaQuERo/resources/mutations_list_grouped_pango_codonPhased_2025-05-05.csv"
+    opt$pmarker="VaQuERo/resources/mutations_problematic_2024-10-04.csv"
     opt$smarker="VaQuERo/resources/mutations_special_2022-12-21.csv"
     opt$zero=0.01
     opt$ninconsens=0.4
     opt$depth=50
     opt$minuniqmark=1
     opt$minuniqmarkfrac=0.4
-    opt$mininfofrac=0.66
+    opt$mininfofrac=0.6
     opt$addUniqZeros=TRUE
     opt$alphaprime=2.2
-    opt$smoothingsamples=1
-    opt$smoothingtime=8
-    opt$voi="KS.1,KS.1.1,KP.2,KP.2.3,KP.3,KP.3.1,KP.4"
-    opt$highlight="KP.3,KP.2,BA.2.86"
-    opt$colorBase="BA.2,BA.2.86,KP.3"
-    opt$recent <- 22
+    opt$smoothingsamples=2
+    opt$smoothingtime=15
+    opt$voi="XEC,LP.8.1,NB.1.8.1,XFG"
+    opt$highlight="XEC,KP.3,KP.2,BA.2.86"
+    opt$colorBase="XEC,KP.3,BA.2.86"
+    opt$recent <- 23
     print("Warning: command line option overwritten")
 }
 
@@ -1240,7 +1240,7 @@ if (dim(globalFittedData)[1] >= tpLimitToPlot){
     stacker.dtt$variant <- factor(stacker.dtt$variant, levels = rev(stack_order))
 
     stacker.labels <- stacker.dtt %>% ungroup() %>% filter(kw == max(kw)) %>% filter(agg_value > 0)
-    stacker.labels$variant <- factor(stacker.labels$variant, levels = rev(stackorder_highlight[stackorder_highlight %in% stacker.labels$variant]))
+    stacker.labels$variant <- factor(stacker.labels$variant, levels = rev(stack_order[stack_order %in% stacker.labels$variant]))
 
 
     ap <- ggplot(data = stacker.dtt, aes(x = as.Date(kw), y = agg_value, fill = variant, color = variant))
@@ -1274,7 +1274,7 @@ if (dim(globalFittedData)[1] >= tpLimitToPlot){
 
 
     filename <- paste0(outdir, '/figs/stackview', '/', paste(opt$country, "all", sep="_"), ".pdf")
-    ggsave(filename = filename, plot = plot_grid(ap, aps, ncol = 1, rel_heights = c(2,3)), width = plotWidth, height = 1.4*plotHeight)
+    ggsave(filename = filename, plot = plot_grid(ap, aps, ncol = 1, rel_heights = c(1,3)), width = plotWidth, height = 1.6*plotHeight)
     fwrite(as.list(c("stacked", "Overview", opt$country, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
 
     rm(ap,filename, ColorBaseData, stacker.dt, stacker.dtt)
@@ -1427,7 +1427,7 @@ if(dim(globalFittedData)[1] > 0){
           fwrite(as.list(c("detection", "Overview", opt$country, filename1)), file = summaryDataFile, append = TRUE, sep = "\t")
 
           writeLines(paste("PROGRESS: generating WWTP detection table"))
-          
+
           sankey_all.dt %>%
               ungroup() %>% filter(variant %in% depicted_in_sankey$variant) %>%
               mutate(N = length(unique(LocationID))) %>%
