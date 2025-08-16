@@ -67,7 +67,7 @@ option_list = list(
               help="One of the precomputed beta distribution parameter used to model the mutation frequency dinstribution [default %default]", metavar="double"),
   make_option(c("--depth"), type="integer", default=75,
               help="Minimal depth at mutation locus to be considered [default %default]", metavar="character"),
-  make_option(c("--recent"), type="integer", default=999,
+  make_option(c("--recent"), type="integer", default=9999,
               help="How old (in days) most recent sample might be to be still considered in overview maps [default %default]", metavar="character"),
   make_option(c("--plottp"), type="integer", default=3,
               help="Produce timecourse plots only if more than this timepoints are available [default %default]", metavar="character"),
@@ -75,7 +75,7 @@ option_list = list(
               help="Minimal absolute number of uniq markers that variant is considered detected [default %default]", metavar="character"),
   make_option(c("--minuniqmarkfrac"), type="double", default=0.4,
               help="Minimal fraction of uniq markers that variant is considered detected [default %default]", metavar="character"),
-  make_option(c("--mininfofrac"), type="double", default=0.6,
+  make_option(c("--mininfofrac"), type="double", default=0.5,
               help="Minimal fraction of markers that variant is considered detected [default %default]", metavar="character"),
   make_option(c("--addUniqZeros"), type="logical", default="FALSE", action = "store_true",
             help="Should unobserved uniq marker added with AF=0 [default %default]", metavar="character"),
@@ -603,10 +603,9 @@ for (r in 1:length(unique(sewage_samps.dt$LocationID))) {
                 sdt %>% filter(sample_date %in% c(timepoint_classic, allTimepoints_classic) ) -> ssdt
 
                 # detect lineage in current center timepoint
-                adaptivMinInfoRatio <- 1-((1-minInfoRatio)^(1.1))
-                specifiedLineages <- detect_lineages(DT_ = ssdt, timepoint_ = timepoint, minInfoRatio_ = adaptivMinInfoRatio)
+                specifiedLineages <- detect_lineages(DT_ = ssdt, timepoint_ = timepoint, minInfoRatio_ = minInfoRatio)
 
-                # deprecated; use neigboring timepoints individially and merge resulting list
+                # deprecated; use neighboring timepoints individually and merge resulting list
                 if(0){
                   # check if current timepoint is squeezed between two timepoint
                   # detect lineage in neighboring timepoints
@@ -1154,6 +1153,13 @@ globalFittedData <- rbindlist(globalFittedDataList)
 globalFullData <- rbindlist(globalFullDataList)
 
 ## complete set to add zeros for unobserved variants
+if(all(0==dim(globalFittedData))){
+  writeLines("WARNING: no variants detected. program ends prematurely.")
+  globalFittedData <- data.table(variant = character(),	LocationID = character(),	LocationName = character(),	sample_id = character(),	sample_date = character(),	value = numeric())
+  fwrite(globalFittedData , file = paste0(outdir, "/globalFittedData.csv"), sep = "\t")
+  timestamp()
+  q("no")
+}
 reshape2::dcast(globalFittedData, sample_id~variant, value.var = "value") -> globalFittedData_completed
 globalFittedData_completed[is.na(globalFittedData_completed)] <- 0
 globalFittedData_completed <- reshape2::melt(globalFittedData_completed, id.vars="sample_id", variable.name = "variant", value.name = "value")
@@ -1285,9 +1291,9 @@ if (dim(globalFittedData)[1] >= tpLimitToPlot){
 if(dim(globalFittedData)[1] > 0){
     writeLines(paste("PROGRESS: plotting overview Sankey plot + Detection Plot"))
 
-    if(as.Date(format(Sys.time(), "%Y-%m-%d")) - max(globalFittedData$sample_date, na.rm = TRUE) > recentEnought){
+    if(as.Date(format(Sys.time(), "%Y-%m-%d")) - as.Date(max(globalFittedData$sample_date, na.rm = TRUE)) > recentEnought){
       recentEnought.original <- recentEnought
-      recentEnought = 1+as.numeric(as.Date(format(Sys.time(), "%Y-%m-%d")) - max(globalFittedData$sample_date, na.rm = TRUE))
+      recentEnought = 1+as.numeric(as.Date(format(Sys.time(), "%Y-%m-%d")) - as.Date(max(globalFittedData$sample_date, na.rm = TRUE)))
       writeLines(paste("WARNING: not data points classify as 'recentEnought' for overview Sankey plot; value increased from", recentEnought.original, "to", recentEnought))
     }
 
@@ -1561,6 +1567,14 @@ if (dim(globalFittedData2)[1] >= tpLimitToPlot){
 rm(globalFittedData2)
 
 ## print overview of all variants and all plants
+## sort variants according dealiased names, priotizing highlightedVariants
+globalFittedData %>%
+  dplyr::select(variant) %>%
+  distinct() %>%
+  rowwise() %>%
+  mutate(variant_dealias = dealias(variant)) %>%
+  arrange(variant_dealias) %>%
+  pull(variant) -> variant_order
 
 globalFittedData$variant <- factor(globalFittedData$variant, levels = variant_order)
 globalFittedData %>% group_by(LocationID) %>% mutate(n = length(unique(sample_date))) %>% filter(n > tpLimitToPlot*2) %>% ungroup() %>% group_by(LocationID, LocationName, sample_date, variant) %>% summarize(value = mean(value), .groups = "drop") -> globalFittedData2

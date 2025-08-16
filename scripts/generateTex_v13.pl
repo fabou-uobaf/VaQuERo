@@ -887,7 +887,7 @@ my $txt1 = '
 
 \title{Österreichischer Abwasser Sars-CoV-2 Varianten Bericht} % Title
 
-\author{Fabian \textsc{Amman} \and Lukas \textsc{Endler} \and Anna \textsc{Schedl} \and Matthew \textsc{Thornton} \and Anastasiia \textsc{Antielieieva} \and Bethany \textsc{Dearlove} \and Andreas \textsc{Bergthaler}} % Author name
+\author{Fabian \textsc{Amman} \and Lukas \textsc{Endler} \and Anna \textsc{Schedl} \and Matthew \textsc{Thornton} \and Andreas \textsc{Bergthaler}} % Author name
 
 \date{\today} % Date for the report
 
@@ -902,12 +902,16 @@ my $txt1 = '
     Auswahlkriterium Varianten: & Berücksichtigte Varianten aus drei Quellen \\\\
                                 & \\\\
                                 & Alle \emph{Variants~of~concern}, \emph{of~interest}, und \emph{under~monitoring}. \\\\
-                                & Definition folgt der Angabe von \href{https://www.ecdc.europa.eu/en/covid-19/variants-concern}{ECDC} und \href{https://data.who.int/dashboards/covid19/variants}{WHO} (Stand 15. Juni., 2025)\\\\
+                                & Definition folgt der Angabe von \href{https://www.ecdc.europa.eu/en/covid-19/variants-concern}{ECDC} und \href{https://data.who.int/dashboards/covid19/variants}{WHO} (Stand 08. August., 2025)\\\\
                                 & \\\\
                                 & Alle Varianten die laut \href{https://gisaid.org/}{GISaid} Daten in Europa in zumindest\\\\
                                 & einem Land und einem Monat eine relative Häufigkeit $>$60\% aufwiesen, oder\\\\
                                 & einem Land und einem Monat eine relative Häufigkeit $>$10\% seit März 2024 aufwiesen, \\\\
-%                               & \\\\
+%                               & \\
+%                               & Alle Varianten die aktuell laut \href{https://cov-spectrum.org/collections/24}{CoV-spectrum Collection 24}\\\\
+%                               & ein Wachstumsvorteil $>$30\% (lower CI) zeigen. Detailgrad der \\\\
+% 			                        & Untervarianten nach individueller Einschätzung angepasst. \\\\
+\\
 %                               & Alle Varianten die aktuell laut \href{https://cov-spectrum.org/collections/24}{CoV-spectrum Collection 24}\\\\
 %                               & ein Wachstumsvorteil $>$30\% (lower CI) zeigen. Detailgrad der \\\\
 % 			                        & Untervarianten nach individueller Einschätzung angepasst. \\\\

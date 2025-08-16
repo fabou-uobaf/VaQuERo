@@ -233,7 +233,7 @@ collapse2mother <- function(x, xset){
 
 
 detect_lineages <- function(DT_, timepoint_, minInfoRatio_){
-    ## define variants for which at least minInfoRatio_ is found cummulatively over all detected marker
+    ## define variants for which at least minInfoRatio_ is found cumulatively over all detected marker
     ## define variants which could be detected by unique markers
     ## define variants with at least minUniqMarkerRatio and minUniqMarker of all uniq markers are found
     ## remove all variants not detected based on minMarker and all which could be, but were not detected, based on uniq markers
