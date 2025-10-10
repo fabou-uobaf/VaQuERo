@@ -1262,7 +1262,7 @@ if (dim(globalFittedData)[1] >= tpLimitToPlot){
     ap <- ap + ylab(paste0("Variantenanteil [1/1]") )
     ap <- ap + xlab("Kalender Woche")
     ap <- ap + ggtitle("Gewichtetes Mittel: Österreich")
-    ap <- ap + geom_text_repel(data=stacker.labels, aes(x=as.Date(kw), y=agg_value, label=variant), position = position_stack(), min.segment.length = .01, direction = "y", alpha = 0.6, xlim = c(max(as.Date(stacker.labels$kw)), Inf), size = 2.5)
+    ap <- ap + geom_text_repel(data=stacker.labels, aes(x=as.Date(kw), y=agg_value, label=variant), position = position_stack(), min.segment.length = .01, direction = "y", alpha = 0.6, xlim = c(max(as.Date(stacker.labels$kw)), Inf), size = 1.5, segment.size = .1)
 
     aps <- ggplot(data = stacker.dtt, aes(x = as.Date(kw), y = agg_value, fill = variant, color = variant))
     aps <- aps + geom_area(alpha = 0.8)
@@ -1280,7 +1280,7 @@ if (dim(globalFittedData)[1] >= tpLimitToPlot){
 
 
     filename <- paste0(outdir, '/figs/stackview', '/', paste(opt$country, "all", sep="_"), ".pdf")
-    ggsave(filename = filename, plot = plot_grid(ap, aps, ncol = 1, rel_heights = c(1,3)), width = plotWidth, height = 1.6*plotHeight)
+    ggsave(filename = filename, plot = plot_grid(ap, aps, ncol = 1, rel_heights = c(1,3)), width = plotWidth, height = 2.0*plotHeight)
     fwrite(as.list(c("stacked", "Overview", opt$country, filename)), file = summaryDataFile, append = TRUE, sep = "\t")
 
     rm(ap,filename, ColorBaseData, stacker.dt, stacker.dtt)
